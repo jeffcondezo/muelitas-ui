@@ -19,7 +19,7 @@ function Navigation() {
                     <div className="nav-filter">
                         <div className="position-relative">
                             <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
-                            <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-classname="list-filter-active" data-target=".page-sidebar">
+                            <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
                                 <i className="fal fa-chevron-up"></i>
                             </a>
                         </div>
@@ -35,7 +35,7 @@ function Navigation() {
                             <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
                         </div>
                         <img src="img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
-                        <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-classname="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
+                        <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
                             <i className="fal fa-angle-down"></i>
                         </a>
                     </div>
@@ -902,7 +902,7 @@ function Navigation() {
                 </nav>
 
                 <div className="nav-footer shadow-top">
-                    <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-classname="nav-function-minify" className="hidden-md-down">
+                    <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
                         <i className="ni ni-chevron-right"></i>
                         <i className="ni ni-chevron-right"></i>
                     </a>
@@ -940,17 +940,17 @@ function Navigation() {
                     </div>
 
                     <div className="hidden-md-down dropdown-icon-menu position-relative">
-                        <a href="#" className="header-btn btn js-waves-off" data-action="toggle" data-classname="nav-function-hidden" title="Hide Navigation">
+                        <a href="#" className="header-btn btn js-waves-off" data-action="toggle" data-class="nav-function-hidden" title="Hide Navigation">
                             <i className="ni ni-menu"></i>
                         </a>
                         <ul>
                             <li>
-                                <a href="#" className="btn js-waves-off" data-action="toggle" data-classname="nav-function-minify" title="Minify Navigation">
+                                <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-minify" title="Minify Navigation">
                                     <i className="ni ni-minify-nav"></i>
                                 </a>
                             </li>
                             <li>
-                                <a href="#" className="btn js-waves-off" data-action="toggle" data-classname="nav-function-fixed" title="Lock Navigation">
+                                <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-fixed" title="Lock Navigation">
                                     <i className="ni ni-lock-nav"></i>
                                 </a>
                             </li>
@@ -958,14 +958,14 @@ function Navigation() {
                     </div>
 
                     <div className="hidden-lg-up">
-                        <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-classname="mobile-nav-on">
+                        <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
                             <i className="ni ni-menu"></i>
                         </a>
                     </div>
                     <div className="search">
                         <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
                             <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
-                            <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-classname="mobile-search-on">
+                            <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
                                 <i className="fal fa-times"></i>
                             </a>
                         </form>
@@ -973,7 +973,7 @@ function Navigation() {
                     <div className="ml-auto d-flex">
 
                         <div className="hidden-sm-up">
-                            <a href="#" className="header-icon" data-action="toggle" data-classname="mobile-search-on" data-focus="search-field" title="Search">
+                            <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
                                 <i className="fal fa-search"></i>
                             </a>
                         </div>
@@ -1637,7 +1637,7 @@ function Navigation() {
                     </div>
                 </main>
 
-                <div className="page-content-overlay" data-action="toggle" data-classname="mobile-nav-on"></div>
+                <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
 
                 <footer className="page-footer" role="contentinfo">
                     <div className="d-flex align-items-center flex-1 text-muted">
@@ -2112,52 +2112,52 @@ function Navigation() {
                             </div>
                         </div>
                         <div className="list" id="fh">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="header-function-fixed"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="header-function-fixed"></a>
                             <span className="onoffswitch-title">Fixed Header</span>
                             <span className="onoffswitch-title-desc">header is in a fixed at all times</span>
                         </div>
                         <div className="list" id="nff">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-function-fixed"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-function-fixed"></a>
                             <span className="onoffswitch-title">Fixed Navigation</span>
                             <span className="onoffswitch-title-desc">left panel is fixed</span>
                         </div>
                         <div className="list" id="nfm">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-function-minify"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-function-minify"></a>
                             <span className="onoffswitch-title">Minify Navigation</span>
                             <span className="onoffswitch-title-desc">Skew nav to maximize space</span>
                         </div>
                         <div className="list" id="nfh">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-function-hidden"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-function-hidden"></a>
                             <span className="onoffswitch-title">Hide Navigation</span>
                             <span className="onoffswitch-title-desc">roll mouse on edge to reveal</span>
                         </div>
                         <div className="list" id="nft">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-function-top"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-function-top"></a>
                             <span className="onoffswitch-title">Top Navigation</span>
                             <span className="onoffswitch-title-desc">Relocate left pane to top</span>
                         </div>
                         <div className="list" id="mmb">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-main-boxed"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-main-boxed"></a>
                             <span className="onoffswitch-title">Boxed Layout</span>
                             <span className="onoffswitch-title-desc">Encapsulates to a container</span>
                         </div>
                         <div className="expanded">
                             <ul className="">
                                 <li>
-                                    <div className="bg-fusion-50" data-action="toggle" data-classname="mod-bg-1"></div>
+                                    <div className="bg-fusion-50" data-action="toggle" data-class="mod-bg-1"></div>
                                 </li>
                                 <li>
-                                    <div className="bg-warning-200" data-action="toggle" data-classname="mod-bg-2"></div>
+                                    <div className="bg-warning-200" data-action="toggle" data-class="mod-bg-2"></div>
                                 </li>
                                 <li>
-                                    <div className="bg-primary-200" data-action="toggle" data-classname="mod-bg-3"></div>
+                                    <div className="bg-primary-200" data-action="toggle" data-class="mod-bg-3"></div>
                                 </li>
                                 <li>
-                                    <div className="bg-success-300" data-action="toggle" data-classname="mod-bg-4"></div>
+                                    <div className="bg-success-300" data-action="toggle" data-class="mod-bg-4"></div>
                                 </li>
                             </ul>
                             <div className="list" id="mbgf">
-                                <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-fixed-bg"></a>
+                                <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-fixed-bg"></a>
                                 <span className="onoffswitch-title">Fixed Background</span>
                             </div>
                         </div>
@@ -2169,17 +2169,17 @@ function Navigation() {
                             </div>
                         </div>
                         <div className="list" id="nmp">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-mobile-push"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-mobile-push"></a>
                             <span className="onoffswitch-title">Push Content</span>
                             <span className="onoffswitch-title-desc">Content pushed on menu reveal</span>
                         </div>
                         <div className="list" id="nmno">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-mobile-no-overlay"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-mobile-no-overlay"></a>
                             <span className="onoffswitch-title">No Overlay</span>
                             <span className="onoffswitch-title-desc">Removes mesh on menu reveal</span>
                         </div>
                         <div className="list" id="sldo">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="nav-mobile-slide-out"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="nav-mobile-slide-out"></a>
                             <span className="onoffswitch-title">Off-Canvas <sup>(beta)</sup></span>
                             <span className="onoffswitch-title-desc">Content overlaps menu</span>
                         </div>
@@ -2191,22 +2191,22 @@ function Navigation() {
                             </div>
                         </div>
                         <div className="list" id="mbf">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-bigger-font"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-bigger-font"></a>
                             <span className="onoffswitch-title">Bigger Content Font</span>
                             <span className="onoffswitch-title-desc">content fonts are bigger for readability</span>
                         </div>
                         <div className="list" id="mhc">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-high-contrast"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-high-contrast"></a>
                             <span className="onoffswitch-title">High Contrast Text (WCAG 2 AA)</span>
                             <span className="onoffswitch-title-desc">4.5:1 text contrast ratio</span>
                         </div>
                         <div className="list" id="mcb">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-color-blind"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-color-blind"></a>
                             <span className="onoffswitch-title">Daltonism <sup>(beta)</sup> </span>
                             <span className="onoffswitch-title-desc">color vision deficiency</span>
                         </div>
                         <div className="list" id="mpc">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-pace-custom"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-pace-custom"></a>
                             <span className="onoffswitch-title">Preloader Inside</span>
                             <span className="onoffswitch-title-desc">preloader will be inside content</span>
                         </div>
@@ -2218,48 +2218,48 @@ function Navigation() {
                             </div>
                         </div>
                         <div className="list" id="mcbg">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-clean-page-bg"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-clean-page-bg"></a>
                             <span className="onoffswitch-title">Clean Page Background</span>
                             <span className="onoffswitch-title-desc">adds more whitespace</span>
                         </div>
                         <div className="list" id="mhni">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-hide-nav-icons"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-hide-nav-icons"></a>
                             <span className="onoffswitch-title">Hide Navigation Icons</span>
                             <span className="onoffswitch-title-desc">invisible navigation icons</span>
                         </div>
                         <div className="list" id="dan">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-disable-animation"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-disable-animation"></a>
                             <span className="onoffswitch-title">Disable CSS Animation</span>
                             <span className="onoffswitch-title-desc">Disables CSS based animations</span>
                         </div>
                         <div className="list" id="mhic">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-hide-info-card"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-hide-info-card"></a>
                             <span className="onoffswitch-title">Hide Info Card</span>
                             <span className="onoffswitch-title-desc">Hides info card from left panel</span>
                         </div>
                         <div className="list" id="mlph">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-lean-subheader"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-lean-subheader"></a>
                             <span className="onoffswitch-title">Lean Subheader</span>
                             <span className="onoffswitch-title-desc">distinguished page header</span>
                         </div>
                         <div className="list" id="mnl">
-                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-classname="mod-nav-link"></a>
+                            <a href="#" onClick={e => e.preventDefault()} className="btn btn-switch" data-action="toggle" data-class="mod-nav-link"></a>
                             <span className="onoffswitch-title">Hierarchical Navigation</span>
                             <span className="onoffswitch-title-desc">Clear breakdown of nav links</span>
                         </div>
                         <div className="list mt-1">
                             <span className="onoffswitch-title">Global Font Size <small>(RESETS ON REFRESH)</small> </span>
                             <div className="btn-group btn-group-sm btn-group-toggle my-2" data-toggle="buttons">
-                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-classname="root-text-sm" data-target="html">
+                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-class="root-text-sm" data-target="html">
                                     <input type="radio" name="changeFrontSize"/> SM
                                 </label>
-                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-classname="root-text" data-target="html">
+                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-class="root-text" data-target="html">
                                     <input type="radio" name="changeFrontSize" defaultChecked={true}/> MD
                                 </label>
-                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-classname="root-text-lg" data-target="html">
+                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-class="root-text-lg" data-target="html">
                                     <input type="radio" name="changeFrontSize"/> LG
                                 </label>
-                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-classname="root-text-xl" data-target="html">
+                                <label className="btn btn-default btn-sm" data-action="toggle-swap" data-class="root-text-xl" data-target="html">
                                     <input type="radio" name="changeFrontSize"/> XL
                                 </label>
                             </div>
