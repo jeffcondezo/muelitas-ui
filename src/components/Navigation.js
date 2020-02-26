@@ -3,10 +3,8 @@ import React from 'react';
 function Navigation() {
   return (
     <div>
-
     <div class="page-wrapper">
         <div class="page-inner">
-
             <aside class="page-sidebar">
                 <div class="page-logo">
                     <a href="#" class="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
@@ -1199,7 +1197,7 @@ function Navigation() {
                                                 <li class="unread">
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-c.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Melissa Ayre <span class="badge badge-primary fw-n position-absolute pos-top pos-right mt-1">INBOX</span></span>
@@ -1212,7 +1210,7 @@ function Navigation() {
                                                 <li class="unread">
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-a.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Adison Lee</span>
@@ -1224,7 +1222,7 @@ function Navigation() {
                                                 <li>
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status status-success mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-b.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Oliver Kopyuv</span>
@@ -1236,7 +1234,7 @@ function Navigation() {
                                                 <li>
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status status-warning mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-e.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Dr. John Cook PhD</span>
@@ -1249,7 +1247,7 @@ function Navigation() {
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status status-success mr-2">
 
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-h.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Sarah McBrook</span>
@@ -1261,7 +1259,7 @@ function Navigation() {
                                                 <li>
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status status-success mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-m.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Anothony Bezyeth</span>
@@ -1273,7 +1271,7 @@ function Navigation() {
                                                 <li>
                                                     <a href="#" class="d-flex align-items-center">
                                                         <span class="status status-danger mr-2">
-                                                            <span class="profile-image rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-j.png')"></span>
+                                                            <span class="profile-image rounded-circle d-inline-block"></span>
                                                         </span>
                                                         <span class="d-flex flex-column flex-1 ml-1">
                                                             <span class="name">Lisa Hatchensen</span>
@@ -1324,12 +1322,12 @@ function Navigation() {
                                                                 Troy Norman'<span class="fw-300">s new connections</span>
                                                             </span>
                                                             <div class="fs-sm d-flex align-items-center mt-2">
-                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-a.png'); background-size: cover;"></span>
-                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-b.png'); background-size: cover;"></span>
-                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-c.png'); background-size: cover;"></span>
-                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-e.png'); background-size: cover;"></span>
+                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                                <span class="profile-image-md mr-1 rounded-circle d-inline-block"></span>
                                                                 <div data-hasmore="+3" class="rounded-circle profile-image-md mr-1">
-                                                                    <span class="profile-image-md mr-1 rounded-circle d-inline-block" style="background-image:url('img/demo/avatars/avatar-h.png'); background-size: cover;"></span>
+                                                                    <span class="profile-image-md mr-1 rounded-circle d-inline-block"></span>
                                                                 </div>
                                                             </div>
                                                             <span class="fs-nano text-muted mt-1">55 minutes ago</span>
@@ -1357,16 +1355,16 @@ function Navigation() {
                                                             <span class="name">Lab Images <span class="fw-300">were updated!</span></span>
                                                             <div class="fs-sm d-flex align-items-center mt-1">
                                                                 <a href="#" class="mr-1 mt-1" title="Cell A-0012">
-                                                                    <span class="d-block img-share" style="background-image:url('img/thumbs/pic-7.png'); background-size: cover;"></span>
+                                                                    <span class="d-block img-share" ></span>
                                                                 </a>
                                                                 <a href="#" class="mr-1 mt-1" title="Patient A-473 saliva">
-                                                                    <span class="d-block img-share" style="background-image:url('img/thumbs/pic-8.png'); background-size: cover;"></span>
+                                                                    <span class="d-block img-share" ></span>
                                                                 </a>
                                                                 <a href="#" class="mr-1 mt-1" title="Patient A-473 blood cells">
-                                                                    <span class="d-block img-share" style="background-image:url('img/thumbs/pic-11.png'); background-size: cover;"></span>
+                                                                    <span class="d-block img-share" ></span>
                                                                 </a>
                                                                 <a href="#" class="mr-1 mt-1" title="Patient A-473 Membrane O.C">
-                                                                    <span class="d-block img-share" style="background-image:url('img/thumbs/pic-12.png'); background-size: cover;"></span>
+                                                                    <span class="d-block img-share" ></span>
                                                                 </a>
                                                             </div>
                                                             <span class="fs-nano text-muted mt-1">55 minutes ago</span>
@@ -1392,7 +1390,7 @@ function Navigation() {
                                                                 </div>
                                                             </div>
                                                             <div class="progress progress-sm d-flex mt-1">
-                                                                <span class="progress-bar bg-primary-500 progress-bar-striped" role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
+                                                                <span class="progress-bar-45 progress-bar bg-primary-500 progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
                                                             </div>
                                                             <span class="fs-nano text-muted mt-1">2 hrs ago</span>
                                                             <div class="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
@@ -1794,7 +1792,7 @@ function Navigation() {
                 <div class="dropdown-header bg-trans-gradient d-flex align-items-center w-100">
                     <div class="d-flex flex-row align-items-center mt-1 mb-1 color-white">
                         <span class="mr-2">
-                            <span class="rounded-circle profile-image d-block" style="background-image:url('img/demo/avatars/avatar-d.png'); background-size: cover;"></span>
+                            <span class="rounded-circle profile-image d-block"></span>
                         </span>
                         <div class="info-card-text">
                             <a href="javascript:void(0);" class="fs-lg text-truncate text-truncate-lg text-white" data-toggle="dropdown" aria-expanded="false">
@@ -1827,7 +1825,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="tracey chang online">
                                             <div class="d-table-cell align-middle status status-success status-sm ">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-d.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block"  ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1842,7 +1840,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="oliver kopyuv online">
                                             <div class="d-table-cell align-middle status status-success status-sm ">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-b.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1857,7 +1855,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="dr john cook phd away">
                                             <div class="d-table-cell align-middle status status-warning status-sm ">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-e.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1872,7 +1870,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="ali amdaney online">
                                             <div class="d-table-cell align-middle status status-success status-sm ">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-g.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1887,7 +1885,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="sarah mcbrook online">
                                             <div class="d-table-cell align-middle status status-success status-sm">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-h.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1902,7 +1900,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="ali amdaney offline">
                                             <div class="d-table-cell align-middle status status-sm">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-a.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1917,7 +1915,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="ali amdaney busy">
                                             <div class="d-table-cell align-middle status status-danger status-sm">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-j.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1932,7 +1930,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="ali amdaney offline">
                                             <div class="d-table-cell align-middle status status-sm">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-c.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
@@ -1947,7 +1945,7 @@ function Navigation() {
                                     <li>
                                         <a href="#" class="d-table w-100 px-2 py-2 text-dark hover-white" data-filter-tags="ali amdaney inactive">
                                             <div class="d-table-cell align-middle">
-                                                <span class="profile-image-md rounded-circle d-block" style="background-image:url('img/demo/avatars/avatar-m.png'); background-size: cover;"></span>
+                                                <span class="profile-image-md rounded-circle d-block" ></span>
                                             </div>
                                             <div class="d-table-cell w-100 align-middle pl-2 pr-2">
                                                 <div class="text-truncate text-truncate-md">
