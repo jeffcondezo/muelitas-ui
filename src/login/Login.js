@@ -1,8 +1,50 @@
-import React from 'react';
+import React, {useState} from 'react';
+
 
 function Login() {
-  return (
+  let [isvalid, setIsvalid] = useState(false)
 
+  // Validate form
+  function validateForm(e){
+    e.preventDefault()  // Disable regular functionality of form element
+    // Form element
+    let form = document.querySelector('form#js-login')
+    setIsvalid(form.checkValidity())  // Check if form is validated
+    // Decide whether show error or continue
+    if(!form.checkValidity()){  // There is error
+      form.classList.add('was-validated');
+    }else{
+      console.log("alright")
+      getToken(form)
+    }
+  }
+  // Submit function
+  function getToken(form){
+    let _token = ''
+    let data = new FormData(form)  // Get data from form element
+    // HTTP REQUEST
+    let xhr = new XMLHttpRequest()
+    xhr.open('POST', process.env.REACT_APP_PROJECT_API_TOKEN)
+    xhr.onload = function(){
+      // Check if token is returned
+
+      // Add token to cookies and headers
+      // Stop waiter
+      // Redirect
+      console.log(xhr.reponse)
+      let response = JSON.parse(xhr.response)
+      console.log(response.token)
+    }
+
+    xhr.send(data)
+    // Show waiter
+
+    console.log(data.get("username"))
+    console.log(data.get("password"))
+    console.log("Token:", _token);
+  }
+
+  return (
     <div className="page-wrapper">
         <div className="page-inner bg-brand-gradient">
             <div className="page-content-wrapper bg-transparent m-0">
@@ -10,8 +52,8 @@ function Login() {
                     <div className="d-flex align-items-center container p-0">
                         <div className="page-logo width-mobile-auto m-0 align-items-center justify-content-center p-0 bg-transparent bg-img-none shadow-0 height-9">
                             <a href="#" onClick={e => e.preventDefault()} className="page-logo-link press-scale-down d-flex align-items-center">
-                                <img src={process.env.PUBLIC_URL + '/img/logo.png'} alt="Muelitas" aria-roledescription="logo" />
-                                <span className="page-logo-text mr-1">Muelitas</span>
+                              <img src={process.env.PUBLIC_URL + '/img/logo.png'} alt="Muelitas" aria-roledescription="logo" />
+                              <span className="page-logo-text mr-1">Muelitas</span>
                             </a>
                         </div>
                         <a href="page_register.html" className="btn-link text-white ml-auto">
@@ -55,20 +97,20 @@ function Login() {
                                     Ingreso
                                 </h1>
                                 <div className="card p-4 rounded-plus bg-faded">
-                                    <form id="js-login" noValidate action="intel_analytics_dashboard.html">
+                                    <form id="js-login" noValidate>
                                         <div className="form-group">
                                             <label className="form-label" htmlFor="username">Usuario</label>
-                                            <input type="email" id="username" className="form-control form-control-lg" placeholder="Ingresa tu usuario." required />
-                                            <div className="invalid-feedback">No, you missed this one.</div>
+                                            <input type="text" id="username" name="username" className="form-control form-control-lg" placeholder="Ingresa tu usuario." required />
+                                            <div className="invalid-feedback">Olvidaste este.</div>
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label" htmlFor="password">Contraseña</label>
-                                            <input type="password" id="password" className="form-control form-control-lg" placeholder="Ingresa tu contraseña" required />
-                                            <div className="invalid-feedback">Sorry, you missed this one.</div>
+                                            <input type="password" id="password" name="password" className="form-control form-control-lg" placeholder="Ingresa tu contraseña" required />
+                                            <div className="invalid-feedback">Este te falta c:</div>
                                         </div>
                                         <div className="row no-gutters">
                                             <div className="col-lg-6 pr-lg-1 my-2">
-                                                <button type="submit" className="btn btn-info btn-block btn-lg">Ingresar </button>
+                                                <button type="submit" className="btn btn-info btn-block btn-lg" onClick={validateForm}>Ingresar </button>
                                             </div>
                                             <div className="col-lg-6 pl-lg-1 my-2">
                                                 <button id="js-login-btn" type="submit" className="btn btn-danger btn-block btn-lg">Olvidé mi contraseña</button>
