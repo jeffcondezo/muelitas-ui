@@ -1,6 +1,8 @@
 import React from 'react';
+import Script from 'react-load-script'
 
-function Navigation() {
+class Navigation extends React.Component{
+  render() {
   return (
     <div>
     <div className="page-wrapper">
@@ -2346,11 +2348,9 @@ function Navigation() {
         </div>
     </div>
 
-    <script src="js/vendors.bundle.js"></script>
-    <script src="js/app.bundle.js"></script>
-
     </div>
   );
+}
 }
 
 export default Navigation;

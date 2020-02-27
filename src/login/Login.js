@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import Script from 'react-load-script'
 
 
 function Login() {
@@ -130,5 +131,4 @@ function Login() {
     </div>
   );
 }
-
 export default Login;
