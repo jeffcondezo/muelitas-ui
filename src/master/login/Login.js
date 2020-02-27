@@ -1,14 +1,13 @@
-import React, {useState} from 'react';
+import React from 'react';
+import './Login.css';
 
 function Login() {
-  let [isvalid, setIsvalid] = useState(false)
 
   // Validate form
   function validateForm(e){
     e.preventDefault()  // Disable regular functionality of form element
     // Form element
     let form = document.querySelector('form#js-login')
-    setIsvalid(form.checkValidity())  // Check if form is validated
     // Decide whether show error or continue
     if(!form.checkValidity()){  // There is error
       form.classList.add('was-validated');
@@ -51,7 +50,7 @@ function Login() {
   }
   function handleErrorResponse(xhr){
     charging(false)
-    if(xhr.type=='error'){
+    if(xhr.type==='error'){
       document.querySelector('div#alert-server').style.display = "block"
       document.querySelector('div#alert-server').classList.remove("fade")
       setTimeout(function(){

@@ -1,8 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Link from 'react-router-dom';
 import './index.css';
-// import './login/Login.css';
 import './components/Navigation.css';
 import Master from './master/Master';
 import Navigation from './components/Navigation';
