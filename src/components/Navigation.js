@@ -2354,16 +2354,17 @@ class Navigation extends React.Component{
 }
 componentDidMount() {
     const script = document.createElement("script");
-    script.async = true;
+    script.async = false;
     script.src = "/js/vendors.bundle.js";
     // For body
     document.body.appendChild(script);
 
     const script2 = document.createElement("script");
-    script2.async = true;
+    script2.async = false;
     script2.src = "/js/app.bundle.js";
     // For body
     document.body.appendChild(script2);
+
   }
 }
 
