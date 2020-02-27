@@ -1,9 +1,6 @@
 import React from 'react';
-import Script from 'react-load-script'
 
-class Navigation extends React.Component{
-
-  render() {
+function Navigation() {
   return (
     <div>
     <div className="page-wrapper">
@@ -2349,22 +2346,11 @@ class Navigation extends React.Component{
         </div>
     </div>
 
+    <script src="js/vendors.bundle.js"></script>
+    <script src="js/app.bundle.js"></script>
+
     </div>
   );
-}
-componentDidMount() {
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "/js/vendors.bundle.js";
-    // For body
-    document.body.appendChild(script);
-
-    const script2 = document.createElement("script");
-    script2.async = true;
-    script2.src = "/js/app.bundle.js";
-    // For body
-    document.body.appendChild(script2);
-  }
 }
 
 export default Navigation;

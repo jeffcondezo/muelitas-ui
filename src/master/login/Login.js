@@ -1,48 +1,79 @@
 import React, {useState} from 'react';
-import Script from 'react-load-script'
-
+import './Login.css';
 
 function Login() {
-  let [isvalid, setIsvalid] = useState(false)
 
   // Validate form
   function validateForm(e){
     e.preventDefault()  // Disable regular functionality of form element
     // Form element
     let form = document.querySelector('form#js-login')
-    setIsvalid(form.checkValidity())  // Check if form is validated
     // Decide whether show error or continue
     if(!form.checkValidity()){  // There is error
       form.classList.add('was-validated');
     }else{
-      console.log("alright")
       getToken(form)
     }
   }
   // Submit function
   function getToken(form){
-    let _token = ''
     let data = new FormData(form)  // Get data from form element
     // HTTP REQUEST
     let xhr = new XMLHttpRequest()
     xhr.open('POST', process.env.REACT_APP_PROJECT_API_TOKEN)
-    xhr.onload = function(){
-      // Check if token is returned
+    xhr.onload = handleTokenResponse  // Receive token or failed
+    xhr.onerror = handleErrorResponse  // Receive server error
 
-      // Add token to cookies and headers
-      // Stop waiter
-      // Redirect
-      console.log(xhr.reponse)
-      let response = JSON.parse(xhr.response)
-      console.log(response.token)
-    }
-
-    xhr.send(data)
+    xhr.send(data)  // Send request
     // Show waiter
-
-    console.log(data.get("username"))
-    console.log(data.get("password"))
-    console.log("Token:", _token);
+    charging(true)
+  }
+  function handleTokenResponse(xhr){
+    xhr = xhr.target
+    // Stop waiter
+    charging(false)
+    // Convert response to json object
+    const response = JSON.parse(xhr.response)
+    // Check if token is returned
+    if(response.token){
+      // Add token to cookies and headers (access_token)
+      localStorage.setItem('access_token', 'response.token')
+      /*
+        We will use access_token cookie afterwards when creating XMLHttpRequest
+        we'd do:
+          xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'))
+      */
+      // Redirect
+    }else{  // Handle bad login
+      handleErrorResponse(xhr)
+    }
+  }
+  function handleErrorResponse(xhr){
+    charging(false)
+    if(xhr.type==='error'){
+      document.querySelector('div#alert-server').style.display = "block"
+      document.querySelector('div#alert-server').classList.remove("fade")
+      setTimeout(function(){
+        document.querySelector('div#alert-server').classList.add("fade")
+      }, 2500)
+      setTimeout(function(){
+        document.querySelector('div#alert-server').style.display = "none"
+      }, 2700)
+    }else{
+      document.querySelector('div#alert-login').style.display = "block"
+      document.querySelector('div#alert-login').classList.remove("fade")
+      setTimeout(function(){
+        document.querySelector('div#alert-login').classList.add("fade")
+      }, 2500)
+      setTimeout(function(){
+        document.querySelector('div#alert-login').style.display = "none"
+      }, 2700)
+    }
+  }
+  function charging(state){
+    let spinner = document.querySelector("#spinner")
+    spinner.style.display = state?"block":"none"
+    document.querySelector('#js-login').style.filter=state?"blur(1px)":""
   }
 
   return (
@@ -118,6 +149,16 @@ function Login() {
                                             </div>
                                         </div>
                                     </form>
+                                </div>
+                                <button className="btn btn-danger rounded-pill waves-effect waves-themed fade" type="button" id="spinner" style={{display:'none'}}>
+                                    <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                    Loading...
+                                </button>
+                                <div id="alert-login" className="fade bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
+                                    <strong>Ups!</strong> Parece que el usuario o contraseña introducidos no son correctos.
+                                </div>
+                                <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
+                                    <strong>Error</strong> No se ha podido establecer conexión con el servidor.
                                 </div>
                             </div>
                         </div>

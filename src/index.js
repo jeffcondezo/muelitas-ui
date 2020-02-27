@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import './login/Login.css';
 import './components/Navigation.css';
-import Login from './login/Login';
+import Master from './master/Master';
 import Navigation from './components/Navigation';
 import * as serviceWorker from './serviceWorker';
 
