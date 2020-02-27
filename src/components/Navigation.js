@@ -1,5 +1,4 @@
 import React from 'react';
-import Script from 'react-load-script'
 
 class Navigation extends React.Component{
 

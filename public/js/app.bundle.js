@@ -1101,14 +1101,12 @@ var initApp = (function(app) {
 			});
 		});
 	};
-
 	/**
 	 * Mobile Check Activate
 	 * DOC: check on window resize if screen width is less than [value]
 	 * @return {int}
 	 */
 	app.mobileCheckActivation = function(){
-
 		if ( window.innerWidth < myapp_config.mobileResolutionTrigger ) {
 
 			myapp_config.root_.addClass('mobile-view-activated');
@@ -1687,10 +1685,10 @@ var initApp = (function(app) {
  * Bind the throttled handler to the resize event.
  * NOTE: Please do not change the order displayed (e.g. 1a, 1b, 2a, 2b...etc)
  **/
+ console.log(myapp_config.throttleDelay);
 $(window).resize(
-
  	$.throttle( myapp_config.throttleDelay, function (e) {
-
+		console.console.log('asd');
 		 /**
 		  * (1a) ADD CLASS WHEN BELOW CERTAIN WIDTH (MOBILE MENU)
 		  * Description: tracks the page min-width of #CONTENT and NAV when navigation is resized.
@@ -1743,7 +1741,6 @@ $(window).on('scroll', initApp.windowScrollEvents);
  * Do not change order a, b, c, d...
  **/
 
-document.addEventListener('DOMContentLoaded', function() {
 
 	/**
 	 * detect desktop or mobile
@@ -1780,7 +1777,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	 **/
 	initApp.appForms('.input-group', 'has-length', 'has-disabled');
 
-});
 
 /**
  * Mobile orientation change events
