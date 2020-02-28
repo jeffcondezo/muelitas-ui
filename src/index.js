@@ -1,12 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import './components/Navigation.css';
+// import './index.css';
 import Master from './master/Master';
-import Navigation from './components/Navigation';
 import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<Navigation />, document.getElementById('root'));
+ReactDOM.render(<Master />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

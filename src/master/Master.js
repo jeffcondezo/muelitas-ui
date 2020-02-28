@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  BrowserRouter,  // Allow history of visited pages
+  BrowserRouter,  // Router needed && Allow history of visited pages
   Switch,  // Allow to change only content
   Route,  // Route handling
   Redirect  // Redirect url
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 // Components
 import Login from './login/Login';
+import Navigation from './components/Navigation';
 
 class Master extends React.Component {
   constructor(props){
@@ -15,14 +16,10 @@ class Master extends React.Component {
       logged: false  // User is loged in?
     }
   }
-  middlewarePage(element){
-    let target = element.type.name
-    // Check if user is logged and url
-    if(target==='Login') return
-    if(!this.state.logged){  // User is not logged and target is not login
-      return <Redirect to="login" />
-    }
-    return element
+  setLogged(status){
+    let clone = Object.assign({}, this.state)  // Clone this.state object
+    clone.logged = status  // Change attribute's value
+    this.setState(clone)  // Save change (re-render)
   }
   render(){  /*** RENDER ***/
     return (
@@ -32,11 +29,13 @@ class Master extends React.Component {
             <Home />  {/* No need of middleware */}
           </Route>
           <Route path="/login">
-            <Login />
+            {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLogged(true)} />}
           </Route>
-          <Route>
-            {/*this.state.logged ? <Home /> : <Redirect to="login" />*/}
-            {this.middlewarePage(<Home/>)}
+          <Route path="/nav">  {/* NAVIGATION */}
+            {this.state.logged ? <Navigation /> : <Redirect to="/login" />}
+          </Route>
+          <Route>  {/* ROUTE NOT FOUND REDIRECT */}
+            <Redirect to="/" />
           </Route>
         </Switch>
       </BrowserRouter>
@@ -54,7 +53,7 @@ Change some class.state attributes:
   this.setState(clone)  // Save change (re-render)
 */
 
-/* COMPONENTS */
+/*** COMPONENTS ***/
 function Home(){
   return (
     <h1>Home</h1>

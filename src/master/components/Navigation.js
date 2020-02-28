@@ -1,1771 +1,1018 @@
 import React from 'react';
+import {
+  BrowserRouter,  // Router needed && Allow history of visited pages
+  Switch,  // Allow to change only content
+  Route,  // Route handling
+  Redirect,  // Redirect url
+  Link
+} from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
+import './Navigation.css';
 
-function Navigation() {
+class Navigation extends React.Component{
+
+  render() {
   return (
     <div>
-    <div className="page-wrapper">
-        <div className="page-inner">
-            <aside className="page-sidebar">
-                <div className="page-logo">
-                    <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
-                        <img src="img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
-                        <span className="page-logo-text mr-1">Muelitas</span>
-                        <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
-                        <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
+      <div className="page-wrapper">
+          <div className="page-inner">
+            <BrowserRouter>
+              <Aside />
+              <PageContent />
+            </BrowserRouter>
+          </div>
+      </div>
+      <FloatShortcut />
+      <Messenger />
+      <Settings />
+    </div>
+  );
+}
+componentDidMount() {
+    const script = document.createElement("script");
+    script.async = false;
+    script.src = "/js/vendors.bundle.js";
+    // For body
+    document.body.appendChild(script);
+
+    const script2 = document.createElement("script");
+    script2.async = false;
+    script2.src = "/js/app.bundle.js";
+    // For body
+    document.body.appendChild(script2);
+
+  }
+}
+
+/*** COMPONENTS ***/
+function SelectComponent(){  // CONTENT
+  return (
+    <main id="js-page-content" role="main" className="page-content">
+      <Switch>
+        {/*routes.map((route, index)=>{console.log(route,index);return(  // Generate each Route inside Switch
+          <Route
+            key={index}
+            path={route.path}
+            exact={route.exact}
+            children={<route.main />}
+          />
+        )})*/}
+        <Route exact path="/nav/home">
+          <h1> HOME </h1>
+          <li> <Link to="/nav/something">something</Link> </li>
+          <li> <Link to="/nav/anotherone">another one</Link> </li>
+        </Route>
+        <Route path="/nav/something">
+          <h1> SOMETHING </h1>
+          <li> <Link to="/nav/anotherone">another one</Link> </li>
+        </Route>
+        <Route path="/nav/anotherone">
+          <h1> ANOTHER ONE </h1>
+          <li> <Link to="/nav/something">something</Link> </li>
+        </Route>
+        <Route>
+          <Redirect to="/nav/home" />
+        </Route>
+      </Switch>
+    </main>
+  )
+}
+function Home(){
+  return (
+    <Route exact path="/nav/home">
+      <h1> HOME </h1>
+      <li> <Link to="/nav/something">something</Link> </li>
+      <li> <Link to="/nav/anotherone">another one</Link> </li>
+    </Route>
+  )
+}
+function Something(){
+  return (
+    <Route path="/nav/something">
+      <h1> SOMETHING </h1>
+      <li> <Link to="/nav/anotherone">another one</Link> </li>
+    </Route>
+  )
+}
+function Anotherone(){
+  return (
+    <Route path="/nav/anotherone">
+      <h1> ANOTHER ONE </h1>
+      <li> <Link to="/nav/something">something</Link> </li>
+    </Route>
+  )
+}
+/*** PAGE ***/
+function Aside(){
+  return (<div>
+    <aside className="page-sidebar">
+        <div className="page-logo">
+            <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
+                <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
+                <span className="page-logo-text mr-1">Muelitas</span>
+                <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
+                <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
+            </a>
+        </div>
+
+        <nav id="js-primary-nav" className="primary-nav" role="navigation">
+            <div className="nav-filter">
+                <div className="position-relative">
+                    <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
+                    <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
+                        <i className="fal fa-chevron-up"></i>
                     </a>
                 </div>
-
-                <nav id="js-primary-nav" className="primary-nav" role="navigation">
-                    <div className="nav-filter">
-                        <div className="position-relative">
-                            <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
-                            <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
-                                <i className="fal fa-chevron-up"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <div className="info-card">
-                        <img src="img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-                        <div className="info-card-text">
-                            <a href="#" className="d-flex align-items-center text-white">
-                                <span className="text-truncate text-truncate-sm d-inline-block">
-                                    UserName - Name
-                                </span>
-                            </a>
-                            <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
-                        </div>
-                        <img src="img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
-                        <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
-                            <i className="fal fa-angle-down"></i>
-                        </a>
-                    </div>
-                    <ul id="js-nav-menu" className="nav-menu">
-                        <li>
-                            <a href="#" title="Application Intel" data-filter-tags="application intel">
-                                <i className="fal fa-info-circle"></i>
-                                <span className="nav-link-text" data-i18n="nav.application_intel">Application Intel</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="intel_analytics_dashboard.html" title="Analytics Dashboard" data-filter-tags="application intel analytics dashboard">
-                                        <span className="nav-link-text" data-i18n="nav.application_intel_analytics_dashboard">Analytics Dashboard</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="intel_marketing_dashboard.html" title="Marketing Dashboard" data-filter-tags="application intel marketing dashboard">
-                                        <span className="nav-link-text" data-i18n="nav.application_intel_marketing_dashboard">Marketing Dashboard</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="intel_introduction.html" title="Introduction" data-filter-tags="application intel introduction">
-                                        <span className="nav-link-text" data-i18n="nav.application_intel_introduction">Introduction</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="intel_privacy.html" title="Privacy" data-filter-tags="application intel privacy">
-                                        <span className="nav-link-text" data-i18n="nav.application_intel_privacy">Privacy</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="intel_build_notes.html" title="Build Notes" data-filter-tags="application intel build notes">
-                                        <span className="nav-link-text" data-i18n="nav.application_intel_build_notes">Build Notes</span>
-                                        <span className="">v4.0.2</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Theme Settings" data-filter-tags="theme settings">
-                                <i className="fal fa-cog"></i>
-                                <span className="nav-link-text" data-i18n="nav.theme_settings">Theme Settings</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="settings_how_it_works.html" title="How it works" data-filter-tags="theme settings how it works">
-                                        <span className="nav-link-text" data-i18n="nav.theme_settings_how_it_works">How it works</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="settings_layout_options.html" title="Layout Options" data-filter-tags="theme settings layout options">
-                                        <span className="nav-link-text" data-i18n="nav.theme_settings_layout_options">Layout Options</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="settings_skin_options.html" title="Skin Options" data-filter-tags="theme settings skin options">
-                                        <span className="nav-link-text" data-i18n="nav.theme_settings_skin_options">Skin Options</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="settings_saving_db.html" title="Saving to Database" data-filter-tags="theme settings saving to database">
-                                        <span className="nav-link-text" data-i18n="nav.theme_settings_saving_to_database">Saving to Database</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Package Info" data-filter-tags="package info">
-                                <i className="fal fa-tag"></i>
-                                <span className="nav-link-text" data-i18n="nav.package_info">Package Info</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="info_app_docs.html" title="Documentation" data-filter-tags="package info documentation">
-                                        <span className="nav-link-text" data-i18n="nav.package_info_documentation">Documentation</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="info_app_licensing.html" title="Product Licensing" data-filter-tags="package info product licensing">
-                                        <span className="nav-link-text" data-i18n="nav.package_info_product_licensing">Product Licensing</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="info_app_flavors.html" title="Different Flavors" data-filter-tags="package info different flavors">
-                                        <span className="nav-link-text" data-i18n="nav.package_info_different_flavors">Different Flavors</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li className="nav-title">Tools & Components</li>
-                        <li>
-                            <a href="#" title="UI Components" data-filter-tags="ui components">
-                                <i className="fal fa-window"></i>
-                                <span className="nav-link-text" data-i18n="nav.ui_components">UI Components</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="ui_alerts.html" title="Alerts" data-filter-tags="ui components alerts">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_alerts">Alerts</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_accordion.html" title="Accordions" data-filter-tags="ui components accordions">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_accordions">Accordions</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_badges.html" title="Badges" data-filter-tags="ui components badges">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_badges">Badges</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_breadcrumbs.html" title="Breadcrumbs" data-filter-tags="ui components breadcrumbs">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_breadcrumbs">Breadcrumbs</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_buttons.html" title="Buttons" data-filter-tags="ui components buttons">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_buttons">Buttons</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_button_group.html" title="Button Group" data-filter-tags="ui components button group">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_button_group">Button Group</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_cards.html" title="Cards" data-filter-tags="ui components cards">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_cards">Cards</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_carousel.html" title="Carousel" data-filter-tags="ui components carousel">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_carousel">Carousel</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_collapse.html" title="Collapse" data-filter-tags="ui components collapse">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_collapse">Collapse</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_dropdowns.html" title="Dropdowns" data-filter-tags="ui components dropdowns">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_dropdowns">Dropdowns</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_list_filter.html" title="List Filter" data-filter-tags="ui components list filter">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_list_filter">List Filter</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_modal.html" title="Modal" data-filter-tags="ui components modal">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_modal">Modal</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_navbars.html" title="Navbars" data-filter-tags="ui components navbars">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_navbars">Navbars</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_panels.html" title="Panels" data-filter-tags="ui components panels">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_panels">Panels</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_pagination.html" title="Pagination" data-filter-tags="ui components pagination">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_pagination">Pagination</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_popovers.html" title="Popovers" data-filter-tags="ui components popovers">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_popovers">Popovers</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_progress_bars.html" title="Progress Bars" data-filter-tags="ui components progress bars">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_progress_bars">Progress Bars</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_scrollspy.html" title="ScrollSpy" data-filter-tags="ui components scrollspy">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_scrollspy">ScrollSpy</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_side_panel.html" title="Side Panel" data-filter-tags="ui components side panel">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_side_panel">Side Panel</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_spinners.html" title="Spinners" data-filter-tags="ui components spinners">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_spinners">Spinners</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_tabs_pills.html" title="Tabs & Pills" data-filter-tags="ui components tabs & pills">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_tabs_&_pills">Tabs & Pills</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_toasts.html" title="Toasts" data-filter-tags="ui components toasts">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_toasts">Toasts</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="ui_tooltips.html" title="Tooltips" data-filter-tags="ui components tooltips">
-                                        <span className="nav-link-text" data-i18n="nav.ui_components_tooltips">Tooltips</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Utilities" data-filter-tags="utilities">
-                                <i className="fal fa-bolt"></i>
-                                <span className="nav-link-text" data-i18n="nav.utilities">Utilities</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="utilities_borders.html" title="Borders" data-filter-tags="utilities borders">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_borders">Borders</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_clearfix.html" title="Clearfix" data-filter-tags="utilities clearfix">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_clearfix">Clearfix</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_color_pallet.html" title="Color Pallet" data-filter-tags="utilities color pallet">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_color_pallet">Color Pallet</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_display_property.html" title="Display Property" data-filter-tags="utilities display property">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_display_property">Display Property</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_fonts.html" title="Fonts" data-filter-tags="utilities fonts">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_fonts">Fonts</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_flexbox.html" title="Flexbox" data-filter-tags="utilities flexbox">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_flexbox">Flexbox</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_helpers.html" title="Helpers" data-filter-tags="utilities helpers">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_helpers">Helpers</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_position.html" title="Position" data-filter-tags="utilities position">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_position">Position</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_responsive_grid.html" title="Responsive Grid" data-filter-tags="utilities responsive grid">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_responsive_grid">Responsive Grid</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_sizing.html" title="Sizing" data-filter-tags="utilities sizing">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_sizing">Sizing</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_spacing.html" title="Spacing" data-filter-tags="utilities spacing">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_spacing">Spacing</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="utilities_typography.html" title="Typography" data-filter-tags="utilities typography fonts headings bold lead colors sizes link text states list styles truncate alignment">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_typography">Typography</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Menu child" data-filter-tags="utilities menu child">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_menu_child">Menu child</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="#" onClick={e => e.preventDefault()} title="Sublevel Item" data-filter-tags="utilities menu child sublevel item">
-                                                <span className="nav-link-text" data-i18n="nav.utilities_menu_child_sublevel_item">Sublevel Item</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" onClick={e => e.preventDefault()} title="Another Item" data-filter-tags="utilities menu child another item">
-                                                <span className="nav-link-text" data-i18n="nav.utilities_menu_child_another_item">Another Item</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li className="disabled">
-                                    <a href="#" onClick={e => e.preventDefault()} title="Disabled item" data-filter-tags="utilities disabled item">
-                                        <span className="nav-link-text" data-i18n="nav.utilities_disabled_item">Disabled item</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Font Icons" data-filter-tags="font icons">
-                                <i className="fal fa-map-marker-alt"></i>
-                                <span className="nav-link-text" data-i18n="nav.font_icons">Font Icons</span>
-                                <span className="dl-ref bg-primary-500 hidden-nav-function-minify hidden-nav-function-top">2,500+</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="FontAwesome" data-filter-tags="font icons fontawesome">
-                                        <span className="nav-link-text" data-i18n="nav.font_icons_fontawesome">FontAwesome Pro</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="icons_fontawesome_light.html" title="Light" data-filter-tags="font icons fontawesome light">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_fontawesome_light">Light</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="icons_fontawesome_regular.html" title="Regular" data-filter-tags="font icons fontawesome regular">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_fontawesome_regular">Regular</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="icons_fontawesome_solid.html" title="Solid" data-filter-tags="font icons fontawesome solid">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_fontawesome_solid">Solid</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="icons_fontawesome_brand.html" title="Brand" data-filter-tags="font icons fontawesome brand">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_fontawesome_brand">Brand</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="NextGen Icons" data-filter-tags="font icons nextgen icons">
-                                        <span className="nav-link-text" data-i18n="nav.font_icons_nextgen_icons">NextGen Icons</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="icons_nextgen_general.html" title="General" data-filter-tags="font icons nextgen icons general">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_nextgen_icons_general">General</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="icons_nextgen_base.html" title="Base" data-filter-tags="font icons nextgen icons base">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_nextgen_icons_base">Base</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Stack Icons" data-filter-tags="font icons stack icons">
-                                        <span className="nav-link-text" data-i18n="nav.font_icons_stack_icons">Stack Icons</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="icons_stack_showcase.html" title="Showcase" data-filter-tags="font icons stack icons showcase">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_stack_icons_showcase">Showcase</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="icons_stack_generate.html?layers=3" title="Generate Stack" data-filter-tags="font icons stack icons generate stack">
-                                                <span className="nav-link-text" data-i18n="nav.font_icons_stack_icons_generate_stack">Generate Stack</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Tables" data-filter-tags="tables">
-                                <i className="fal fa-th-list"></i>
-                                <span className="nav-link-text" data-i18n="nav.tables">Tables</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="tables_basic.html" title="Basic Tables" data-filter-tags="tables basic tables">
-                                        <span className="nav-link-text" data-i18n="nav.tables_basic_tables">Basic Tables</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="tables_generate_style.html" title="Generate Table Style" data-filter-tags="tables generate table style">
-                                        <span className="nav-link-text" data-i18n="nav.tables_generate_table_style">Generate Table Style</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Form Stuff" data-filter-tags="form stuff">
-                                <i className="fal fa-edit"></i>
-                                <span className="nav-link-text" data-i18n="nav.form_stuff">Form Stuff</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="form_basic_inputs.html" title="Basic Inputs" data-filter-tags="form stuff basic inputs">
-                                        <span className="nav-link-text" data-i18n="nav.form_stuff_basic_inputs">Basic Inputs</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_checkbox_radio.html" title="Checkbox & Radio" data-filter-tags="form stuff checkbox & radio">
-                                        <span className="nav-link-text" data-i18n="nav.form_stuff_checkbox_&_radio">Checkbox & Radio</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_input_groups.html" title="Input Groups" data-filter-tags="form stuff input groups">
-                                        <span className="nav-link-text" data-i18n="nav.form_stuff_input_groups">Input Groups</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_validation.html" title="Validation" data-filter-tags="form stuff validation">
-                                        <span className="nav-link-text" data-i18n="nav.form_stuff_validation">Validation</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li className="nav-title">Plugins & Addons</li>
-                        <li>
-                            <a href="#" title="Plugins" data-filter-tags="plugins">
-                                <i className="fal fa-shield-alt"></i>
-                                <span className="nav-link-text" data-i18n="nav.plugins">Core Plugins</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="plugin_faq.html" title="Plugins FAQ" data-filter-tags="plugins plugins faq">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_plugins_faq">Plugins FAQ</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_waves.html" title="Waves" data-filter-tags="plugins waves">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_waves">Waves</span>
-                                        <span className="dl-ref label bg-primary-400 ml-2">9 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_pacejs.html" title="PaceJS" data-filter-tags="plugins pacejs">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_pacejs">PaceJS</span>
-                                        <span className="dl-ref label bg-primary-500 ml-2">13 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_smartpanels.html" title="SmartPanels" data-filter-tags="plugins smartpanels">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_smartpanels">SmartPanels</span>
-                                        <span className="dl-ref label bg-primary-600 ml-2">9 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_bootbox.html" title="BootBox" data-filter-tags="plugins bootbox alert sound">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_bootbox">BootBox</span>
-                                        <span className="dl-ref label bg-primary-600 ml-2">15 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_slimscroll.html" title="Slimscroll" data-filter-tags="plugins slimscroll">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_slimscroll">Slimscroll</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">5 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_throttle.html" title="Throttle" data-filter-tags="plugins throttle">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_throttle">Throttle</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">1 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_navigation.html" title="Navigation" data-filter-tags="plugins navigation">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_navigation">Navigation</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">2 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_i18next.html" title="i18next" data-filter-tags="plugins i18next">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_i18next">i18next</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">10 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="plugin_appcore.html" title="App.Core" data-filter-tags="plugins app.core">
-                                        <span className="nav-link-text" data-i18n="nav.plugins_app.core">App.Core</span>
-                                        <span className="dl-ref label bg-success-700 ml-2">14 KB</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Datatables" data-filter-tags="datatables datagrid">
-                                <i className="fal fa-table"></i>
-                                <span className="nav-link-text" data-i18n="nav.datatables">Datatables</span>
-                                <span className="dl-ref bg-primary-500 hidden-nav-function-minify hidden-nav-function-top">235 KB</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="datatables_basic.html" title="Basic" data-filter-tags="datatables datagrid basic">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_basic">Basic</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_autofill.html" title="Autofill" data-filter-tags="datatables datagrid autofill">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_autofill">Autofill</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_buttons.html" title="Buttons" data-filter-tags="datatables datagrid buttons">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_buttons">Buttons</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_export.html" title="Export" data-filter-tags="datatables datagrid export tables pdf excel print csv">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_export">Export</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_colreorder.html" title="ColReorder" data-filter-tags="datatables datagrid colreorder">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_colreorder">ColReorder</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_columnfilter.html" title="ColumnFilter" data-filter-tags="datatables datagrid columnfilter">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_columnfilter">ColumnFilter</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_fixedcolumns.html" title="FixedColumns" data-filter-tags="datatables datagrid fixedcolumns">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_fixedcolumns">FixedColumns</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_fixedheader.html" title="FixedHeader" data-filter-tags="datatables datagrid fixedheader">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_fixedheader">FixedHeader</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_keytable.html" title="KeyTable" data-filter-tags="datatables datagrid keytable">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_keytable">KeyTable</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_responsive.html" title="Responsive" data-filter-tags="datatables datagrid responsive">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_responsive">Responsive</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_responsive_alt.html" title="Responsive Alt" data-filter-tags="datatables datagrid responsive alt">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_responsive_alt">Responsive Alt</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_rowgroup.html" title="RowGroup" data-filter-tags="datatables datagrid rowgroup">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_rowgroup">RowGroup</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_rowreorder.html" title="RowReorder" data-filter-tags="datatables datagrid rowreorder">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_rowreorder">RowReorder</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_scroller.html" title="Scroller" data-filter-tags="datatables datagrid scroller">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_scroller">Scroller</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_select.html" title="Select" data-filter-tags="datatables datagrid select">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_select">Select</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="datatables_alteditor.html" title="AltEditor" data-filter-tags="datatables datagrid alteditor">
-                                        <span className="nav-link-text" data-i18n="nav.datatables_alteditor">AltEditor</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Statistics" data-filter-tags="statistics chart graphs">
-                                <i className="fal fa-chart-pie"></i>
-                                <span className="nav-link-text" data-i18n="nav.statistics">Statistics</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="statistics_flot.html" title="Flot" data-filter-tags="statistics chart graphs flot bar pie">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_flot">Flot</span>
-                                        <span className="dl-ref label bg-primary-500 ml-2">36 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_chartjs.html" title="Chart.js" data-filter-tags="statistics chart graphs chart.js bar pie">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_chart.js">Chart.js</span>
-                                        <span className="dl-ref label bg-primary-500 ml-2">205 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_chartist.html" title="Chartist.js" data-filter-tags="statistics chart graphs chartist.js">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_chartist.js">Chartist.js</span>
-                                        <span className="dl-ref label bg-primary-600 ml-2">39 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_c3.html" title="C3 Charts" data-filter-tags="statistics chart graphs c3 charts">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_c3_charts">C3 Charts</span>
-                                        <span className="dl-ref label bg-primary-600 ml-2">197 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_peity.html" title="Peity" data-filter-tags="statistics chart graphs peity small">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_peity">Peity</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">4 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_sparkline.html" title="Sparkline" data-filter-tags="statistics chart graphs sparkline small tiny">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_sparkline">Sparkline</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">42 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_easypiechart.html" title="Easy Pie Chart" data-filter-tags="statistics chart graphs easy pie chart">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_easy_pie_chart">Easy Pie Chart</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">4 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="statistics_dygraph.html" title="Dygraph" data-filter-tags="statistics chart graphs dygraph complex">
-                                        <span className="nav-link-text" data-i18n="nav.statistics_dygraph">Dygraph</span>
-                                        <span className="dl-ref label bg-primary-700 ml-2">120 KB</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Notifications" data-filter-tags="notifications">
-                                <i className="fal fa-exclamation-circle"></i>
-                                <span className="nav-link-text" data-i18n="nav.notifications">Notifications</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="notifications_sweetalert2.html" title="SweetAlert2" data-filter-tags="notifications sweetalert2">
-                                        <span className="nav-link-text" data-i18n="nav.notifications_sweetalert2">SweetAlert2</span>
-                                        <span className="dl-ref label bg-primary-500 ml-2">40 KB</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="notifications_toastr.html" title="Toastr" data-filter-tags="notifications toastr">
-                                        <span className="nav-link-text" data-i18n="nav.notifications_toastr">Toastr</span>
-                                        <span className="dl-ref label bg-primary-600 ml-2">5 KB</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Form Plugins" data-filter-tags="form plugins">
-                                <i className="fal fa-credit-card-front"></i>
-                                <span className="nav-link-text" data-i18n="nav.form_plugins">Form Plugins</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="form_plugins_colorpicker.html" title="Color Picker" data-filter-tags="form plugins color picker">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_color_picker">Color Picker</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugins_datepicker.html" title="Date Picker" data-filter-tags="form plugins date picker">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_date_picker">Date Picker</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugins_daterange_picker.html" title="Date Range Picker" data-filter-tags="form plugins date range picker">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_date_range_picker">Date Range Picker</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugins_dropzone.html" title="Dropzone" data-filter-tags="form plugins dropzone">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_dropzone">Dropzone</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugins_ionrangeslider.html" title="Ion.RangeSlider" data-filter-tags="form plugins ion.rangeslider">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_ion.rangeslider">Ion.RangeSlider</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugins_inputmask.html" title="Inputmask" data-filter-tags="form plugins inputmask">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_inputmask">Inputmask</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugin_imagecropper.html" title="Image Cropper" data-filter-tags="form plugins image cropper">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_image_cropper">Image Cropper</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugin_select2.html" title="Select2" data-filter-tags="form plugins select2">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_select2">Select2</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="form_plugin_summernote.html" title="Summernote" data-filter-tags="form plugins summernote texteditor editor">
-                                        <span className="nav-link-text" data-i18n="nav.form_plugins_summernote">Summernote</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" title="Miscellaneous" data-filter-tags="miscellaneous">
-                                <i className="fal fa-globe"></i>
-                                <span className="nav-link-text" data-i18n="nav.miscellaneous">Miscellaneous</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="miscellaneous_fullcalendar.html" title="FullCalendar" data-filter-tags="miscellaneous fullcalendar">
-                                        <span className="nav-link-text" data-i18n="nav.miscellaneous_fullcalendar">FullCalendar</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="miscellaneous_lightgallery.html" title="Light Gallery" data-filter-tags="miscellaneous light gallery">
-                                        <span className="nav-link-text" data-i18n="nav.miscellaneous_light_gallery">Light Gallery</span>
-                                        <span className="dl-ref label bg-primary-500 ml-2">61 KB</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li className="nav-title">Layouts & Apps</li>
-                        <li>
-                            <a href="#" title="Pages" data-filter-tags="pages">
-                                <i className="fal fa-plus-circle"></i>
-                                <span className="nav-link-text" data-i18n="nav.pages">Page Views</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="page_chat.html" title="Chat" data-filter-tags="pages chat">
-                                        <span className="nav-link-text" data-i18n="nav.pages_chat">Chat</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="page_contacts.html" title="Contacts" data-filter-tags="pages contacts">
-                                        <span className="nav-link-text" data-i18n="nav.pages_contacts">Contacts</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Forum" data-filter-tags="pages forum">
-                                        <span className="nav-link-text" data-i18n="nav.pages_forum">Forum</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="page_forum_list.html" title="List" data-filter-tags="pages forum list">
-                                                <span className="nav-link-text" data-i18n="nav.pages_forum_list">List</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_forum_threads.html" title="Threads" data-filter-tags="pages forum threads">
-                                                <span className="nav-link-text" data-i18n="nav.pages_forum_threads">Threads</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_forum_discussion.html" title="Discussion" data-filter-tags="pages forum discussion">
-                                                <span className="nav-link-text" data-i18n="nav.pages_forum_discussion">Discussion</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Inbox" data-filter-tags="pages inbox">
-                                        <span className="nav-link-text" data-i18n="nav.pages_inbox">Inbox</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="page_inbox_general.html" title="General" data-filter-tags="pages inbox general">
-                                                <span className="nav-link-text" data-i18n="nav.pages_inbox_general">General</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_inbox_read.html" title="Read" data-filter-tags="pages inbox read">
-                                                <span className="nav-link-text" data-i18n="nav.pages_inbox_read">Read</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_inbox_write.html" title="Write" data-filter-tags="pages inbox write">
-                                                <span className="nav-link-text" data-i18n="nav.pages_inbox_write">Write</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="page_invoice.html" title="Invoice (printable)" data-filter-tags="pages invoice (printable)">
-                                        <span className="nav-link-text" data-i18n="nav.pages_invoice_(printable)">Invoice (printable)</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Authentication" data-filter-tags="pages authentication">
-                                        <span className="nav-link-text" data-i18n="nav.pages_authentication">Authentication</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="page_forget.html" title="Forget Password" data-filter-tags="pages authentication forget password">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_forget_password">Forget Password</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_locked.html" title="Locked Screen" data-filter-tags="pages authentication locked screen">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_locked_screen">Locked Screen</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_login.html" title="Login" data-filter-tags="pages authentication login">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_login">Login</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_login-alt.html" title="Login Alt" data-filter-tags="pages authentication login alt">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_login_alt">Login Alt</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_register.html" title="Register" data-filter-tags="pages authentication register">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_register">Register</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_confirmation.html" title="Confirmation" data-filter-tags="pages authentication confirmation">
-                                                <span className="nav-link-text" data-i18n="nav.pages_authentication_confirmation">Confirmation</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="#" onClick={e => e.preventDefault()} title="Error Pages" data-filter-tags="pages error pages">
-                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages">Error Pages</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="page_error.html" title="General Error" data-filter-tags="pages error pages general error">
-                                                <span className="nav-link-text" data-i18n="nav.pages_error_pages_general_error">General Error</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_error_404.html" title="Server Error" data-filter-tags="pages error pages server error">
-                                                <span className="nav-link-text" data-i18n="nav.pages_error_pages_server_error">Server Error</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="page_error_announced.html" title="Announced Error" data-filter-tags="pages error pages announced error">
-                                                <span className="nav-link-text" data-i18n="nav.pages_error_pages_announced_error">Announced Error</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="page_profile.html" title="Profile" data-filter-tags="pages profile">
-                                        <span className="nav-link-text" data-i18n="nav.pages_profile">Profile</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="page_search.html" title="Search Results" data-filter-tags="pages search results">
-                                        <span className="nav-link-text" data-i18n="nav.pages_search_results">Search Results</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <div className="filter-message js-filter-message bg-success-600"></div>
-                </nav>
-
-                <div className="nav-footer shadow-top">
-                    <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
-                        <i className="ni ni-chevron-right"></i>
-                        <i className="ni ni-chevron-right"></i>
+            </div>
+            <div className="info-card">
+                <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
+                <div className="info-card-text">
+                    <a href="#" className="d-flex align-items-center text-white">
+                        <span className="text-truncate text-truncate-sm d-inline-block">
+                            UserName - Name
+                        </span>
                     </a>
-                    <ul className="list-table m-auto nav-footer-buttons">
-                        <li>
-                            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
-                                <i className="fal fa-comments"></i>
+                    <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
+                </div>
+                <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
+                <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
+                    <i className="fal fa-angle-down"></i>
+                </a>
+            </div>
+            <ul id="js-nav-menu" className="nav-menu">
+                <li className="nav-title">Principales paginas</li>
+                <li>
+                    <a href="#" title="Pages" data-filter-tags="pages">
+                        <i className="fal fa-plus-circle"></i>
+                        <span className="nav-link-text" data-i18n="nav.pages">Prueba</span>
+                    </a>
+                    <ul>
+                        {/*<li>
+                            <a href="#" onClick={e => e.preventDefault()} title="Error Pages" data-filter-tags="pages error pages">
+                                <span className="nav-link-text" data-i18n="nav.pages_error_pages">Error Pages</span>
                             </a>
+                            <ul>
+                                <li>
+                                    <a href="page_error.html" title="General Error" data-filter-tags="pages error pages general error">
+                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_general_error">General Error</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="page_error_404.html" title="Server Error" data-filter-tags="pages error pages server error">
+                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_server_error">Server Error</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="page_error_announced.html" title="Announced Error" data-filter-tags="pages error pages announced error">
+                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_announced_error">Announced Error</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>*/}
+                        {/*routes.map((route, index)=>(  // Generate each Route inside Switch
+                          <li key={String(index)+"1"} >
+                            <Link key={String(index)+"2"} title="Search Results" data-filter-tags="pages search results" to={route.path}>
+                              <span key={String(index)+"3"}  className="nav-link-text" data-i18n="nav.pages_search_results">{route.sidebar}</span>
+                            </Link>
+                          </li>
+                        ))*/}
+                        <li>
+                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
+                            <span className="nav-link-text" data-i18n="nav.pages_search_results">Home</span>
+                          </Link>
                         </li>
                         <li>
-                            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
-                                <i className="fal fa-life-ring"></i>
-                            </a>
+                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/something'>
+                            <span className="nav-link-text" data-i18n="nav.pages_search_results">SOMETHING</span>
+                          </Link>
                         </li>
                         <li>
-                            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
-                                <i className="fal fa-phone"></i>
-                            </a>
+                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/anotherone'>
+                            <span className="nav-link-text" data-i18n="nav.pages_search_results">ANOTHER ONE</span>
+                          </Link>
+                        </li>
+                        <li>
+                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
+                            <span className="nav-link-text" data-i18n="nav.pages_search_results">Redirect</span>
+                          </Link>
                         </li>
                     </ul>
-                </div>
-            </aside>
+                </li>
+            </ul>
+            <div className="filter-message js-filter-message bg-success-600"></div>
+        </nav>
 
-            <div className="page-content-wrapper">
+        <div className="nav-footer shadow-top">
+            <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
+                <i className="ni ni-chevron-right"></i>
+                <i className="ni ni-chevron-right"></i>
+            </a>
+            <ul className="list-table m-auto nav-footer-buttons">
+                <li>
+                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
+                        <i className="fal fa-comments"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
+                        <i className="fal fa-life-ring"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
+                        <i className="fal fa-phone"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </aside>
+    <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
+    </div>
+  )
+}
+function PageContent(){
+  return (
+    <div className="page-content-wrapper">
+        <PageHeader />
+        <SelectComponent />
+        <PageFooter />
 
-                <header className="page-header" role="banner">
-
-                    <div className="page-logo">
-                        <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
-                            <img src="img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
-                            <span className="page-logo-text mr-1">SmartAdmin WebApp</span>
-                            <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
-                            <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
-                        </a>
-                    </div>
-
-                    <div className="hidden-md-down dropdown-icon-menu position-relative">
-                        <a href="#" className="header-btn btn js-waves-off" data-action="toggle" data-class="nav-function-hidden" title="Hide Navigation">
-                            <i className="ni ni-menu"></i>
-                        </a>
-                        <ul>
+        <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">
+            <div className="modal-dialog modal-dialog-top modal-transparent" role="document">
+                <div className="modal-content">
+                    <div className="modal-body">
+                        <ul className="app-list w-auto h-auto p-0 text-left">
                             <li>
-                                <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-minify" title="Minify Navigation">
-                                    <i className="ni ni-minify-nav"></i>
+                                <a href="intel_introduction.html" className="app-list-item text-white border-0 m-0">
+                                    <div className="icon-stack">
+                                        <i className="base base-7 icon-stack-3x opacity-100 color-primary-500 "></i>
+                                        <i className="base base-7 icon-stack-2x opacity-100 color-primary-300 "></i>
+                                        <i className="fal fa-home icon-stack-1x opacity-100 color-white"></i>
+                                    </div>
+                                    <span className="app-list-name">
+                                        Home
+                                    </span>
                                 </a>
                             </li>
                             <li>
-                                <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-fixed" title="Lock Navigation">
-                                    <i className="ni ni-lock-nav"></i>
+                                <a href="page_inbox_general.html" className="app-list-item text-white border-0 m-0">
+                                    <div className="icon-stack">
+                                        <i className="base base-7 icon-stack-3x opacity-100 color-success-500 "></i>
+                                        <i className="base base-7 icon-stack-2x opacity-100 color-success-300 "></i>
+                                        <i className="ni ni-envelope icon-stack-1x text-white"></i>
+                                    </div>
+                                    <span className="app-list-name">
+                                        Inbox
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="intel_introduction.html" className="app-list-item text-white border-0 m-0">
+                                    <div className="icon-stack">
+                                        <i className="base base-7 icon-stack-2x opacity-100 color-primary-300 "></i>
+                                        <i className="fal fa-plus icon-stack-1x opacity-100 color-white"></i>
+                                    </div>
+                                    <span className="app-list-name">
+                                        Add More
+                                    </span>
                                 </a>
                             </li>
                         </ul>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <div className="hidden-lg-up">
-                        <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
-                            <i className="ni ni-menu"></i>
-                        </a>
+        <p id="js-color-profile" className="d-none">
+            <span className="color-primary-50"></span>
+            <span className="color-primary-100"></span>
+            <span className="color-primary-200"></span>
+            <span className="color-primary-300"></span>
+            <span className="color-primary-400"></span>
+            <span className="color-primary-500"></span>
+            <span className="color-primary-600"></span>
+            <span className="color-primary-700"></span>
+            <span className="color-primary-800"></span>
+            <span className="color-primary-900"></span>
+            <span className="color-info-50"></span>
+            <span className="color-info-100"></span>
+            <span className="color-info-200"></span>
+            <span className="color-info-300"></span>
+            <span className="color-info-400"></span>
+            <span className="color-info-500"></span>
+            <span className="color-info-600"></span>
+            <span className="color-info-700"></span>
+            <span className="color-info-800"></span>
+            <span className="color-info-900"></span>
+            <span className="color-danger-50"></span>
+            <span className="color-danger-100"></span>
+            <span className="color-danger-200"></span>
+            <span className="color-danger-300"></span>
+            <span className="color-danger-400"></span>
+            <span className="color-danger-500"></span>
+            <span className="color-danger-600"></span>
+            <span className="color-danger-700"></span>
+            <span className="color-danger-800"></span>
+            <span className="color-danger-900"></span>
+            <span className="color-warning-50"></span>
+            <span className="color-warning-100"></span>
+            <span className="color-warning-200"></span>
+            <span className="color-warning-300"></span>
+            <span className="color-warning-400"></span>
+            <span className="color-warning-500"></span>
+            <span className="color-warning-600"></span>
+            <span className="color-warning-700"></span>
+            <span className="color-warning-800"></span>
+            <span className="color-warning-900"></span>
+            <span className="color-success-50"></span>
+            <span className="color-success-100"></span>
+            <span className="color-success-200"></span>
+            <span className="color-success-300"></span>
+            <span className="color-success-400"></span>
+            <span className="color-success-500"></span>
+            <span className="color-success-600"></span>
+            <span className="color-success-700"></span>
+            <span className="color-success-800"></span>
+            <span className="color-success-900"></span>
+            <span className="color-fusion-50"></span>
+            <span className="color-fusion-100"></span>
+            <span className="color-fusion-200"></span>
+            <span className="color-fusion-300"></span>
+            <span className="color-fusion-400"></span>
+            <span className="color-fusion-500"></span>
+            <span className="color-fusion-600"></span>
+            <span className="color-fusion-700"></span>
+            <span className="color-fusion-800"></span>
+            <span className="color-fusion-900"></span>
+        </p>
+    </div>
+  )
+}
+function PageHeader(){
+  return (
+    <header className="page-header" role="banner">
+
+        <div className="page-logo">
+            <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
+                <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
+                <span className="page-logo-text mr-1">SmartAdmin WebApp</span>
+                <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
+                <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
+            </a>
+        </div>
+
+        <div className="hidden-md-down dropdown-icon-menu position-relative">
+            <a href="#" className="header-btn btn js-waves-off" data-action="toggle" data-class="nav-function-hidden" title="Hide Navigation">
+                <i className="ni ni-menu"></i>
+            </a>
+            <ul>
+                <li>
+                    <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-minify" title="Minify Navigation">
+                        <i className="ni ni-minify-nav"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-fixed" title="Lock Navigation">
+                        <i className="ni ni-lock-nav"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div className="hidden-lg-up">
+            <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
+                <i className="ni ni-menu"></i>
+            </a>
+        </div>
+        <div className="search">
+            <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
+                <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
+                <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
+                    <i className="fal fa-times"></i>
+                </a>
+            </form>
+        </div>
+        <div className="ml-auto d-flex">
+
+            <div className="hidden-sm-up">
+                <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
+                    <i className="fal fa-search"></i>
+                </a>
+            </div>
+
+            <div className="hidden-md-down">
+                <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-settings">
+                    <i className="fal fa-cog"></i>
+                </a>
+            </div>
+
+            <div>
+                <a href="#" className="header-icon" data-toggle="dropdown" title="My Apps">
+                    <i className="fal fa-cube"></i>
+                </a>
+                <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
+                    <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
+                        <h4 className="m-0 text-center color-white">
+                            Quick Shortcut
+                            <small className="mb-0 opacity-80">User Applications & Addons</small>
+                        </h4>
                     </div>
-                    <div className="search">
-                        <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
-                            <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
-                            <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
-                                <i className="fal fa-times"></i>
-                            </a>
-                        </form>
+                    <div className="custom-scroll h-100">
+                        <ul className="app-list">
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-2 icon-stack-3x color-primary-600"></i>
+                                        <i className="base-3 icon-stack-2x color-primary-700"></i>
+                                        <i className="ni ni-settings icon-stack-1x text-white fs-lg"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Services
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-2 icon-stack-3x color-primary-400"></i>
+                                        <i className="base-10 text-white icon-stack-1x"></i>
+                                        <i className="ni md-profile color-primary-800 icon-stack-2x"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Account
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-9 icon-stack-3x color-success-400"></i>
+                                        <i className="base-2 icon-stack-2x color-success-500"></i>
+                                        <i className="ni ni-shield icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Security
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-18 icon-stack-3x color-info-700"></i>
+                                        <span className="position-absolute pos-top pos-left pos-right color-white fs-md mt-2 fw-400">28</span>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Calendar
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-7 icon-stack-3x color-info-500"></i>
+                                        <i className="base-7 icon-stack-2x color-info-700"></i>
+                                        <i className="ni ni-graph icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Stats
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-4 icon-stack-3x color-danger-500"></i>
+                                        <i className="base-4 icon-stack-1x color-danger-400"></i>
+                                        <i className="ni ni-envelope icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Messages
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-4 icon-stack-3x color-fusion-400"></i>
+                                        <i className="base-5 icon-stack-2x color-fusion-200"></i>
+                                        <i className="base-5 icon-stack-1x color-fusion-100"></i>
+                                        <i className="fal fa-keyboard icon-stack-1x color-info-50"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Notes
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-16 icon-stack-3x color-fusion-500"></i>
+                                        <i className="base-10 icon-stack-1x color-primary-50 opacity-30"></i>
+                                        <i className="base-10 icon-stack-1x fs-xl color-primary-50 opacity-20"></i>
+                                        <i className="fal fa-dot-circle icon-stack-1x text-white opacity-85"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Photos
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-19 icon-stack-3x color-primary-400"></i>
+                                        <i className="base-7 icon-stack-2x color-primary-300"></i>
+                                        <i className="base-7 icon-stack-1x fs-xxl color-primary-200"></i>
+                                        <i className="base-7 icon-stack-1x color-primary-500"></i>
+                                        <i className="fal fa-globe icon-stack-1x text-white opacity-85"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Maps
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-5 icon-stack-3x color-success-700 opacity-80"></i>
+                                        <i className="base-12 icon-stack-2x color-success-700 opacity-30"></i>
+                                        <i className="fal fa-comment-alt icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Chat
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-5 icon-stack-3x color-warning-600"></i>
+                                        <i className="base-7 icon-stack-2x color-warning-800 opacity-50"></i>
+                                        <i className="fal fa-phone icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Phone
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" className="app-list-item hover-white">
+                                    <span className="icon-stack">
+                                        <i className="base-6 icon-stack-3x color-danger-600"></i>
+                                        <i className="fal fa-chart-line icon-stack-1x text-white"></i>
+                                    </span>
+                                    <span className="app-list-name">
+                                        Projects
+                                    </span>
+                                </a>
+                            </li>
+                            <li className="w-100">
+                                <a href="#" className="btn btn-default mt-4 mb-2 pr-5 pl-5"> Add more apps </a>
+                            </li>
+                        </ul>
                     </div>
-                    <div className="ml-auto d-flex">
+                </div>
+            </div>
 
-                        <div className="hidden-sm-up">
-                            <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
-                                <i className="fal fa-search"></i>
-                            </a>
+            <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-messenger">
+                <i className="fal fa-globe"></i>
+                <span className="badge badge-icon">!</span>
+            </a>
+
+            <div>
+                <a href="#" className="header-icon" data-toggle="dropdown" title="You got 11 notifications">
+                    <i className="fal fa-bell"></i>
+                    <span className="badge badge-icon">11</span>
+                </a>
+                <div className="dropdown-menu dropdown-menu-animated dropdown-xl">
+                    <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top mb-2">
+                        <h4 className="m-0 text-center color-white">
+                            11 New
+                            <small className="mb-0 opacity-80">User Notifications</small>
+                        </h4>
+                    </div>
+                    <ul className="nav nav-tabs nav-tabs-clean" role="tablist">
+                        <li className="nav-item">
+                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-messages" data-i18n="drpdwn.messages">Messages</a>
+                        </li>
+                        <li className="nav-item">
+                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-feeds" data-i18n="drpdwn.feeds">Feeds</a>
+                        </li>
+                        <li className="nav-item">
+                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-events" data-i18n="drpdwn.events">Events</a>
+                        </li>
+                    </ul>
+                    <div className="tab-content tab-notification">
+                        <div className="tab-pane active p-3 text-center">
+                            <h5 className="mt-4 pt-4 fw-500">
+                                <span className="d-block fa-3x pb-4 text-muted">
+                                    <i className="ni ni-arrow-up text-gradient opacity-70"></i>
+                                </span> Select a tab above to activate
+                                <small className="mt-3 fs-b fw-400 text-muted">
+                                    This blank page message helps protect your privacy, or you can show the first message here automatically through
+                                    <a href="#">settings page</a>
+                                </small>
+                            </h5>
                         </div>
-
-                        <div className="hidden-md-down">
-                            <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-settings">
-                                <i className="fal fa-cog"></i>
-                            </a>
-                        </div>
-
-                        <div>
-                            <a href="#" className="header-icon" data-toggle="dropdown" title="My Apps">
-                                <i className="fal fa-cube"></i>
-                            </a>
-                            <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
-                                <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
-                                    <h4 className="m-0 text-center color-white">
-                                        Quick Shortcut
-                                        <small className="mb-0 opacity-80">User Applications & Addons</small>
-                                    </h4>
-                                </div>
-                                <div className="custom-scroll h-100">
-                                    <ul className="app-list">
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-2 icon-stack-3x color-primary-600"></i>
-                                                    <i className="base-3 icon-stack-2x color-primary-700"></i>
-                                                    <i className="ni ni-settings icon-stack-1x text-white fs-lg"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Services
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-2 icon-stack-3x color-primary-400"></i>
-                                                    <i className="base-10 text-white icon-stack-1x"></i>
-                                                    <i className="ni md-profile color-primary-800 icon-stack-2x"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Account
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-9 icon-stack-3x color-success-400"></i>
-                                                    <i className="base-2 icon-stack-2x color-success-500"></i>
-                                                    <i className="ni ni-shield icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Security
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-18 icon-stack-3x color-info-700"></i>
-                                                    <span className="position-absolute pos-top pos-left pos-right color-white fs-md mt-2 fw-400">28</span>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Calendar
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-7 icon-stack-3x color-info-500"></i>
-                                                    <i className="base-7 icon-stack-2x color-info-700"></i>
-                                                    <i className="ni ni-graph icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Stats
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-4 icon-stack-3x color-danger-500"></i>
-                                                    <i className="base-4 icon-stack-1x color-danger-400"></i>
-                                                    <i className="ni ni-envelope icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Messages
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-4 icon-stack-3x color-fusion-400"></i>
-                                                    <i className="base-5 icon-stack-2x color-fusion-200"></i>
-                                                    <i className="base-5 icon-stack-1x color-fusion-100"></i>
-                                                    <i className="fal fa-keyboard icon-stack-1x color-info-50"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Notes
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-16 icon-stack-3x color-fusion-500"></i>
-                                                    <i className="base-10 icon-stack-1x color-primary-50 opacity-30"></i>
-                                                    <i className="base-10 icon-stack-1x fs-xl color-primary-50 opacity-20"></i>
-                                                    <i className="fal fa-dot-circle icon-stack-1x text-white opacity-85"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Photos
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-19 icon-stack-3x color-primary-400"></i>
-                                                    <i className="base-7 icon-stack-2x color-primary-300"></i>
-                                                    <i className="base-7 icon-stack-1x fs-xxl color-primary-200"></i>
-                                                    <i className="base-7 icon-stack-1x color-primary-500"></i>
-                                                    <i className="fal fa-globe icon-stack-1x text-white opacity-85"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Maps
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-5 icon-stack-3x color-success-700 opacity-80"></i>
-                                                    <i className="base-12 icon-stack-2x color-success-700 opacity-30"></i>
-                                                    <i className="fal fa-comment-alt icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Chat
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-5 icon-stack-3x color-warning-600"></i>
-                                                    <i className="base-7 icon-stack-2x color-warning-800 opacity-50"></i>
-                                                    <i className="fal fa-phone icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Phone
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" className="app-list-item hover-white">
-                                                <span className="icon-stack">
-                                                    <i className="base-6 icon-stack-3x color-danger-600"></i>
-                                                    <i className="fal fa-chart-line icon-stack-1x text-white"></i>
-                                                </span>
-                                                <span className="app-list-name">
-                                                    Projects
-                                                </span>
-                                            </a>
-                                        </li>
-                                        <li className="w-100">
-                                            <a href="#" className="btn btn-default mt-4 mb-2 pr-5 pl-5"> Add more apps </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-messenger">
-                            <i className="fal fa-globe"></i>
-                            <span className="badge badge-icon">!</span>
-                        </a>
-
-                        <div>
-                            <a href="#" className="header-icon" data-toggle="dropdown" title="You got 11 notifications">
-                                <i className="fal fa-bell"></i>
-                                <span className="badge badge-icon">11</span>
-                            </a>
-                            <div className="dropdown-menu dropdown-menu-animated dropdown-xl">
-                                <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top mb-2">
-                                    <h4 className="m-0 text-center color-white">
-                                        11 New
-                                        <small className="mb-0 opacity-80">User Notifications</small>
-                                    </h4>
-                                </div>
-                                <ul className="nav nav-tabs nav-tabs-clean" role="tablist">
-                                    <li className="nav-item">
-                                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-messages" data-i18n="drpdwn.messages">Messages</a>
+                        <div className="tab-pane" id="tab-messages" role="tabpanel">
+                            <div className="custom-scroll h-100">
+                                <ul className="notification">
+                                    <li className="unread">
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Melissa Ayre <span className="badge badge-primary fw-n position-absolute pos-top pos-right mt-1">INBOX</span></span>
+                                                <span className="msg-a fs-sm">Re: New security codes</span>
+                                                <span className="msg-b fs-xs">Hello again and thanks for being part...</span>
+                                                <span className="fs-nano text-muted mt-1">56 seconds ago</span>
+                                            </span>
+                                        </a>
                                     </li>
-                                    <li className="nav-item">
-                                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-feeds" data-i18n="drpdwn.feeds">Feeds</a>
+                                    <li className="unread">
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Adison Lee</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">2 minutes ago</span>
+                                            </span>
+                                        </a>
                                     </li>
-                                    <li className="nav-item">
-                                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-events" data-i18n="drpdwn.events">Events</a>
+                                    <li>
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status status-success mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Oliver Kopyuv</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">3 days ago</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status status-warning mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Dr. John Cook PhD</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">2 weeks ago</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status status-success mr-2">
+
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Sarah McBrook</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">3 weeks ago</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status status-success mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Anothony Bezyeth</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">one month ago</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" className="d-flex align-items-center">
+                                            <span className="status status-danger mr-2">
+                                                <span className="profile-image rounded-circle d-inline-block"></span>
+                                            </span>
+                                            <span className="d-flex flex-column flex-1 ml-1">
+                                                <span className="name">Lisa Hatchensen</span>
+                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                                <span className="fs-nano text-muted mt-1">one year ago</span>
+                                            </span>
+                                        </a>
                                     </li>
                                 </ul>
-                                <div className="tab-content tab-notification">
-                                    <div className="tab-pane active p-3 text-center">
-                                        <h5 className="mt-4 pt-4 fw-500">
-                                            <span className="d-block fa-3x pb-4 text-muted">
-                                                <i className="ni ni-arrow-up text-gradient opacity-70"></i>
-                                            </span> Select a tab above to activate
-                                            <small className="mt-3 fs-b fw-400 text-muted">
-                                                This blank page message helps protect your privacy, or you can show the first message here automatically through
-                                                <a href="#">settings page</a>
-                                            </small>
-                                        </h5>
-                                    </div>
-                                    <div className="tab-pane" id="tab-messages" role="tabpanel">
-                                        <div className="custom-scroll h-100">
-                                            <ul className="notification">
-                                                <li className="unread">
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Melissa Ayre <span className="badge badge-primary fw-n position-absolute pos-top pos-right mt-1">INBOX</span></span>
-                                                            <span className="msg-a fs-sm">Re: New security codes</span>
-                                                            <span className="msg-b fs-xs">Hello again and thanks for being part...</span>
-                                                            <span className="fs-nano text-muted mt-1">56 seconds ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li className="unread">
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Adison Lee</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">2 minutes ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status status-success mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Oliver Kopyuv</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">3 days ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status status-warning mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Dr. John Cook PhD</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">2 weeks ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status status-success mr-2">
-
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Sarah McBrook</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">3 weeks ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status status-success mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Anothony Bezyeth</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">one month ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" className="d-flex align-items-center">
-                                                        <span className="status status-danger mr-2">
-                                                            <span className="profile-image rounded-circle d-inline-block"></span>
-                                                        </span>
-                                                        <span className="d-flex flex-column flex-1 ml-1">
-                                                            <span className="name">Lisa Hatchensen</span>
-                                                            <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                            <span className="fs-nano text-muted mt-1">one year ago</span>
-                                                        </span>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="tab-pane" id="tab-feeds" role="tabpanel">
-                                        <div className="custom-scroll h-100">
-                                            <ul className="notification">
-                                                <li className="unread">
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-                                                        <span className="d-flex flex-column flex-1">
-                                                            <span className="name d-flex align-items-center">Administrator <span className="badge badge-success fw-n ml-1">UPDATE</span></span>
-                                                            <span className="msg-a fs-sm">
-                                                                System updated to version <strong>4.0.2</strong> <a href="intel_build_notes.html">(patch notes)</a>
-                                                            </span>
-                                                            <span className="fs-nano text-muted mt-1">5 mins ago</span>
-                                                        </span>
-                                                        <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                            <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-                                                        <div className="d-flex flex-column flex-1">
-                                                            <span className="name">
-                                                                Adison Lee <span className="fw-300 d-inline">replied to your video <a href="#" className="fw-400"> Cancer Drug</a> </span>
-                                                            </span>
-                                                            <span className="msg-a fs-sm mt-2">Bring to the table win-win survival strategies to ensure proactive domination. At the end of the day...</span>
-                                                            <span className="fs-nano text-muted mt-1">10 minutes ago</span>
-                                                        </div>
-                                                        <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                            <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-
-                                                        <div className="d-flex flex-column flex-1">
-                                                            <span className="name">
-                                                                Troy Norman'<span className="fw-300">s new connections</span>
-                                                            </span>
-                                                            <div className="fs-sm d-flex align-items-center mt-2">
-                                                                <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                                <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                                <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                                <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                                <div data-hasmore="+3" className="rounded-circle profile-image-md mr-1">
-                                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                                </div>
-                                                            </div>
-                                                            <span className="fs-nano text-muted mt-1">55 minutes ago</span>
-                                                        </div>
-                                                        <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                            <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-                                                        <div className="d-flex flex-column flex-1">
-                                                            <span className="name">Dr John Cook <span className="fw-300">sent a <span className="text-danger">new signal</span></span></span>
-                                                            <span className="msg-a fs-sm mt-2">Nanotechnology immersion along the information highway will close the loop on focusing solely on the bottom line.</span>
-                                                            <span className="fs-nano text-muted mt-1">10 minutes ago</span>
-                                                        </div>
-                                                        <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                            <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-                                                        <div className="d-flex flex-column flex-1">
-                                                            <span className="name">Lab Images <span className="fw-300">were updated!</span></span>
-                                                            <div className="fs-sm d-flex align-items-center mt-1">
-                                                                <a href="#" className="mr-1 mt-1" title="Cell A-0012">
-                                                                    <span className="d-block img-share" ></span>
-                                                                </a>
-                                                                <a href="#" className="mr-1 mt-1" title="Patient A-473 saliva">
-                                                                    <span className="d-block img-share" ></span>
-                                                                </a>
-                                                                <a href="#" className="mr-1 mt-1" title="Patient A-473 blood cells">
-                                                                    <span className="d-block img-share" ></span>
-                                                                </a>
-                                                                <a href="#" className="mr-1 mt-1" title="Patient A-473 Membrane O.C">
-                                                                    <span className="d-block img-share" ></span>
-                                                                </a>
-                                                            </div>
-                                                            <span className="fs-nano text-muted mt-1">55 minutes ago</span>
-                                                        </div>
-                                                        <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                            <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="d-flex align-items-center show-child-on-hover">
-
-                                                        <div className="d-flex flex-column flex-1">
-                                                            <div className="name mb-2">
-                                                                Lisa Lamar<span className="fw-300"> updated project</span>
-                                                            </div>
-                                                            <div className="row fs-b fw-300">
-                                                                <div className="col text-left">
-                                                                    Progress
-                                                                </div>
-                                                                <div className="col text-right fw-500">
-                                                                    45%
-                                                                </div>
-                                                            </div>
-                                                            <div className="progress progress-sm d-flex mt-1">
-                                                                <span className="progress-bar-45 progress-bar bg-primary-500 progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
-                                                            </div>
-                                                            <span className="fs-nano text-muted mt-1">2 hrs ago</span>
-                                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="tab-pane" id="tab-events" role="tabpanel">
-                                        <div className="d-flex flex-column h-100">
-                                            <div className="h-auto">
-                                                <table className="table table-bordered table-calendar m-0 w-100 h-100 border-0">
-                                                <tbody>
-                                                    <tr>
-                                                        <th colSpan="7" className="pt-3 pb-2 pl-3 pr-3 text-center">
-                                                            <div className="js-get-date h5 mb-2">[your date here]</div>
-                                                        </th>
-                                                    </tr>
-                                                    <tr className="text-center">
-                                                        <th>Sun</th>
-                                                        <th>Mon</th>
-                                                        <th>Tue</th>
-                                                        <th>Wed</th>
-                                                        <th>Thu</th>
-                                                        <th>Fri</th>
-                                                        <th>Sat</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="text-muted bg-faded">30</td>
-                                                        <td>1</td>
-                                                        <td>2</td>
-                                                        <td>3</td>
-                                                        <td>4</td>
-                                                        <td>5</td>
-                                                        <td><i className="fal fa-birthday-cake mt-1 ml-1 position-absolute pos-left pos-top text-primary"></i> 6</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>7</td>
-                                                        <td>8</td>
-                                                        <td>9</td>
-                                                        <td className="bg-primary-300 pattern-0">10</td>
-                                                        <td>11</td>
-                                                        <td>12</td>
-                                                        <td>13</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>14</td>
-                                                        <td>15</td>
-                                                        <td>16</td>
-                                                        <td>17</td>
-                                                        <td>18</td>
-                                                        <td>19</td>
-                                                        <td>20</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>21</td>
-                                                        <td>22</td>
-                                                        <td>23</td>
-                                                        <td>24</td>
-                                                        <td>25</td>
-                                                        <td>26</td>
-                                                        <td>27</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>28</td>
-                                                        <td>29</td>
-                                                        <td>30</td>
-                                                        <td>31</td>
-                                                        <td className="text-muted bg-faded">1</td>
-                                                        <td className="text-muted bg-faded">2</td>
-                                                        <td className="text-muted bg-faded">3</td>
-                                                    </tr>
-                                                  </tbody>
-                                                </table>
+                            </div>
+                        </div>
+                        <div className="tab-pane" id="tab-feeds" role="tabpanel">
+                            <div className="custom-scroll h-100">
+                                <ul className="notification">
+                                    <li className="unread">
+                                        <div className="d-flex align-items-center show-child-on-hover">
+                                            <span className="d-flex flex-column flex-1">
+                                                <span className="name d-flex align-items-center">Administrator <span className="badge badge-success fw-n ml-1">UPDATE</span></span>
+                                                <span className="msg-a fs-sm">
+                                                    System updated to version <strong>4.0.2</strong> <a href="intel_build_notes.html">(patch notes)</a>
+                                                </span>
+                                                <span className="fs-nano text-muted mt-1">5 mins ago</span>
+                                            </span>
+                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
                                             </div>
-                                            <div className="flex-1 custom-scroll">
-                                                <div className="p-2">
-                                                    <div className="d-flex align-items-center text-left mb-3">
-                                                        <div className="width-5 fw-300 text-primary l-h-n mr-1 align-self-start fs-xxl">
-                                                            15
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="d-flex flex-column">
-                                                                <span className="l-h-n fs-md fw-500 opacity-70">
-                                                                    October 2020
-                                                                </span>
-                                                                <span className="l-h-n fs-nano fw-400 text-secondary">
-                                                                    Friday
-                                                                </span>
-                                                            </div>
-                                                            <div className="mt-3">
-                                                                <p>
-                                                                    <strong>2:30PM</strong> - Doctor's appointment
-                                                                </p>
-                                                                <p>
-                                                                    <strong>3:30PM</strong> - Report overview
-                                                                </p>
-                                                                <p>
-                                                                    <strong>4:30PM</strong> - Meeting with Donnah V.
-                                                                </p>
-                                                                <p>
-                                                                    <strong>5:30PM</strong> - Late Lunch
-                                                                </p>
-                                                                <p>
-                                                                    <strong>6:30PM</strong> - Report Compression
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div className="d-flex align-items-center show-child-on-hover">
+                                            <div className="d-flex flex-column flex-1">
+                                                <span className="name">
+                                                    Adison Lee <span className="fw-300 d-inline">replied to your video <a href="#" className="fw-400"> Cancer Drug</a> </span>
+                                                </span>
+                                                <span className="msg-a fs-sm mt-2">Bring to the table win-win survival strategies to ensure proactive domination. At the end of the day...</span>
+                                                <span className="fs-nano text-muted mt-1">10 minutes ago</span>
+                                            </div>
+                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div className="d-flex align-items-center show-child-on-hover">
+
+                                            <div className="d-flex flex-column flex-1">
+                                                <span className="name">
+                                                    Troy Norman'<span className="fw-300">s new connections</span>
+                                                </span>
+                                                <div className="fs-sm d-flex align-items-center mt-2">
+                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                                    <div data-hasmore="+3" className="rounded-circle profile-image-md mr-1">
+                                                        <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
                                                     </div>
+                                                </div>
+                                                <span className="fs-nano text-muted mt-1">55 minutes ago</span>
+                                            </div>
+                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div className="d-flex align-items-center show-child-on-hover">
+                                            <div className="d-flex flex-column flex-1">
+                                                <span className="name">Dr John Cook <span className="fw-300">sent a <span className="text-danger">new signal</span></span></span>
+                                                <span className="msg-a fs-sm mt-2">Nanotechnology immersion along the information highway will close the loop on focusing solely on the bottom line.</span>
+                                                <span className="fs-nano text-muted mt-1">10 minutes ago</span>
+                                            </div>
+                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div className="d-flex align-items-center show-child-on-hover">
+                                            <div className="d-flex flex-column flex-1">
+                                                <span className="name">Lab Images <span className="fw-300">were updated!</span></span>
+                                                <div className="fs-sm d-flex align-items-center mt-1">
+                                                    <a href="#" className="mr-1 mt-1" title="Cell A-0012">
+                                                        <span className="d-block img-share" ></span>
+                                                    </a>
+                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 saliva">
+                                                        <span className="d-block img-share" ></span>
+                                                    </a>
+                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 blood cells">
+                                                        <span className="d-block img-share" ></span>
+                                                    </a>
+                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 Membrane O.C">
+                                                        <span className="d-block img-share" ></span>
+                                                    </a>
+                                                </div>
+                                                <span className="fs-nano text-muted mt-1">55 minutes ago</span>
+                                            </div>
+                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div className="d-flex align-items-center show-child-on-hover">
+
+                                            <div className="d-flex flex-column flex-1">
+                                                <div className="name mb-2">
+                                                    Lisa Lamar<span className="fw-300"> updated project</span>
+                                                </div>
+                                                <div className="row fs-b fw-300">
+                                                    <div className="col text-left">
+                                                        Progress
+                                                    </div>
+                                                    <div className="col text-right fw-500">
+                                                        45%
+                                                    </div>
+                                                </div>
+                                                <div className="progress progress-sm d-flex mt-1">
+                                                    <span className="progress-bar-45 progress-bar bg-primary-500 progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
+                                                </div>
+                                                <span className="fs-nano text-muted mt-1">2 hrs ago</span>
+                                                <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="tab-pane" id="tab-events" role="tabpanel">
+                            <div className="d-flex flex-column h-100">
+                                <div className="h-auto">
+                                    <table className="table table-bordered table-calendar m-0 w-100 h-100 border-0">
+                                    <tbody>
+                                        <tr>
+                                            <th colSpan="7" className="pt-3 pb-2 pl-3 pr-3 text-center">
+                                                <div className="js-get-date h5 mb-2">[your date here]</div>
+                                            </th>
+                                        </tr>
+                                        <tr className="text-center">
+                                            <th>Sun</th>
+                                            <th>Mon</th>
+                                            <th>Tue</th>
+                                            <th>Wed</th>
+                                            <th>Thu</th>
+                                            <th>Fri</th>
+                                            <th>Sat</th>
+                                        </tr>
+                                        <tr>
+                                            <td className="text-muted bg-faded">30</td>
+                                            <td>1</td>
+                                            <td>2</td>
+                                            <td>3</td>
+                                            <td>4</td>
+                                            <td>5</td>
+                                            <td><i className="fal fa-birthday-cake mt-1 ml-1 position-absolute pos-left pos-top text-primary"></i> 6</td>
+                                        </tr>
+                                        <tr>
+                                            <td>7</td>
+                                            <td>8</td>
+                                            <td>9</td>
+                                            <td className="bg-primary-300 pattern-0">10</td>
+                                            <td>11</td>
+                                            <td>12</td>
+                                            <td>13</td>
+                                        </tr>
+                                        <tr>
+                                            <td>14</td>
+                                            <td>15</td>
+                                            <td>16</td>
+                                            <td>17</td>
+                                            <td>18</td>
+                                            <td>19</td>
+                                            <td>20</td>
+                                        </tr>
+                                        <tr>
+                                            <td>21</td>
+                                            <td>22</td>
+                                            <td>23</td>
+                                            <td>24</td>
+                                            <td>25</td>
+                                            <td>26</td>
+                                            <td>27</td>
+                                        </tr>
+                                        <tr>
+                                            <td>28</td>
+                                            <td>29</td>
+                                            <td>30</td>
+                                            <td>31</td>
+                                            <td className="text-muted bg-faded">1</td>
+                                            <td className="text-muted bg-faded">2</td>
+                                            <td className="text-muted bg-faded">3</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                </div>
+                                <div className="flex-1 custom-scroll">
+                                    <div className="p-2">
+                                        <div className="d-flex align-items-center text-left mb-3">
+                                            <div className="width-5 fw-300 text-primary l-h-n mr-1 align-self-start fs-xxl">
+                                                15
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="d-flex flex-column">
+                                                    <span className="l-h-n fs-md fw-500 opacity-70">
+                                                        October 2020
+                                                    </span>
+                                                    <span className="l-h-n fs-nano fw-400 text-secondary">
+                                                        Friday
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3">
+                                                    <p>
+                                                        <strong>2:30PM</strong> - Doctor's appointment
+                                                    </p>
+                                                    <p>
+                                                        <strong>3:30PM</strong> - Report overview
+                                                    </p>
+                                                    <p>
+                                                        <strong>4:30PM</strong> - Meeting with Donnah V.
+                                                    </p>
+                                                    <p>
+                                                        <strong>5:30PM</strong> - Late Lunch
+                                                    </p>
+                                                    <p>
+                                                        <strong>6:30PM</strong> - Report Compression
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="py-2 px-3 bg-faded d-block rounded-bottom text-right border-faded border-bottom-0 border-right-0 border-left-0">
-                                    <a href="#" className="fs-xs fw-500 ml-auto">view all notifications</a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <a href="#" data-toggle="dropdown" title="drlantern@gotbootstrap.com" className="header-icon d-flex align-items-center justify-content-center ml-2">
-                                <img src="img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-
-              <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">Me</span>
-              <i className="ni ni-chevron-down hidden-xs-down"></i> -->
-                            </a>
-                            <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
-                                <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
-                                    <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
-                                        <span className="mr-2">
-                                            <img src="img/demo/avatars/avatar-admin.png" className="rounded-circle profile-image" alt="Dr. Codex Lantern"/>
-                                        </span>
-                                        <div className="info-card-text">
-                                            <div className="fs-lg text-truncate text-truncate-lg">Dr. Codex Lantern</div>
-                                            <span className="text-truncate text-truncate-md opacity-80">drlantern@gotbootstrap.com</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="dropdown-divider m-0"></div>
-                                <a href="#" className="dropdown-item" data-action="app-reset">
-                                    <span data-i18n="drpdwn.reset_layout">Reset Layout</span>
-                                </a>
-                                <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
-                                    <span data-i18n="drpdwn.settings">Settings</span>
-                                </a>
-                                <div className="dropdown-divider m-0"></div>
-                                <a href="#" className="dropdown-item" data-action="app-fullscreen">
-                                    <span data-i18n="drpdwn.fullscreen">Fullscreen</span>
-                                    <i className="float-right text-muted fw-n">F11</i>
-                                </a>
-                                <a href="#" className="dropdown-item" data-action="app-print">
-                                    <span data-i18n="drpdwn.print">Print</span>
-                                    <i className="float-right text-muted fw-n">Ctrl + P</i>
-                                </a>
-                                <div className="dropdown-multilevel dropdown-multilevel-left">
-                                    <div className="dropdown-item">
-                                        Language
-                                    </div>
-                                    <div className="dropdown-menu">
-                                        <a href="#?lang=fr" className="dropdown-item" data-action="lang" data-lang="fr">Français</a>
-                                        <a href="#?lang=en" className="dropdown-item active" data-action="lang" data-lang="en">English (US)</a>
-                                        <a href="#?lang=es" className="dropdown-item" data-action="lang" data-lang="es">Español</a>
-                                        <a href="#?lang=ru" className="dropdown-item" data-action="lang" data-lang="ru">Русский язык</a>
-                                        <a href="#?lang=jp" className="dropdown-item" data-action="lang" data-lang="jp">日本語</a>
-                                        <a href="#?lang=ch" className="dropdown-item" data-action="lang" data-lang="ch">中文</a>
-                                    </div>
-                                </div>
-                                <div className="dropdown-divider m-0"></div>
-                                <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
-                                    <span data-i18n="drpdwn.page-logout">Logout</span>
-                                    <span className="float-right fw-n">&commat;codexlantern</span>
-                                </a>
                             </div>
                         </div>
                     </div>
-                </header>
-
-                <main id="js-page-content" role="main" className="page-content">
-                    <ol className="breadcrumb page-breadcrumb">
-                        <li className="breadcrumb-item"><a href="#" onClick={e => e.preventDefault()}>SmartAdmin</a></li>
-                        <li className="breadcrumb-item">category_1</li>
-                        <li className="breadcrumb-item">category_2</li>
-                        <li className="breadcrumb-item active">Page Titile</li>
-                        <li className="position-absolute pos-top pos-right d-none d-sm-block"><span className="js-get-date"></span></li>
-                    </ol>
-                    <div className="subheader">
-                        <h1 className="subheader-title">
-                            <i className='subheader-icon fal fa-'></i> Page <span className='fw-300'>Title</span> <sup className='badge badge-primary fw-500'>ADDON</sup>
-                            <small>
-                                blank description
-                            </small>
-                        </h1>
-                        <div className="subheader-block">
-                            Right content of header
-                        </div>
-                    </div>
-                    <div className="alert alert-primary">
-                        <div className="d-flex flex-start w-100">
-                            <div className="mr-2 hidden-md-down">
-                                <span className="icon-stack icon-stack-lg">
-                                    <i className="base base-6 icon-stack-3x opacity-100 color-primary-500"></i>
-                                    <i className="base base-10 icon-stack-2x opacity-100 color-primary-300 fa-flip-vertical"></i>
-                                    <i className="ni ni-blog-read icon-stack-1x opacity-100 color-white"></i>
-                                </span>
-                            </div>
-                            <div className="d-flex flex-fill">
-                                <div className="flex-fill">
-                                    <span className="h5">About</span>
-                                    <p>Points.</p>
-                                    <p className="m-0">
-                                        Find in-depth, guidelines, tutorials and more on Addon's <a href="#" target="_blank">Official Documentation</a>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="row">
-                        <div className="col-xl-12">
-                            <div id="panel-1" className="panel">
-                                <div className="panel-hdr">
-                                    <h2>
-                                        Panel <span className="fw-300"><i>Title</i></span>
-                                    </h2>
-                                    <div className="panel-toolbar">
-                                        <button className="btn btn-panel" data-action="panel-collapse" data-toggle="tooltip" data-offset="0,10" data-original-title="Collapse"></button>
-                                        <button className="btn btn-panel" data-action="panel-fullscreen" data-toggle="tooltip" data-offset="0,10" data-original-title="Fullscreen"></button>
-                                        <button className="btn btn-panel" data-action="panel-close" data-toggle="tooltip" data-offset="0,10" data-original-title="Close"></button>
-                                    </div>
-                                </div>
-                                <div className="panel-container show">
-                                    <div className="panel-content">
-                                        <div className="panel-tag">
-                                            Panel tag <code>code</code>
-                                        </div>
-                                        Text
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-
-                <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
-
-                <footer className="page-footer" role="contentinfo">
-                    <div className="d-flex align-items-center flex-1 text-muted">
-                        <span className="hidden-md-down fw-700">2019 © SmartAdmin by&nbsp;<a href='https://www.gotbootstrap.com' className='text-primary fw-500' title='gotbootstrap.com' target='_blank'>gotbootstrap.com</a></span>
-                    </div>
-                    <div>
-                        <ul className="list-table m-0">
-                            <li><a href="intel_introduction.html" className="text-secondary fw-700">About</a></li>
-                            <li className="pl-3"><a href="info_app_licensing.html" className="text-secondary fw-700">License</a></li>
-                            <li className="pl-3"><a href="info_app_docs.html" className="text-secondary fw-700">Documentation</a></li>
-                            <li className="pl-3 fs-xl"><a href="https://wrapbootstrap.com/user/MyOrange" className="text-secondary" target="_blank"><i className="fal fa-question-circle" aria-hidden="true"></i></a></li>
-                        </ul>
-                    </div>
-                </footer>
-
-                <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">
-                    <div className="modal-dialog modal-dialog-top modal-transparent" role="document">
-                        <div className="modal-content">
-                            <div className="modal-body">
-                                <ul className="app-list w-auto h-auto p-0 text-left">
-                                    <li>
-                                        <a href="intel_introduction.html" className="app-list-item text-white border-0 m-0">
-                                            <div className="icon-stack">
-                                                <i className="base base-7 icon-stack-3x opacity-100 color-primary-500 "></i>
-                                                <i className="base base-7 icon-stack-2x opacity-100 color-primary-300 "></i>
-                                                <i className="fal fa-home icon-stack-1x opacity-100 color-white"></i>
-                                            </div>
-                                            <span className="app-list-name">
-                                                Home
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="page_inbox_general.html" className="app-list-item text-white border-0 m-0">
-                                            <div className="icon-stack">
-                                                <i className="base base-7 icon-stack-3x opacity-100 color-success-500 "></i>
-                                                <i className="base base-7 icon-stack-2x opacity-100 color-success-300 "></i>
-                                                <i className="ni ni-envelope icon-stack-1x text-white"></i>
-                                            </div>
-                                            <span className="app-list-name">
-                                                Inbox
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="intel_introduction.html" className="app-list-item text-white border-0 m-0">
-                                            <div className="icon-stack">
-                                                <i className="base base-7 icon-stack-2x opacity-100 color-primary-300 "></i>
-                                                <i className="fal fa-plus icon-stack-1x opacity-100 color-white"></i>
-                                            </div>
-                                            <span className="app-list-name">
-                                                Add More
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div className="py-2 px-3 bg-faded d-block rounded-bottom text-right border-faded border-bottom-0 border-right-0 border-left-0">
+                        <a href="#" className="fs-xs fw-500 ml-auto">view all notifications</a>
                     </div>
                 </div>
+            </div>
 
-                <p id="js-color-profile" className="d-none">
-                    <span className="color-primary-50"></span>
-                    <span className="color-primary-100"></span>
-                    <span className="color-primary-200"></span>
-                    <span className="color-primary-300"></span>
-                    <span className="color-primary-400"></span>
-                    <span className="color-primary-500"></span>
-                    <span className="color-primary-600"></span>
-                    <span className="color-primary-700"></span>
-                    <span className="color-primary-800"></span>
-                    <span className="color-primary-900"></span>
-                    <span className="color-info-50"></span>
-                    <span className="color-info-100"></span>
-                    <span className="color-info-200"></span>
-                    <span className="color-info-300"></span>
-                    <span className="color-info-400"></span>
-                    <span className="color-info-500"></span>
-                    <span className="color-info-600"></span>
-                    <span className="color-info-700"></span>
-                    <span className="color-info-800"></span>
-                    <span className="color-info-900"></span>
-                    <span className="color-danger-50"></span>
-                    <span className="color-danger-100"></span>
-                    <span className="color-danger-200"></span>
-                    <span className="color-danger-300"></span>
-                    <span className="color-danger-400"></span>
-                    <span className="color-danger-500"></span>
-                    <span className="color-danger-600"></span>
-                    <span className="color-danger-700"></span>
-                    <span className="color-danger-800"></span>
-                    <span className="color-danger-900"></span>
-                    <span className="color-warning-50"></span>
-                    <span className="color-warning-100"></span>
-                    <span className="color-warning-200"></span>
-                    <span className="color-warning-300"></span>
-                    <span className="color-warning-400"></span>
-                    <span className="color-warning-500"></span>
-                    <span className="color-warning-600"></span>
-                    <span className="color-warning-700"></span>
-                    <span className="color-warning-800"></span>
-                    <span className="color-warning-900"></span>
-                    <span className="color-success-50"></span>
-                    <span className="color-success-100"></span>
-                    <span className="color-success-200"></span>
-                    <span className="color-success-300"></span>
-                    <span className="color-success-400"></span>
-                    <span className="color-success-500"></span>
-                    <span className="color-success-600"></span>
-                    <span className="color-success-700"></span>
-                    <span className="color-success-800"></span>
-                    <span className="color-success-900"></span>
-                    <span className="color-fusion-50"></span>
-                    <span className="color-fusion-100"></span>
-                    <span className="color-fusion-200"></span>
-                    <span className="color-fusion-300"></span>
-                    <span className="color-fusion-400"></span>
-                    <span className="color-fusion-500"></span>
-                    <span className="color-fusion-600"></span>
-                    <span className="color-fusion-700"></span>
-                    <span className="color-fusion-800"></span>
-                    <span className="color-fusion-900"></span>
-                </p>
-
+            <div>
+                <a href="#" data-toggle="dropdown" title="drlantern@gotbootstrap.com" className="header-icon d-flex align-items-center justify-content-center ml-2">
+                    <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
+                    <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">Me</span>
+                    <i className="ni ni-chevron-down hidden-xs-down"></i>
+                </a>
+                <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
+                    <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
+                        <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
+                            <span className="mr-2">
+                                <img src="/img/demo/avatars/avatar-admin.png" className="rounded-circle profile-image" alt="Dr. Codex Lantern"/>
+                            </span>
+                            <div className="info-card-text">
+                                <div className="fs-lg text-truncate text-truncate-lg">Dr. Codex Lantern</div>
+                                <span className="text-truncate text-truncate-md opacity-80">drlantern@gotbootstrap.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="dropdown-divider m-0"></div>
+                    <a href="#" className="dropdown-item" data-action="app-reset">
+                        <span data-i18n="drpdwn.reset_layout">Reset Layout</span>
+                    </a>
+                    <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
+                        <span data-i18n="drpdwn.settings">Settings</span>
+                    </a>
+                    <div className="dropdown-divider m-0"></div>
+                    <a href="#" className="dropdown-item" data-action="app-fullscreen">
+                        <span data-i18n="drpdwn.fullscreen">Fullscreen</span>
+                        <i className="float-right text-muted fw-n">F11</i>
+                    </a>
+                    <a href="#" className="dropdown-item" data-action="app-print">
+                        <span data-i18n="drpdwn.print">Print</span>
+                        <i className="float-right text-muted fw-n">Ctrl + P</i>
+                    </a>
+                    <div className="dropdown-multilevel dropdown-multilevel-left">
+                        <div className="dropdown-item">
+                            Language
+                        </div>
+                        <div className="dropdown-menu">
+                            <a href="#?lang=fr" className="dropdown-item" data-action="lang" data-lang="fr">Français</a>
+                            <a href="#?lang=en" className="dropdown-item active" data-action="lang" data-lang="en">English (US)</a>
+                            <a href="#?lang=es" className="dropdown-item" data-action="lang" data-lang="es">Español</a>
+                            <a href="#?lang=ru" className="dropdown-item" data-action="lang" data-lang="ru">Русский язык</a>
+                            <a href="#?lang=jp" className="dropdown-item" data-action="lang" data-lang="jp">日本語</a>
+                            <a href="#?lang=ch" className="dropdown-item" data-action="lang" data-lang="ch">中文</a>
+                        </div>
+                    </div>
+                    <div className="dropdown-divider m-0"></div>
+                    <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
+                        <span data-i18n="drpdwn.page-logout">Logout</span>
+                        <span className="float-right fw-n">&commat;codexlantern</span>
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-
+    </header>
+  )
+}
+function PageFooter(){
+  return (
+    <footer className="page-footer" role="contentinfo">
+      <div className="d-flex align-items-center flex-1 text-muted">
+          <span className="hidden-md-down fw-700">2019 © SmartAdmin by&nbsp;<a href='https://www.gotbootstrap.com' className='text-primary fw-500' title='gotbootstrap.com' target='_blank'>gotbootstrap.com</a></span>
+      </div>
+      <div>
+          <ul className="list-table m-0">
+              <li><a href="intel_introduction.html" className="text-secondary fw-700">About</a></li>
+              <li className="pl-3"><a href="info_app_licensing.html" className="text-secondary fw-700">License</a></li>
+              <li className="pl-3"><a href="info_app_docs.html" className="text-secondary fw-700">Documentation</a></li>
+              <li className="pl-3 fs-xl"><a href="https://wrapbootstrap.com/user/MyOrange" className="text-secondary" target="_blank"><i className="fal fa-question-circle" aria-hidden="true"></i></a></li>
+          </ul>
+      </div>
+    </footer>
+  )
+}
+/* ADDITIONAL FEATURES */
+function FloatShortcut(){
+  return (
     <nav className="shortcut-menu d-none d-sm-block">
         <input type="checkbox" className="menu-open" name="menu-open" id="menu_open" />
         <label htmlFor="menu_open" className="menu-open-button ">
@@ -1787,7 +1034,10 @@ function Navigation() {
             <i className="fal fa-microphone"></i>
         </a>
     </nav>
-
+  )
+}
+function Messenger(){
+  return (
     <div className="modal fade js-modal-messenger modal-backdrop-transparent" tabIndex="-1" role="dialog" aria-hidden="true">
         <div className="modal-dialog modal-dialog-right">
             <div className="modal-content h-100">
@@ -2089,7 +1339,10 @@ function Navigation() {
             </div>
         </div>
     </div>
-
+  )
+}
+function Settings(){
+  return (
     <div className="modal fade js-modal-settings modal-backdrop-transparent" tabIndex="-1" role="dialog" aria-hidden="true">
         <div className="modal-dialog modal-dialog-right modal-md">
             <div className="modal-content">
@@ -2345,12 +1598,42 @@ function Navigation() {
             </div>
         </div>
     </div>
-
-    <script src="js/vendors.bundle.js"></script>
-    <script src="js/app.bundle.js"></script>
-
-    </div>
-  );
+  )
 }
+/* ROUTES */
+const routes = [
+  {
+    path: "/nav/",
+    exact: true,
+    sidebar: 'home',
+    main: () => (<h1>HOME</h1>)
+    // main: () => <Home />
+  },
+  {
+    path: "/nav/something",
+    sidebar: 'some',
+    main: () => (<h1>SOMETHING</h1>)
+    // main: () => <Something />
+  },
+  {
+    path: "/nav/anotherone",
+    sidebar: 'another',
+    main: () => (<h1>ANOTHER ONE</h1>)
+    // main: () => <Anotherone />
+  },
+  {
+    path: "/nav",
+    main: () => (<h1>Redirect</h1>)
+    // main: () => <Redirect to="/nav/home" />
+  }
+];
 
+/* NOTES
+<div> content </div> => Functions components can return only one element,
+    to return more than only one, you should put them inside another tag
+let { path, url } = useRouteMatch();
+let { topicId } = useParams();
+*/
+
+/* EXPORT NAVIGATION */
 export default Navigation;

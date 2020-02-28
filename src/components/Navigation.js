@@ -1519,9 +1519,8 @@ class Navigation extends React.Component{
                         <div>
                             <a href="#" data-toggle="dropdown" title="drlantern@gotbootstrap.com" className="header-icon d-flex align-items-center justify-content-center ml-2">
                                 <img src="img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-
-              <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">Me</span>
-              <i className="ni ni-chevron-down hidden-xs-down"></i> -->
+                                <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">Me</span>
+                                <i className="ni ni-chevron-down hidden-xs-down"></i>
                             </a>
                             <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
                                 <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">

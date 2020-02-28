@@ -1688,7 +1688,6 @@ var initApp = (function(app) {
  console.log(myapp_config.throttleDelay);
 $(window).resize(
  	$.throttle( myapp_config.throttleDelay, function (e) {
-		console.console.log('asd');
 		 /**
 		  * (1a) ADD CLASS WHEN BELOW CERTAIN WIDTH (MOBILE MENU)
 		  * Description: tracks the page min-width of #CONTENT and NAV when navigation is resized.

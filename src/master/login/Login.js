@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
+import React from 'react';
 import './Login.css';
 
-function Login() {
+function Login(props) {
 
   // Validate form
   function validateForm(e){
@@ -37,13 +37,17 @@ function Login() {
     // Check if token is returned
     if(response.token){
       // Add token to cookies and headers (access_token)
-      localStorage.setItem('access_token', 'response.token')
+      localStorage.setItem('access_token', response.token)
       /*
         We will use access_token cookie afterwards when creating XMLHttpRequest
         we'd do:
           xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'))
       */
       // Redirect
+      props.onClick()
+      /*
+        Page will automatically redirect to home when calling props.onClick (setLogged)
+      */
     }else{  // Handle bad login
       handleErrorResponse(xhr)
     }
