@@ -8,26 +8,28 @@ import {
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
 
-class Navigation extends React.Component{
+// Components to import
+import Cita from './cita/Cita';
 
-  render() {
-  return (
-    <div>
-      <div className="page-wrapper">
+class Navigation extends React.Component {
+  render(){
+    return (
+      <div>
+        <div className="page-wrapper">
           <div className="page-inner">
             <BrowserRouter>
               <Aside />
               <PageContent />
             </BrowserRouter>
           </div>
+        </div>
+        <FloatShortcut />
+        <Messenger />
+        <Settings />
       </div>
-      <FloatShortcut />
-      <Messenger />
-      <Settings />
-    </div>
-  );
-}
-componentDidMount() {
+    );
+  }
+  componentDidMount(){
     const script = document.createElement("script");
     script.async = false;
     script.src = "/js/vendors.bundle.js";
@@ -39,7 +41,6 @@ componentDidMount() {
     script2.src = "/js/app.bundle.js";
     // For body
     document.body.appendChild(script2);
-
   }
 }
 
@@ -61,9 +62,8 @@ function SelectComponent(){  // CONTENT
           <li> <Link to="/nav/something">something</Link> </li>
           <li> <Link to="/nav/anotherone">another one</Link> </li>
         </Route>
-        <Route path="/nav/something">
-          <h1> SOMETHING </h1>
-          <li> <Link to="/nav/anotherone">another one</Link> </li>
+        <Route path="/nav/cita">
+          <Cita />
         </Route>
         <Route path="/nav/anotherone">
           <h1> ANOTHER ONE </h1>
@@ -102,131 +102,121 @@ function Anotherone(){
   )
 }
 /*** PAGE ***/
-function Aside(){
-  return (<div>
-    <aside className="page-sidebar">
-        <div className="page-logo">
-            <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
-                <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
-                <span className="page-logo-text mr-1">Muelitas</span>
-                <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
-                <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
-            </a>
-        </div>
+function AsideLinks(){
+  return (
+    <ul id="js-nav-menu" className="nav-menu">
+    <div>
+      <li className="nav-title">Principales paginas</li>
+      <li>
+        <a href="#" title="Pages" data-filter-tags="pages">
+            <i className="fal fa-plus-circle"></i>
+            <span className="nav-link-text" data-i18n="nav.pages">Prueba</span>
+        </a>
+        <ul>
+          {/*<li>
+            <ul>
+              <li>
+                <a href="page_error.html" title="General Error" data-filter-tags="pages error pages general error">
+                  <span className="nav-link-text" data-i18n="nav.pages_error_pages_general_error">General Error</span>
+                </a>
+              </li>
+              <li>
+                <a href="page_error_announced.html" title="Announced Error" data-filter-tags="pages error pages announced error">
+                  <span className="nav-link-text" data-i18n="nav.pages_error_pages_announced_error">Announced Error</span>
+                </a>
+              </li>
+            </ul>
+          </li>*/}
 
-        <nav id="js-primary-nav" className="primary-nav" role="navigation">
-            <div className="nav-filter">
-                <div className="position-relative">
-                    <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
-                    <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
-                        <i className="fal fa-chevron-up"></i>
-                    </a>
-                </div>
-            </div>
-            <div className="info-card">
-                <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-                <div className="info-card-text">
-                    <a href="#" className="d-flex align-items-center text-white">
-                        <span className="text-truncate text-truncate-sm d-inline-block">
-                            UserName - Name
-                        </span>
-                    </a>
-                    <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
-                </div>
-                <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
-                <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
-                    <i className="fal fa-angle-down"></i>
+          <li>
+            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
+              <span className="nav-link-text" data-i18n="nav.pages_search_results">Home</span>
+            </Link>
+          </li>
+          <li>
+            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/cita'>
+              <span className="nav-link-text" data-i18n="nav.pages_search_results">CITA</span>
+            </Link>
+          </li>
+          <li>
+            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/anotherone'>
+              <span className="nav-link-text" data-i18n="nav.pages_search_results">ANOTHER ONE</span>
+            </Link>
+          </li>
+        </ul>
+      </li>
+    </div>
+    </ul>
+  )
+}
+function Aside(){
+  return (<>
+    <aside className="page-sidebar">
+      <div className="page-logo">
+          <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
+              <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
+              <span className="page-logo-text mr-1">Muelitas</span>
+              <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
+              <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
+          </a>
+      </div>
+
+      <nav id="js-primary-nav" className="primary-nav" role="navigation">
+        <div className="nav-filter">
+            <div className="position-relative">
+                <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
+                <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
+                    <i className="fal fa-chevron-up"></i>
                 </a>
             </div>
-            <ul id="js-nav-menu" className="nav-menu">
-                <li className="nav-title">Principales paginas</li>
-                <li>
-                    <a href="#" title="Pages" data-filter-tags="pages">
-                        <i className="fal fa-plus-circle"></i>
-                        <span className="nav-link-text" data-i18n="nav.pages">Prueba</span>
-                    </a>
-                    <ul>
-                        {/*<li>
-                            <a href="#" onClick={e => e.preventDefault()} title="Error Pages" data-filter-tags="pages error pages">
-                                <span className="nav-link-text" data-i18n="nav.pages_error_pages">Error Pages</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="page_error.html" title="General Error" data-filter-tags="pages error pages general error">
-                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_general_error">General Error</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="page_error_404.html" title="Server Error" data-filter-tags="pages error pages server error">
-                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_server_error">Server Error</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="page_error_announced.html" title="Announced Error" data-filter-tags="pages error pages announced error">
-                                        <span className="nav-link-text" data-i18n="nav.pages_error_pages_announced_error">Announced Error</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>*/}
-                        {/*routes.map((route, index)=>(  // Generate each Route inside Switch
-                          <li key={String(index)+"1"} >
-                            <Link key={String(index)+"2"} title="Search Results" data-filter-tags="pages search results" to={route.path}>
-                              <span key={String(index)+"3"}  className="nav-link-text" data-i18n="nav.pages_search_results">{route.sidebar}</span>
-                            </Link>
-                          </li>
-                        ))*/}
-                        <li>
-                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
-                            <span className="nav-link-text" data-i18n="nav.pages_search_results">Home</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/something'>
-                            <span className="nav-link-text" data-i18n="nav.pages_search_results">SOMETHING</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/anotherone'>
-                            <span className="nav-link-text" data-i18n="nav.pages_search_results">ANOTHER ONE</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
-                            <span className="nav-link-text" data-i18n="nav.pages_search_results">Redirect</span>
-                          </Link>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-            <div className="filter-message js-filter-message bg-success-600"></div>
-        </nav>
-
-        <div className="nav-footer shadow-top">
-            <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
-                <i className="ni ni-chevron-right"></i>
-                <i className="ni ni-chevron-right"></i>
-            </a>
-            <ul className="list-table m-auto nav-footer-buttons">
-                <li>
-                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
-                        <i className="fal fa-comments"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
-                        <i className="fal fa-life-ring"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
-                        <i className="fal fa-phone"></i>
-                    </a>
-                </li>
-            </ul>
         </div>
+        <div className="info-card">
+            <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
+            <div className="info-card-text">
+                <a href="#" className="d-flex align-items-center text-white">
+                    <span className="text-truncate text-truncate-sm d-inline-block">
+                        UserName - Name
+                    </span>
+                </a>
+                <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
+            </div>
+            <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
+            <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
+                <i className="fal fa-angle-down"></i>
+            </a>
+        </div>
+
+        <AsideLinks />
+
+        <div className="filter-message js-filter-message bg-success-600"></div>
+      </nav>
+
+      <div className="nav-footer shadow-top">
+          <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
+              <i className="ni ni-chevron-right"></i>
+              <i className="ni ni-chevron-right"></i>
+          </a>
+          <ul className="list-table m-auto nav-footer-buttons">
+              <li>
+                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
+                      <i className="fal fa-comments"></i>
+                  </a>
+              </li>
+              <li>
+                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
+                      <i className="fal fa-life-ring"></i>
+                  </a>
+              </li>
+              <li>
+                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
+                      <i className="fal fa-phone"></i>
+                  </a>
+              </li>
+          </ul>
+      </div>
     </aside>
     <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
-    </div>
+    </>
   )
 }
 function PageContent(){
@@ -1541,43 +1531,43 @@ function Settings(){
                                     <a href="#" id="myapp-0" data-action="theme-update" data-themesave data-theme="" data-toggle="tooltip" data-placement="top" title="Wisteria (base css)" data-original-title="Wisteria (base css)"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-1" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-1.css" data-toggle="tooltip" data-placement="top" title="Tapestry" data-original-title="Tapestry"></a>
+                                    <a href="#" id="myapp-1" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-1.css"} data-toggle="tooltip" data-placement="top" title="Tapestry" data-original-title="Tapestry"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-2" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-2.css" data-toggle="tooltip" data-placement="top" title="Atlantis" data-original-title="Atlantis"></a>
+                                    <a href="#" id="myapp-2" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-2.css"} data-toggle="tooltip" data-placement="top" title="Atlantis" data-original-title="Atlantis"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-3" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-3.css" data-toggle="tooltip" data-placement="top" title="Indigo" data-original-title="Indigo"></a>
+                                    <a href="#" id="myapp-3" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-3.css"} data-toggle="tooltip" data-placement="top" title="Indigo" data-original-title="Indigo"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-4" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-4.css" data-toggle="tooltip" data-placement="top" title="Dodger Blue" data-original-title="Dodger Blue"></a>
+                                    <a href="#" id="myapp-4" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-4.css"} data-toggle="tooltip" data-placement="top" title="Dodger Blue" data-original-title="Dodger Blue"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-5" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-5.css" data-toggle="tooltip" data-placement="top" title="Tradewind" data-original-title="Tradewind"></a>
+                                    <a href="#" id="myapp-5" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-5.css"} data-toggle="tooltip" data-placement="top" title="Tradewind" data-original-title="Tradewind"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-6" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-6.css" data-toggle="tooltip" data-placement="top" title="Cranberry" data-original-title="Cranberry"></a>
+                                    <a href="#" id="myapp-6" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-6.css"} data-toggle="tooltip" data-placement="top" title="Cranberry" data-original-title="Cranberry"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-7" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-7.css" data-toggle="tooltip" data-placement="top" title="Oslo Gray" data-original-title="Oslo Gray"></a>
+                                    <a href="#" id="myapp-7" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-7.css"} data-toggle="tooltip" data-placement="top" title="Oslo Gray" data-original-title="Oslo Gray"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-8" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-8.css" data-toggle="tooltip" data-placement="top" title="Chetwode Blue" data-original-title="Chetwode Blue"></a>
+                                    <a href="#" id="myapp-8" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-8.css"} data-toggle="tooltip" data-placement="top" title="Chetwode Blue" data-original-title="Chetwode Blue"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-9" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-9.css" data-toggle="tooltip" data-placement="top" title="Apricot" data-original-title="Apricot"></a>
+                                    <a href="#" id="myapp-9" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-9.css"} data-toggle="tooltip" data-placement="top" title="Apricot" data-original-title="Apricot"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-10" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-10.css" data-toggle="tooltip" data-placement="top" title="Blue Smoke" data-original-title="Blue Smoke"></a>
+                                    <a href="#" id="myapp-10" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-10.css"} data-toggle="tooltip" data-placement="top" title="Blue Smoke" data-original-title="Blue Smoke"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-11" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-11.css" data-toggle="tooltip" data-placement="top" title="Green Smoke" data-original-title="Green Smoke"></a>
+                                    <a href="#" id="myapp-11" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-11.css"} data-toggle="tooltip" data-placement="top" title="Green Smoke" data-original-title="Green Smoke"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-12" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-12.css" data-toggle="tooltip" data-placement="top" title="Wild Blue Yonder" data-original-title="Wild Blue Yonder"></a>
+                                    <a href="#" id="myapp-12" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-12.css"} data-toggle="tooltip" data-placement="top" title="Wild Blue Yonder" data-original-title="Wild Blue Yonder"></a>
                                 </li>
                                 <li>
-                                    <a href="#" id="myapp-13" data-action="theme-update" data-themesave data-theme="css/themes/cust-theme-13.css" data-toggle="tooltip" data-placement="top" title="Emerald" data-original-title="Emerald"></a>
+                                    <a href="#" id="myapp-13" data-action="theme-update" data-themesave data-theme={process.env.PUBLIC_URL+"/css/themes/cust-theme-13.css"} data-toggle="tooltip" data-placement="top" title="Emerald" data-original-title="Emerald"></a>
                                 </li>
                             </ul>
                         </div>
@@ -1600,36 +1590,9 @@ function Settings(){
     </div>
   )
 }
-/* ROUTES */
-const routes = [
-  {
-    path: "/nav/",
-    exact: true,
-    sidebar: 'home',
-    main: () => (<h1>HOME</h1>)
-    // main: () => <Home />
-  },
-  {
-    path: "/nav/something",
-    sidebar: 'some',
-    main: () => (<h1>SOMETHING</h1>)
-    // main: () => <Something />
-  },
-  {
-    path: "/nav/anotherone",
-    sidebar: 'another',
-    main: () => (<h1>ANOTHER ONE</h1>)
-    // main: () => <Anotherone />
-  },
-  {
-    path: "/nav",
-    main: () => (<h1>Redirect</h1>)
-    // main: () => <Redirect to="/nav/home" />
-  }
-];
 
 /* NOTES
-<div> content </div> => Functions components can return only one element,
+<> content </> => Functions components can return only one element,
     to return more than only one, you should put them inside another tag
 let { path, url } = useRouteMatch();
 let { topicId } = useParams();

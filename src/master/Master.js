@@ -3,7 +3,8 @@ import {
   BrowserRouter,  // Router needed && Allow history of visited pages
   Switch,  // Allow to change only content
   Route,  // Route handling
-  Redirect  // Redirect url
+  Redirect,  // Redirect url
+  Link  // Alternative to a element for Router usage
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 // Components
 import Login from './login/Login';
@@ -13,7 +14,7 @@ class Master extends React.Component {
   constructor(props){
     super();
     this.state = {
-      logged: false  // User is loged in?
+      logged: true  // User is loged in?
     }
   }
   setLogged(status){
@@ -55,9 +56,10 @@ Change some class.state attributes:
 
 /*** COMPONENTS ***/
 function Home(){
-  return (
+  return (<div>
     <h1>Home</h1>
-  )
+    <Link to="/login">IR AL LOGIN</Link>
+  </div>)
 }
 
 /* EXPORT MASTER */
