@@ -12,6 +12,29 @@ import './Navigation.css';
 import Cita from './cita/Cita';
 
 class Navigation extends React.Component {
+  constructor(props){
+    super();
+    this.state = {
+      user_id: 1,
+      sucursal_id: [1],
+    }
+  }
+  setPersonalInfo(){
+    // let xhr = new XMLHttpRequest();
+    // xhr.open('POST', process.env.REACT_APP_PROJECT_API+'atencion/cita/');
+    // xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
+    // xhr.onload = (xhr)=>{
+    //   xhr = xhr.target
+    //   if(xhr.status==500) this.handleErrorResponse();
+    //   const response_object = JSON.parse(xhr.response);
+    //   console.log(response_object);
+    //   // if(response_object.length!=1) return
+    //   document.querySelector("#cita-close").click()  // Cerrar formulario cita
+    //   // Re render fullcalendar
+    // };
+    // xhr.onerror = this.handleErrorResponse;  // Receive server error
+    // xhr.send();  // Send request
+  }
   render(){
     return (
       <div>
@@ -19,7 +42,7 @@ class Navigation extends React.Component {
           <div className="page-inner">
             <BrowserRouter>
               <Aside />
-              <PageContent />
+              <PageContent state={this.state} />
             </BrowserRouter>
           </div>
         </div>
@@ -41,11 +64,12 @@ class Navigation extends React.Component {
     script2.src = "/js/app.bundle.js";
     // For body
     document.body.appendChild(script2);
+    this.setPersonalInfo()  // Set user in state
   }
 }
 
 /*** COMPONENTS ***/
-function SelectComponent(){  // CONTENT
+function SelectComponent(props){  // CONTENT
   return (
     <main id="js-page-content" role="main" className="page-content">
       <Switch>
@@ -63,7 +87,7 @@ function SelectComponent(){  // CONTENT
           <li> <Link to="/nav/anotherone">another one</Link> </li>
         </Route>
         <Route path="/nav/cita">
-          <Cita />
+          <Cita state={props.state} />
         </Route>
         <Route path="/nav/anotherone">
           <h1> ANOTHER ONE </h1>
@@ -219,11 +243,11 @@ function Aside(){
     </>
   )
 }
-function PageContent(){
+function PageContent(props){
   return (
     <div className="page-content-wrapper">
         <PageHeader />
-        <SelectComponent />
+        <SelectComponent state={props.state} />
         <PageFooter />
 
         <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">

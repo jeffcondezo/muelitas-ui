@@ -14,7 +14,7 @@ class Master extends React.Component {
   constructor(props){
     super();
     this.state = {
-      logged: true  // User is loged in?
+      logged: false  // User is loged in?
     }
   }
   setLogged(status){
