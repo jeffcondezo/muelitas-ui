@@ -44,9 +44,12 @@ class Cita extends React.Component {
     // Get this calendar
     let _calendar = this.state.calendar;
     _calendar.removeAllEvents()  // Remove current events in fullcalendar
+    console.log(response_object);
     response_object.forEach((v) => {
       let _data = {};
-      _data.title = "Paciente: "+v.paciente_dni;
+      _data.title = "Paciente: "+v.paciente.nombre_principal
+      +' '+ v.paciente.ape_paterno + '\n' + 'Doctor: ' +
+      v.personal.nombre_principal +' '+ v.personal.ape_paterno;
       _data.start = v.fecha+"T"+v.hora;
       let _color = "gray";
       switch(v.estado){
