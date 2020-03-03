@@ -16,6 +16,24 @@ class Master extends React.Component {
     this.state = {
       logged: false  // User is loged in?
     }
+    // Check if user is already loged
+    if(!this.state.logged && localStorage.hasOwnProperty('access_token'))
+      this.checkAlreadyLogged()  // Token cookie already exists?
+  }
+  checkAlreadyLogged(){  // Token exists and this.state.logged = false
+    // Send token to check if it's alright
+    let a = new FormData();
+    a.append("key", localStorage["access_token"]);
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://127.0.0.1:8000/maestro/tokenexist/');
+    xhr.onload = (xhr) => {
+      if(xhr.target.response=="delete"){  // If token is wrong
+        localStorage.removeItem("access_token");  // Delete token
+      }else{
+        this.setLogged(true);  // If token is alright set logged to true
+      }
+    }
+    xhr.send(a);  // Send request
   }
   setLogged(status){
     let clone = Object.assign({}, this.state)  // Clone this.state object

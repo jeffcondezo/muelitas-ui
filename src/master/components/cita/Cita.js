@@ -37,19 +37,16 @@ class Cita extends React.Component {
   handleCitaResponse(xhr){
     xhr = xhr.target;
     if(xhr.status===403){this.handlePermissionError();return;}
+    if(xhr.status===400){this.handleServerError();return;}
     if(xhr.status===500){this.handleServerError();return;}
     // Convert response to json object
-    console.log(this.state.calendar);
     const response_object = JSON.parse(xhr.response);
     // Get this calendar
     let _calendar = this.state.calendar;
     _calendar.removeAllEvents()  // Remove current events in fullcalendar
-    console.log(response_object);
     response_object.forEach((v) => {
       let _data = {};
-      _data.title = "Paciente: "+v.paciente.nombre_principal
-      +' '+ v.paciente.ape_paterno + '\n' + 'Doctor: ' +
-      v.personal.nombre_principal +' '+ v.personal.ape_paterno;
+      _data.title = "Paciente: "+v.paciente_data.nombre_principal;
       _data.start = v.fecha+"T"+v.hora;
       let _color = "gray";
       switch(v.estado){
@@ -159,12 +156,8 @@ class Cita extends React.Component {
       xhr = xhr.target
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
-      const response_object = JSON.parse(xhr.response);
-      console.log(response_object);
-      // if(response_object.length!==1) return
       document.querySelector("#cita-close").click()  // Cerrar formulario cita
-      // Re render fullcalendar
-      this.getCitas()
+      this.getCitas()  // Re render fullcalendar
     };
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send(data);  // Send request
@@ -259,7 +252,6 @@ class Cita extends React.Component {
     )
   }
   componentDidMount(){
-    console.log("CONTINUED");
     // Create calendar object
     let calendarEl = document.querySelector('#calendar');
     let calendar = new Calendar(calendarEl, {

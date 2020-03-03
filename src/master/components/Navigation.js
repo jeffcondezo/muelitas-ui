@@ -132,6 +132,11 @@ function AsideLinks(){
     <div>
       <li className="nav-title">Principales paginas</li>
       <li>
+        <Link title="Search Results" data-filter-tags="pages search results" to='/nav/cita'>
+          <span className="nav-link-text" data-i18n="nav.pages_search_results">CITA</span>
+        </Link>
+      </li>
+      <li>
         <a href="#" title="Pages" data-filter-tags="pages">
             <i className="fal fa-plus-circle"></i>
             <span className="nav-link-text" data-i18n="nav.pages">Prueba</span>
@@ -155,11 +160,6 @@ function AsideLinks(){
           <li>
             <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
               <span className="nav-link-text" data-i18n="nav.pages_search_results">Home</span>
-            </Link>
-          </li>
-          <li>
-            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/cita'>
-              <span className="nav-link-text" data-i18n="nav.pages_search_results">CITA</span>
             </Link>
           </li>
           <li>
