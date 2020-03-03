@@ -14,7 +14,9 @@ class Master extends React.Component {
   constructor(props){
     super();
     this.state = {
-      logged: false  // User is loged in?
+      logged: false,  // User is loged in?
+      user: {},
+      error_log: "",
     }
     // Check if user is already loged
     if(!this.state.logged && localStorage.hasOwnProperty('access_token'))
@@ -27,17 +29,39 @@ class Master extends React.Component {
     let xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://127.0.0.1:8000/maestro/tokenexist/');
     xhr.onload = (xhr) => {
-      if(xhr.target.response=="delete"){  // If token is wrong
+      if(xhr.target.response==="delete"){  // If token is wrong
         localStorage.removeItem("access_token");  // Delete token
-      }else{
-        this.setLogged(true);  // If token is alright set logged to true
+        return;
       }
+      if(xhr.target.status===0){
+        console.log("CONEXIÓN CON EL SERVIDOR FAILED");
+        return;
+      }
+      if(xhr.target.status===500){
+        console.log(xhr.target.status);
+        return;
+      }
+      // If token is alright set this.state with user data
+      const response_object = JSON.parse(xhr.target.response);
+      let clone = Object.assign({}, this.state)  // Clone this.state object
+      // Change attribute's value
+      clone.logged = true  // Set logged true
+      clone.user = response_object  // Set user data
+      this.setState(clone)  // Save change (re-render)
+    }
+    xhr.onerror = (xhr) => {
+      console.log(xhr.target.status);
     }
     xhr.send(a);  // Send request
   }
   setLogged(status){
     let clone = Object.assign({}, this.state)  // Clone this.state object
     clone.logged = status  // Change attribute's value
+    this.setState(clone)  // Save change (re-render)
+  }
+  setError(from, log){
+    let clone = Object.assign({}, this.state)  // Clone this.state object
+    clone.error_log = String(log)  // Change attribute's value
     this.setState(clone)  // Save change (re-render)
   }
   render(){  /*** RENDER ***/
@@ -51,7 +75,10 @@ class Master extends React.Component {
             {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLogged(true)} />}
           </Route>
           <Route path="/nav">  {/* NAVIGATION */}
-            {this.state.logged ? <Navigation /> : <Redirect to="/login" />}
+            {this.state.logged ? <Navigation state={this.state.user} errorFunc={(a,b)=>this.setError(a,b)} /> : <Redirect to="/login" />}
+          </Route>
+          <Route path="/error/log">
+            {this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} /> }
           </Route>
           <Route>  {/* ROUTE NOT FOUND REDIRECT */}
             <Redirect to="/" />
@@ -70,6 +97,8 @@ Change some class.state attributes:
   let clone = Object.assign({}, this.state)  // Clone this.state object
   clone.attribute = new_value  // Change attribute's value
   this.setState(clone)  // Save change (re-render)
+When generating url with params we should use double quotes ("),
+  instead of single quotes (')
 */
 
 /*** COMPONENTS ***/
@@ -78,6 +107,13 @@ function Home(){
     <h1>Home</h1>
     <Link to="/login">IR AL LOGIN</Link>
   </div>)
+}
+function Error(props){
+  return (
+    <>
+    <h3><b>Error: </b></h3><h4><i>{props.log}</i></h4>
+    </>
+  )
 }
 
 /* EXPORT MASTER */

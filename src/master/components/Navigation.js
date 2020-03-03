@@ -15,34 +15,56 @@ class Navigation extends React.Component {
   constructor(props){
     super();
     this.state = {
-      user_id: 1,
-      sucursal_id: [1],
+      user: props.state,
+      error_log: "",
+      sucursales: [],
+      current_sucursal_pk: -1,
+      profile_pic: "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg",
     }
+    this.errorFunc = (a,b)=>props.errorFunc(a,b)
+    this.setPersonalInfo()
   }
   setPersonalInfo(){
-    // let xhr = new XMLHttpRequest();
-    // xhr.open('POST', process.env.REACT_APP_PROJECT_API+'atencion/cita/');
+    let xhr = new XMLHttpRequest();
+    let _filter = `filtro={"usuario":"${this.state.user.pk}"}`;
+    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
+    let url = _url + '?' + _filter;
+    xhr.open('GET', url);
     // xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    // xhr.onload = (xhr)=>{
-    //   xhr = xhr.target
-    //   if(xhr.status==500) this.handleErrorResponse();
-    //   const response_object = JSON.parse(xhr.response);
-    //   console.log(response_object);
-    //   // if(response_object.length!=1) return
-    //   document.querySelector("#cita-close").click()  // Cerrar formulario cita
-    //   // Re render fullcalendar
-    // };
-    // xhr.onerror = this.handleErrorResponse;  // Receive server error
-    // xhr.send();  // Send request
+    xhr.onload = (xhr)=>{
+      xhr = xhr.target
+      if(xhr.status!==200){  // Error
+        // Send error log to Master
+        this.errorFunc(document.location.href, xhr.statusText);
+        // Change this state to re render and return redirect to ERROR PAGE
+        let clone = Object.assign({}, this.state);
+        clone.error_log = String("--changed--");
+        this.setState(clone);
+        return;
+      }
+      // Parse from json response
+      const response_object = JSON.parse(xhr.response)[0];
+      // Save in this.state
+      let clone = Object.assign({}, this.state);
+      clone.sucursales = response_object.sucursales;
+      clone.current_sucursal_pk = response_object.sucursales[0].pk;
+      this.setState(clone);
+    };
+    xhr.onerror = this.handleErrorResponse;  // Receive server error
+    xhr.send();  // Send request
+  }
+  changeSucursal(pk){
+    console.log("PK:", pk);
   }
   render(){
+    if(this.state.error_log!=="") return <Redirect to="/error/log" />
     return (
       <div>
         <div className="page-wrapper">
           <div className="page-inner">
             <BrowserRouter>
               <Aside />
-              <PageContent state={this.state} />
+              <PageContent state={this.state} changeSucursal={this.changeSucursal} />
             </BrowserRouter>
           </div>
         </div>
@@ -64,7 +86,6 @@ class Navigation extends React.Component {
     script2.src = "/js/app.bundle.js";
     // For body
     document.body.appendChild(script2);
-    this.setPersonalInfo()  // Set user in state
   }
 }
 
@@ -246,7 +267,7 @@ function Aside(){
 function PageContent(props){
   return (
     <div className="page-content-wrapper">
-        <PageHeader />
+        <PageHeader state={props.state} changeSucursal={props.changeSucursal} />
         <SelectComponent state={props.state} />
         <PageFooter />
 
@@ -361,7 +382,7 @@ function PageContent(props){
     </div>
   )
 }
-function PageHeader(){
+function PageHeader(props){
   return (
     <header className="page-header" role="banner">
 
@@ -949,62 +970,99 @@ function PageHeader(){
                 </div>
             </div>
 
-            <div>
-                <a href="#" data-toggle="dropdown" title="drlantern@gotbootstrap.com" className="header-icon d-flex align-items-center justify-content-center ml-2">
-                    <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-                    <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">Me</span>
-                    <i className="ni ni-chevron-down hidden-xs-down"></i>
-                </a>
-                <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
-                    <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
-                        <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
-                            <span className="mr-2">
-                                <img src="/img/demo/avatars/avatar-admin.png" className="rounded-circle profile-image" alt="Dr. Codex Lantern"/>
-                            </span>
-                            <div className="info-card-text">
-                                <div className="fs-lg text-truncate text-truncate-lg">Dr. Codex Lantern</div>
-                                <span className="text-truncate text-truncate-md opacity-80">drlantern@gotbootstrap.com</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="dropdown-divider m-0"></div>
-                    <a href="#" className="dropdown-item" data-action="app-reset">
-                        <span data-i18n="drpdwn.reset_layout">Reset Layout</span>
-                    </a>
-                    <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
-                        <span data-i18n="drpdwn.settings">Settings</span>
-                    </a>
-                    <div className="dropdown-divider m-0"></div>
-                    <a href="#" className="dropdown-item" data-action="app-fullscreen">
-                        <span data-i18n="drpdwn.fullscreen">Fullscreen</span>
-                        <i className="float-right text-muted fw-n">F11</i>
-                    </a>
-                    <a href="#" className="dropdown-item" data-action="app-print">
-                        <span data-i18n="drpdwn.print">Print</span>
-                        <i className="float-right text-muted fw-n">Ctrl + P</i>
-                    </a>
-                    <div className="dropdown-multilevel dropdown-multilevel-left">
-                        <div className="dropdown-item">
-                            Language
-                        </div>
-                        <div className="dropdown-menu">
-                            <a href="#?lang=fr" className="dropdown-item" data-action="lang" data-lang="fr">Français</a>
-                            <a href="#?lang=en" className="dropdown-item active" data-action="lang" data-lang="en">English (US)</a>
-                            <a href="#?lang=es" className="dropdown-item" data-action="lang" data-lang="es">Español</a>
-                            <a href="#?lang=ru" className="dropdown-item" data-action="lang" data-lang="ru">Русский язык</a>
-                            <a href="#?lang=jp" className="dropdown-item" data-action="lang" data-lang="jp">日本語</a>
-                            <a href="#?lang=ch" className="dropdown-item" data-action="lang" data-lang="ch">中文</a>
-                        </div>
-                    </div>
-                    <div className="dropdown-divider m-0"></div>
-                    <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
-                        <span data-i18n="drpdwn.page-logout">Logout</span>
-                        <span className="float-right fw-n">&commat;codexlantern</span>
-                    </a>
-                </div>
-            </div>
+            <UserSettings state={props.state} changeSucursal={props.changeSucursal} />
         </div>
     </header>
+  )
+}
+function UserSettings(props){
+  return (
+    <div>
+        <a href="#" data-toggle="dropdown"
+          title={props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
+          className="header-icon d-flex align-items-center justify-content-center ml-2"
+          >
+            <img
+              src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+              className="profile-image rounded-circle"
+              alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+              />
+            <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
+              { props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Me"}
+            </span>
+            <i className="ni ni-chevron-down hidden-xs-down"></i>
+        </a>
+        <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
+            <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
+                <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
+                    <span className="mr-2">
+                        <img
+                          src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+                          className="rounded-circle profile-image"
+                          alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+                          />
+                    </span>
+                    <div className="info-card-text">
+                        <div className="fs-lg text-truncate text-truncate-lg">
+                          {props.state.current_sucursal_pk!=-1 ? props.state.user.username.toUpperCase() : "Dr. Codex Lantern"}
+                        </div>
+                        <span className="text-truncate text-truncate-md opacity-80">
+                          {props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div className="dropdown-divider m-0"></div>
+            <a href="#" className="dropdown-item" data-action="app-reset">
+                <span data-i18n="drpdwn.reset_layout">Reset Layout</span>
+            </a>
+            <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
+                <span data-i18n="drpdwn.settings">Settings</span>
+            </a>
+            <div className="dropdown-divider m-0"></div>
+            <a href="#" className="dropdown-item" data-action="app-fullscreen">
+                <span data-i18n="drpdwn.fullscreen">Fullscreen</span>
+                <i className="float-right text-muted fw-n">F11</i>
+            </a>
+            <a href="#" className="dropdown-item" data-action="app-print">
+                <span data-i18n="drpdwn.print">Print</span>
+                <i className="float-right text-muted fw-n">Ctrl + P</i>
+            </a>
+            {/* CHOOSE SUCURSAL */}
+            <ChooseSucursal state={props.state} changeSucursal={props.changeSucursal} />
+            {/* FIN CHOOSE SUCURSAL*/}
+            <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
+                <span data-i18n="drpdwn.page-logout">Logout</span>
+                <span className="float-right fw-n">&commat;codexlantern</span>
+            </a>
+        </div>
+    </div>
+  )
+}
+function ChooseSucursal(props){
+  // https://flaviocopes.com/react-how-to-loop/
+  const sucursales = [];  // Declare variable to use
+  for(let a of props.state.sucursales){  // Iterate over all sucursales this user has
+    sucursales.push(
+      <a key={a.pk}
+        onClick={()=>props.changeSucursal(a.pk)}
+        className={a.pk==props.state.current_sucursal_pk?"dropdown-item active":"dropdown-item"}>
+          {a.direccion}
+      </a>
+    );
+  }
+  return (
+    <>
+    <div className="dropdown-multilevel dropdown-multilevel-left">
+      <div className="dropdown-item">
+        Sucursal
+      </div>
+      <div className="dropdown-menu">
+        {sucursales}
+      </div>
+    </div>
+    <div className="dropdown-divider m-0"></div>
+    </>
   )
 }
 function PageFooter(){

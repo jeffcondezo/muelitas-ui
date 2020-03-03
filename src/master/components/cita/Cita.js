@@ -14,15 +14,14 @@ class Cita extends React.Component {
     super();
     this.state = {
       calendar: false,
-      user_id: props.state.user_id,
-      sucursal_id: props.state.sucursal_id,
+      global: props.state,
     }
   }
   getCitas(){
     // HTTP REQUEST
     // Add filter to url
     let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"sucursal":"${this.state.sucursal_id[0]}"}`;
+    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
     let _url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
     let url = _url + '?' + _filter;
     xhr.open('GET', url);
@@ -140,7 +139,7 @@ class Cita extends React.Component {
     let data = new FormData();
     data.append("sucursal", _sucursal);
     data.append("paciente", _paciente);  // PACIENTE
-    data.append("personal", this.state.user_id);
+    data.append("personal", this.state.global.user.pk);
     data.append("fecha", _fecha);
     data.append("hora", _hora+":"+_minute);
     data.append("origen_cita", _origen_cita);

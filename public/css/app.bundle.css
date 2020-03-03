@@ -756,7 +756,7 @@ html body {
           top: 0.8125rem;
           z-index: -1;
           left: 0.3125rem;
-          opacity: 1; }
+          opacity: 0; } /* CHANGE HERE */
         .header-icon:not(.btn)[data-toggle="dropdown"][aria-expanded="true"] > [class*='fa-']:first-child,
         .header-icon:not(.btn)[data-toggle="dropdown"][aria-expanded="true"] > .ni:first-child {
           color: #404040 !important;
