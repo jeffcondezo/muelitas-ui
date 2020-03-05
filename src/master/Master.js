@@ -41,10 +41,12 @@ class Master extends React.Component {
         console.log(xhr.target.status);
         return;
       }
+
       // If token is alright set this.state with user data
       const response_object = JSON.parse(xhr.target.response);
-      let clone = Object.assign({}, this.state)  // Clone this.state object
+
       // Change attribute's value
+      let clone = Object.assign({}, this.state)  // Clone this.state object
       clone.logged = true  // Set logged true
       clone.user = response_object  // Set user data
       this.setState(clone)  // Save change (re-render)

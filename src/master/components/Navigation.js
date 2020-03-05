@@ -53,8 +53,13 @@ class Navigation extends React.Component {
     xhr.onerror = this.handleErrorResponse;  // Receive server error
     xhr.send();  // Send request
   }
-  changeSucursal(pk){
-    console.log("PK:", pk);
+  changeSucursal = (pk) => {
+    console.log("Change sucursal pk:", pk);
+    // If it's the same pk than the current one, abort
+    if(this.state.current_sucursal_pk===pk) return;
+    let clone = Object.assign({}, this.state);
+    clone.current_sucursal_pk = pk;
+    this.setState(clone);
   }
   render(){
     if(this.state.error_log!=="") return <Redirect to="/error/log" />
@@ -63,7 +68,7 @@ class Navigation extends React.Component {
         <div className="page-wrapper">
           <div className="page-inner">
             <BrowserRouter>
-              <Aside />
+              <Aside state={this.state} />
               <PageContent state={this.state} changeSucursal={this.changeSucursal} />
             </BrowserRouter>
           </div>
@@ -104,15 +109,9 @@ function SelectComponent(props){  // CONTENT
         )})*/}
         <Route exact path="/nav/home">
           <h1> HOME </h1>
-          <li> <Link to="/nav/something">something</Link> </li>
-          <li> <Link to="/nav/anotherone">another one</Link> </li>
         </Route>
         <Route path="/nav/cita">
           <Cita state={props.state} />
-        </Route>
-        <Route path="/nav/anotherone">
-          <h1> ANOTHER ONE </h1>
-          <li> <Link to="/nav/something">something</Link> </li>
         </Route>
         <Route>
           <Redirect to="/nav/home" />
@@ -127,22 +126,6 @@ function Home(){
       <h1> HOME </h1>
       <li> <Link to="/nav/something">something</Link> </li>
       <li> <Link to="/nav/anotherone">another one</Link> </li>
-    </Route>
-  )
-}
-function Something(){
-  return (
-    <Route path="/nav/something">
-      <h1> SOMETHING </h1>
-      <li> <Link to="/nav/anotherone">another one</Link> </li>
-    </Route>
-  )
-}
-function Anotherone(){
-  return (
-    <Route path="/nav/anotherone">
-      <h1> ANOTHER ONE </h1>
-      <li> <Link to="/nav/something">something</Link> </li>
     </Route>
   )
 }
@@ -194,7 +177,7 @@ function AsideLinks(){
     </ul>
   )
 }
-function Aside(){
+function Aside(props){
   return (<>
     <aside className="page-sidebar">
       <div className="page-logo">
@@ -216,19 +199,29 @@ function Aside(){
             </div>
         </div>
         <div className="info-card">
-            <img src="/img/demo/avatars/avatar-admin.png" className="profile-image rounded-circle" alt="Dr. Codex Lantern"/>
-            <div className="info-card-text">
-                <a href="#" className="d-flex align-items-center text-white">
-                    <span className="text-truncate text-truncate-sm d-inline-block">
-                        UserName - Name
-                    </span>
-                </a>
-                <span className="d-inline-block text-truncate text-truncate-sm">Rol de Usuario</span>
-            </div>
-            <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
-            <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
-                <i className="fal fa-angle-down"></i>
+          <img
+            src={props.state.current_sucursal_pk!==-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+            className="profile-image rounded-circle"
+            alt={props.state.current_sucursal_pk!==-1 ? props.state.user.username : "Dr. Codex Lantern"}
+          />
+          <div className="info-card-text">
+            <a href="#" className="d-flex align-items-center text-white">
+              <span className="text-truncate text-truncate-sm d-inline-block">
+                {props.state.user.personal?
+                  props.state.user.personal.nombre_principal+" "+props.state.user.personal.ape_paterno :
+                  props.state.user.username
+                }
+              </span>
             </a>
+            <span className="d-inline-block text-truncate text-truncate-sm"
+              title={props.state.user.personal ? props.state.user.personal.especialidad : "Administrador"}>
+              {props.state.user.personal ? props.state.user.personal.especialidad : "Administrador"}
+            </span>
+          </div>
+          <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
+          <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
+            <i className="fal fa-angle-down"></i>
+          </a>
         </div>
 
         <AsideLinks />
@@ -237,27 +230,27 @@ function Aside(){
       </nav>
 
       <div className="nav-footer shadow-top">
-          <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
-              <i className="ni ni-chevron-right"></i>
-              <i className="ni ni-chevron-right"></i>
-          </a>
-          <ul className="list-table m-auto nav-footer-buttons">
-              <li>
-                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
-                      <i className="fal fa-comments"></i>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
-                      <i className="fal fa-life-ring"></i>
-                  </a>
-              </li>
-              <li>
-                  <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
-                      <i className="fal fa-phone"></i>
-                  </a>
-              </li>
-          </ul>
+        <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
+          <i className="ni ni-chevron-right"></i>
+          <i className="ni ni-chevron-right"></i>
+        </a>
+        <ul className="list-table m-auto nav-footer-buttons">
+          <li>
+            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Chat logs">
+              <i className="fal fa-comments"></i>
+            </a>
+          </li>
+          <li>
+            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Support Chat">
+              <i className="fal fa-life-ring"></i>
+            </a>
+          </li>
+          <li>
+            <a href="#" onClick={e => e.preventDefault()} data-toggle="tooltip" data-placement="top" title="Make a call">
+              <i className="fal fa-phone"></i>
+            </a>
+          </li>
+        </ul>
       </div>
     </aside>
     <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
@@ -981,36 +974,36 @@ function UserSettings(props){
         <a href="#" data-toggle="dropdown"
           title={props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
           className="header-icon d-flex align-items-center justify-content-center ml-2"
-          >
-            <img
-              src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
-              className="profile-image rounded-circle"
-              alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
-              />
-            <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
-              { props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Me"}
-            </span>
-            <i className="ni ni-chevron-down hidden-xs-down"></i>
+        >
+          <img
+            src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+            className="profile-image rounded-circle"
+            alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+          />
+          <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
+            { props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Me"}
+          </span>
+          <i className="ni ni-chevron-down hidden-xs-down"></i>
         </a>
         <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
             <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
-                <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
-                    <span className="mr-2">
-                        <img
-                          src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
-                          className="rounded-circle profile-image"
-                          alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
-                          />
-                    </span>
-                    <div className="info-card-text">
-                        <div className="fs-lg text-truncate text-truncate-lg">
-                          {props.state.current_sucursal_pk!=-1 ? props.state.user.username.toUpperCase() : "Dr. Codex Lantern"}
-                        </div>
-                        <span className="text-truncate text-truncate-md opacity-80">
-                          {props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
-                        </span>
-                    </div>
+              <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
+                <span className="mr-2">
+                  <img
+                    src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+                    className="rounded-circle profile-image"
+                    alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+                  />
+                </span>
+                <div className="info-card-text">
+                  <div className="fs-lg text-truncate text-truncate-lg">
+                    {props.state.current_sucursal_pk!=-1 ? props.state.user.username.toUpperCase() : "Dr. Codex Lantern"}
+                  </div>
+                  <span className="text-truncate text-truncate-md opacity-80">
+                    {props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
+                  </span>
                 </div>
+              </div>
             </div>
             <div className="dropdown-divider m-0"></div>
             <a href="#" className="dropdown-item" data-action="app-reset">
@@ -1033,7 +1026,7 @@ function UserSettings(props){
             {/* FIN CHOOSE SUCURSAL*/}
             <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
                 <span data-i18n="drpdwn.page-logout">Logout</span>
-                <span className="float-right fw-n">&commat;codexlantern</span>
+                <span className="float-right fw-n"></span>
             </a>
         </div>
     </div>
@@ -1675,9 +1668,12 @@ function Settings(){
 
 /* NOTES
 <> content </> => Functions components can return only one element,
-    to return more than only one, you should put them inside another tag
-let { path, url } = useRouteMatch();
-let { topicId } = useParams();
+  to return more than only one, you should put them inside another tag
+Handle routes params
+  let { path, url } = useRouteMatch();
+  let { topicId } = useParams();
+React only update real DOM when virtual DOM has changed, and only update that little change between it's versions
+  https://stackoverflow.com/questions/24718709/reactjs-does-render-get-called-any-time-setstate-is-called
 */
 
 /* EXPORT NAVIGATION */
