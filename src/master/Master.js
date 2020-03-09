@@ -56,12 +56,43 @@ class Master extends React.Component {
     }
     xhr.send(a);  // Send request
   }
-  setLogged(status){
-    let clone = Object.assign({}, this.state)  // Clone this.state object
-    clone.logged = status  // Change attribute's value
-    this.setState(clone)  // Save change (re-render)
+  setLoggedIn(){
+    // Send token to retrieve user's info
+    let a = new FormData();
+    a.append("key", localStorage["access_token"]);
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://127.0.0.1:8000/maestro/tokenexist/');
+    xhr.onload = (xhr) => {
+      // Posible errors
+      if(xhr.target.response==="delete"){  // If token is wrong
+        localStorage.removeItem("access_token");  // Delete token
+        return;
+      }
+      if(xhr.target.status===0){
+        this.setError("CONEXIÓN CON EL SERVIDOR FAILED");
+        return;
+      }
+      if(xhr.target.status===500){
+        this.setError(xhr.target.status);
+        return;
+      }
+
+      // If token is alright set this.state with user data
+      const response_object = JSON.parse(xhr.target.response);
+
+      // Change attribute's value
+      let clone = Object.assign({}, this.state)  // Clone this.state object
+      clone.logged = true  // Set logged true
+      clone.user = response_object  // Set user data
+      this.setState(clone)  // Save change (re-render)
+    }
+    xhr.onerror = (xhr) => {
+      this.setError(xhr.target.status);
+    }
+    xhr.send(a);  // Send request
   }
-  setError(from, log){
+  setError(log, from){
+    if(from===undefined) from = "";
     let clone = Object.assign({}, this.state)  // Clone this.state object
     clone.error_log = String(log)  // Change attribute's value
     this.setState(clone)  // Save change (re-render)
@@ -74,7 +105,7 @@ class Master extends React.Component {
             <Home />  {/* No need of middleware */}
           </Route>
           <Route path="/login">
-            {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLogged(true)} />}
+            {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLoggedIn()} />}
           </Route>
           <Route path="/nav">  {/* NAVIGATION */}
             {this.state.logged ? <Navigation state={this.state.user} errorFunc={(a,b)=>this.setError(a,b)} /> : <Redirect to="/login" />}

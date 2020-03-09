@@ -132,10 +132,14 @@ class Cita extends React.Component {
     if(dni.length<8){
       // Reset paciente data
       document.querySelector("#pac_pk").value = "";
-      document.querySelector("#pac_nom_pri").value = "";
-      document.querySelector("#pac_nom_sec").value = "";
-      document.querySelector("#pac_ape_pat").value = "";
-      document.querySelector("#pac_ape_mat").value = "";
+        document.querySelector("#pac_nom_pri").disabled = false;
+        document.querySelector("#pac_nom_pri").value = "";
+        document.querySelector("#pac_nom_sec").disabled = false;
+        document.querySelector("#pac_nom_sec").value = "";
+        document.querySelector("#pac_ape_pat").disabled = false;
+        document.querySelector("#pac_ape_pat").value = "";
+        document.querySelector("#pac_ape_mat").disabled = false;
+        document.querySelector("#pac_ape_mat").value = "";
       return;  // if dni is not 8 length
     }
 
@@ -154,58 +158,122 @@ class Cita extends React.Component {
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
       const response_object = JSON.parse(xhr.response);
-      if(response_object.length!==1) return
-      // Get paciente data
+      if(response_object.length!==1){
+        document.querySelector("#pac_nom_pri").disabled = false;
+        document.querySelector("#pac_nom_pri").value = "";
+        document.querySelector("#pac_nom_sec").disabled = false;
+        document.querySelector("#pac_nom_sec").value = "";
+        document.querySelector("#pac_ape_pat").disabled = false;
+        document.querySelector("#pac_ape_pat").value = "";
+        document.querySelector("#pac_ape_mat").disabled = false;
+        document.querySelector("#pac_ape_mat").value = "";
+        return;
+      }
+      // Set paciente data and disable inputs
+      document.querySelector("#pac_pk").disabled = true;
       document.querySelector("#pac_pk").value = response_object[0].pk;
+      document.querySelector("#pac_nom_pri").disabled = true;
       document.querySelector("#pac_nom_pri").value = response_object[0].nombre_principal;
+      document.querySelector("#pac_nom_sec").disabled = true;
       document.querySelector("#pac_nom_sec").value = response_object[0].nombre_secundario;
+      document.querySelector("#pac_ape_pat").disabled = true;
       document.querySelector("#pac_ape_pat").value = response_object[0].ape_paterno;
+      document.querySelector("#pac_ape_mat").disabled = true;
       document.querySelector("#pac_ape_mat").value = response_object[0].ape_materno;
     }
     xhr.onerror = this.handleServerError;
     xhr.send();  // Send request
   }
   saveCita = () => {
-    // Validate first
-    let _dni = document.querySelector("#pac_dni").value;
-    let _fecha = document.querySelector("#date").value;
-    let _hora = document.querySelector("#hour").value;
+    // VALIDATIONS FIRST
     // Validate date
-    let now = new Date();
+    let _fecha = document.querySelector("#date").value;
+    let now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
     if(_fecha < now.toJSON().slice(0,10)){
       // Show form error
       this.errorForm("No se puede programar una cita para días anteriores");
       return;
     }
+
     // Validate dni & time
+    let _dni = document.querySelector("#pac_dni").value;
     if(String(parseInt(_dni)).length!==8){
       this.errorForm("El dni no contiene 8 digitos");  // Show form error
       return;  // Skip function
     }
+    let _hora = document.querySelector("#hour").value;
     if(_hora<8 || _hora>21){
       this.errorForm("La hora está fuera del horario de trabajo");  // Show form error
       return;  // Skip function
     }
-    // Validate disposition personal&date&hour
-    // ######################################################## //
-    // Validate paciente to create data
-    // ######################################################## //
 
+    // Get PERSONAL
+    let personal_ = window.$("#personal").select2('data');
+    if(personal_.length===0){
+      this.errorForm("Debe seleccionar al menos un personal de atención");
+      return;
+    }
+    let _personal = [];
+    personal_.forEach((personal) => {
+      _personal.push(personal.id);
+    });
+    console.log(_personal);
+
+    // Get PACIENTE
+    let _paciente;  // OBTENER
+    if(document.querySelector("#pac_pk").value!==""){ // User is known
+      _paciente = document.querySelector("#pac_pk").value; // Set user id
+    }else{ // User is not known
+      // Validate paciente form
+      /* We use regular expression to check there is only letters and spaces
+      We also check that it does not start or end with a space
+      */
+      if(
+        // Check if second name is not empty
+        document.querySelector("#pac_nom_sec").value !== "" &&
+        // Check if second name is wrong or is less than 3 characters
+        ((/[^a-zA-Z]/).test(document.querySelector("#pac_nom_sec").value)
+        || document.querySelector("#pac_nom_sec").value.length < 3)
+      ){
+        this.errorForm("El nombre secundario solo pueden contener letras y espacios");
+        return;
+      }
+      // Check the main values
+      let reg_expr = (/^[a-zA-Z][a-zA-Z ]+[a-zA-Z]$/);
+      if(
+        !reg_expr.test(document.querySelector("#pac_nom_pri").value) ||
+        !reg_expr.test(document.querySelector("#pac_ape_pat").value) ||
+        !reg_expr.test(document.querySelector("#pac_ape_mat").value)
+      ){
+        this.errorForm("Los apellidos y nombres solo pueden contener letras y espacios, como minimo 3 caracteres");
+        return;
+      }
+
+      // Get paciente data
+      _paciente = {}
+      _paciente.dni = _dni;
+      _paciente.nombre_principal = document.querySelector("#pac_nom_pri").value;
+      _paciente.nombre_secundario = document.querySelector("#pac_nom_sec").value;
+      _paciente.ape_paterno = document.querySelector("#pac_ape_pat").value;
+      _paciente.ape_materno = document.querySelector("#pac_ape_mat").value;
+      // _paciente.sexo = document.querySelector("#pac_genre").value;
+      // _paciente.celular = document.querySelector("#pac_celular").value;
+    }
+    console.log(_paciente);
+
+    // Get META
     let _minute = document.querySelector("#minute").value;
-    let _pac_pk = document.querySelector("#pac_pk").value;  // UNDEFINED
-    // Meta
     let _sucursal = this.state.global.current_sucursal_pk;
-    let _paciente = '1';  // OBTENER
-    let _personal = this.state.global.user.personal.pk;
     let _origen_cita = "3";  // Origen Web
     let _estado = "1";  // Cita Pendiente
     let _indicaciones = "";
     let _programado = "";  // OBTENER
 
+
     // Generate data object
     let data = new FormData();
     data.append("sucursal", _sucursal);
-    data.append("paciente", _pac_pk);
+    data.append("paciente", _paciente);
     data.append("personal", _personal);
     data.append("fecha", _fecha);
     data.append("hora", _hora+":"+_minute);
@@ -213,6 +281,8 @@ class Cita extends React.Component {
     data.append("estado", _estado);
     data.append("indicaciones", _indicaciones);
     data.append("programado", _programado);
+    // ######################################################## //
+    data.forEach((v,i)=>{console.log(i,v)})
 
     // Send data to create cita
     let xhr = new XMLHttpRequest();
@@ -223,6 +293,15 @@ class Cita extends React.Component {
       xhr = xhr.target
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
+
+      // Error disposition personal&date&hour
+      console.log(xhr);
+      return;
+      if(false){
+        return;
+      }
+      // ######################################################## //
+
       document.querySelector("#cita-close").click()  // Cerrar formulario cita
       this.getCitas()  // Re render fullcalendar
     };
@@ -281,16 +360,16 @@ class Cita extends React.Component {
               {/* Paciente */}
               <input type="text" id="pac_pk" style={{display:'none'}} defaultValue="" disable="true" />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_nom_pri" name="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" disabled />
+                <input type="text" id="pac_nom_pri" name="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_nom_sec" name="pac_nom_sec" className="form-control form-control-lg" placeholder="Nombres secundarios" disabled />
+                <input type="text" id="pac_nom_sec" name="pac_nom_sec" className="form-control form-control-lg" placeholder="Nombres secundarios" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_ape_pat" name="pac_ape_pat" className="form-control form-control-lg" placeholder="Apellido Paterno" disabled />
+                <input type="text" id="pac_ape_pat" name="pac_ape_pat" className="form-control form-control-lg" placeholder="Apellido Paterno" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" disabled />
+                <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
               </div>
               {/* Fin Paciente */}
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
@@ -374,16 +453,23 @@ class Cita extends React.Component {
       eventColor: 'tomato',  // Default event color
     });
 
+    // Handle calendar, citas and personal
     let clone = Object.assign({}, this.state)  // Clone this.state object
     clone.calendar = calendar  // Change attribute's value
     this.setState(clone)  // Save change (re-render)
     this.getCitas();
     this.getPersonal();
+
+    // Set select2 for personal
+    window.$("#personal").select2({
+      dropdownParent: window.$("#personal").parent()
+    });
   }
 }
 
 /*** COMPONENTS ***/
 function SelectPersonal(props){
+
   // const sucursales = [];  // Declare variable to use
   // for(let a of props.state.sucursales){  // Iterate over all sucursales this user has
   //   sucursales.push(
@@ -399,6 +485,8 @@ function SelectPersonal(props){
       <label className="form-label" htmlFor="personal">Personal de atención: </label>
       <select id="personal" className="custom-select form-control" multiple>
         <option value="15">15</option>
+        <option value="25">25</option>
+        <option value="35">35</option>
       </select>
     </div>
   )

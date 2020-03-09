@@ -58,19 +58,23 @@ function Login(props) {
       document.querySelector('div#alert-server').style.display = "block"
       document.querySelector('div#alert-server').classList.remove("fade")
       setTimeout(function(){
-        document.querySelector('div#alert-server').classList.add("fade")
+        if(document.querySelector('div#alert-server'))
+          document.querySelector('div#alert-server').classList.add("fade")
       }, 2500)
       setTimeout(function(){
+        if(document.querySelector('div#alert-server'))
         document.querySelector('div#alert-server').style.display = "none"
       }, 2700)
     }else{
       document.querySelector('div#alert-login').style.display = "block"
       document.querySelector('div#alert-login').classList.remove("fade")
       setTimeout(function(){
-        document.querySelector('div#alert-login').classList.add("fade")
+        if(document.querySelector('div#alert-login'))
+          document.querySelector('div#alert-login').classList.add("fade")
       }, 2500)
       setTimeout(function(){
-        document.querySelector('div#alert-login').style.display = "none"
+        if(document.querySelector('div#alert-login'))
+          document.querySelector('div#alert-login').style.display = "none"
       }, 2700)
     }
   }
