@@ -105,6 +105,17 @@ class Cita extends React.Component {
     });
     _calendar.render();
   }
+  handleBadRequest(){
+    document.querySelector("#cita-close").click()  // Cerrar formulario cita
+    document.querySelector('div#alert-server').style.display = "block"
+    document.querySelector('div#alert-server').classList.remove("fade")
+    setTimeout(function(){
+      document.querySelector('div#alert-server').classList.add("fade")
+    }, 2500)
+    setTimeout(function(){
+      document.querySelector('div#alert-server').style.display = "none"
+    }, 2700)
+  }
   handleServerError(){
     document.querySelector("#cita-close").click()  // Cerrar formulario cita
     document.querySelector('div#alert-server').style.display = "block"
@@ -132,14 +143,10 @@ class Cita extends React.Component {
     if(dni.length<8){
       // Reset paciente data
       document.querySelector("#pac_pk").value = "";
-        document.querySelector("#pac_nom_pri").disabled = false;
-        document.querySelector("#pac_nom_pri").value = "";
-        document.querySelector("#pac_nom_sec").disabled = false;
-        document.querySelector("#pac_nom_sec").value = "";
-        document.querySelector("#pac_ape_pat").disabled = false;
-        document.querySelector("#pac_ape_pat").value = "";
-        document.querySelector("#pac_ape_mat").disabled = false;
-        document.querySelector("#pac_ape_mat").value = "";
+      document.querySelector("#pac_nom_pri").disabled = false;
+      document.querySelector("#pac_nom_sec").disabled = false;
+      document.querySelector("#pac_ape_pat").disabled = false;
+      document.querySelector("#pac_ape_mat").disabled = false;
       return;  // if dni is not 8 length
     }
 
@@ -160,13 +167,9 @@ class Cita extends React.Component {
       const response_object = JSON.parse(xhr.response);
       if(response_object.length!==1){
         document.querySelector("#pac_nom_pri").disabled = false;
-        document.querySelector("#pac_nom_pri").value = "";
         document.querySelector("#pac_nom_sec").disabled = false;
-        document.querySelector("#pac_nom_sec").value = "";
         document.querySelector("#pac_ape_pat").disabled = false;
-        document.querySelector("#pac_ape_pat").value = "";
         document.querySelector("#pac_ape_mat").disabled = false;
-        document.querySelector("#pac_ape_mat").value = "";
         return;
       }
       // Set paciente data and disable inputs
@@ -217,12 +220,11 @@ class Cita extends React.Component {
     personal_.forEach((personal) => {
       _personal.push(personal.id);
     });
-    console.log(_personal);
 
     // Get PACIENTE
     let _paciente;  // OBTENER
     if(document.querySelector("#pac_pk").value!==""){ // User is known
-      _paciente = document.querySelector("#pac_pk").value; // Set user id
+      _paciente = parseInt(document.querySelector("#pac_pk").value); // Set user id
     }else{ // User is not known
       // Validate paciente form
       /* We use regular expression to check there is only letters and spaces
@@ -252,6 +254,7 @@ class Cita extends React.Component {
       // Get paciente data
       _paciente = {}
       _paciente.dni = _dni;
+      _paciente.sexo = "1";
       _paciente.nombre_principal = document.querySelector("#pac_nom_pri").value;
       _paciente.nombre_secundario = document.querySelector("#pac_nom_sec").value;
       _paciente.ape_paterno = document.querySelector("#pac_ape_pat").value;
@@ -266,31 +269,37 @@ class Cita extends React.Component {
     let _sucursal = this.state.global.current_sucursal_pk;
     let _origen_cita = "3";  // Origen Web
     let _estado = "1";  // Cita Pendiente
-    let _indicaciones = "";
-    let _programado = "";  // OBTENER
+    let _indicaciones = "to do before cita";
+    let _programado = "to do in cita";  // OBTENER
 
 
     // Generate data object
-    let data = new FormData();
-    data.append("sucursal", _sucursal);
-    data.append("paciente", _paciente);
-    data.append("personal", _personal);
-    data.append("fecha", _fecha);
-    data.append("hora", _hora+":"+_minute);
-    data.append("origen_cita", _origen_cita);
-    data.append("estado", _estado);
-    data.append("indicaciones", _indicaciones);
-    data.append("programado", _programado);
-    // ######################################################## //
-    data.forEach((v,i)=>{console.log(i,v)})
+    let data = {};
+    data['sucursal'] = _sucursal;
+    data['personal_array'] = String(_personal);
+    data['fecha'] = _fecha;
+    data['hora'] = _hora+":"+_minute;
+    data['hora_fin'] = (parseInt(_hora)+1)+":"+(parseInt(_minute)+5);
+    data['origen_cita'] = _origen_cita;
+    data['estado'] = _estado;
+    data['indicaciones'] = _indicaciones;
+    data['programado'] = _programado;
+    // Handle paciente
+    if(typeof(_paciente)==='number')
+      data['paciente'] = _paciente;
+    else if(typeof(_paciente)==='object')
+      data['paciente_obj'] = _paciente;
+    console.log(data);
 
     // Send data to create cita
     let xhr = new XMLHttpRequest();
     xhr.open('POST', process.env.REACT_APP_PROJECT_API+'atencion/cita/');
-    // xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    // Json type content 'cuz we may send paciente data object
+    xhr.setRequestHeader('Content-type', 'application/json')
     xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
     xhr.onload = (xhr)=>{
       xhr = xhr.target
+      if(xhr.status===400){this.handleBadRequest();return;}
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
 
@@ -306,7 +315,7 @@ class Cita extends React.Component {
       this.getCitas()  // Re render fullcalendar
     };
     xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send(data);  // Send request
+    xhr.send(JSON.stringify(data));  // Send request
   }
   errorForm(log){
     document.querySelector('div#alert-login span').innerText = log;
@@ -484,9 +493,9 @@ function SelectPersonal(props){
     <div className="form-group">
       <label className="form-label" htmlFor="personal">Personal de atención: </label>
       <select id="personal" className="custom-select form-control" multiple>
-        <option value="15">15</option>
-        <option value="25">25</option>
-        <option value="35">35</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
       </select>
     </div>
   )
