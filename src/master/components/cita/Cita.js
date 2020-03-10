@@ -2,6 +2,7 @@ import React from 'react';
 // Calendar components
 import { Calendar } from '@fullcalendar/core';  // Class
 import timeGridPlugin from '@fullcalendar/timegrid';
+import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 
@@ -68,9 +69,9 @@ class Cita extends React.Component {
       const response_object = JSON.parse(xhr.response);
       console.log(response_object);
 
-      // response_object.forEach((v) => {
-      //   console.log(v);
-      // });
+      let clone = Object.assign({}, this.state);
+      clone.personal = response_object;
+      this.setState(clone);
     }
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send();  // Send request
@@ -105,16 +106,20 @@ class Cita extends React.Component {
     });
     _calendar.render();
   }
-  handleBadRequest(){
-    document.querySelector("#cita-close").click()  // Cerrar formulario cita
-    document.querySelector('div#alert-server').style.display = "block"
-    document.querySelector('div#alert-server').classList.remove("fade")
-    setTimeout(function(){
-      document.querySelector('div#alert-server').classList.add("fade")
-    }, 2500)
-    setTimeout(function(){
-      document.querySelector('div#alert-server').style.display = "none"
-    }, 2700)
+  handleBadRequest(xhr){
+    let response = JSON.parse(xhr.responseText)
+    console.log(response);
+    if(typeof(response)==="object"){  // Response is object/array
+      if(response.length===1){  // Error code
+        switch(response[0]){
+          case 'CRUCE_DE_CITAS':
+            alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise la lista de actividades por personal y escoja otro horario")
+            break;
+          default: return;
+        }
+      }
+      // Indicate the error field in cita form
+    }
   }
   handleServerError(){
     document.querySelector("#cita-close").click()  // Cerrar formulario cita
@@ -265,12 +270,22 @@ class Cita extends React.Component {
     console.log(_paciente);
 
     // Get META
-    let _minute = document.querySelector("#minute").value;
+    let _minutos = document.querySelector("#minute").value;
     let _sucursal = this.state.global.current_sucursal_pk;
-    let _origen_cita = "3";  // Origen Web
+    let _origen_cita = "3";  // Origen Web #############
     let _estado = "1";  // Cita Pendiente
-    let _indicaciones = "to do before cita";
-    let _programado = "to do in cita";  // OBTENER
+    // let _indicaciones = "";
+    let _programado = document.querySelector("#programado").value;
+    let _duracion = document.querySelector("#duracion").value;
+    let _hora_fin = (()=>{
+      let _minres = parseInt(_duracion)+parseInt(_minutos);
+      let _temp_hora = parseInt(_hora)+parseInt(_minres/60);
+      let _temp_min = _minres%60;
+      // Fix left zeros
+      _temp_hora = String(_temp_hora).length === 1 ? '0'+_temp_hora:_temp_hora;
+      _temp_min = String(_temp_min).length === 1 ? '0'+_temp_min:_temp_min;
+      return `${_temp_hora}:${_temp_min}`;
+    })();  // OBTENER
 
 
     // Generate data object
@@ -278,11 +293,11 @@ class Cita extends React.Component {
     data['sucursal'] = _sucursal;
     data['personal_array'] = String(_personal);
     data['fecha'] = _fecha;
-    data['hora'] = _hora+":"+_minute;
-    data['hora_fin'] = (parseInt(_hora)+1)+":"+(parseInt(_minute)+5);
+    data['hora'] = _hora+":"+_minutos;
+    data['hora_fin'] = _hora_fin;
     data['origen_cita'] = _origen_cita;
     data['estado'] = _estado;
-    data['indicaciones'] = _indicaciones;
+    // data['indicaciones'] = _indicaciones;
     data['programado'] = _programado;
     // Handle paciente
     if(typeof(_paciente)==='number')
@@ -299,17 +314,38 @@ class Cita extends React.Component {
     xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
     xhr.onload = (xhr)=>{
       xhr = xhr.target
-      if(xhr.status===400){this.handleBadRequest();return;}
+      if(xhr.status===400){this.handleBadRequest(xhr);return;}
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
 
       // Error disposition personal&date&hour
-      console.log(xhr);
-      return;
-      if(false){
-        return;
+      if(xhr.statusText!=="Created"){
+        alert("IDK")
       }
-      // ######################################################## //
+
+      alert("Cita creada exitosamente");
+      // Reset values
+      (()=>{
+        // Other values
+        document.querySelector("#pac_pk").value = "";
+        document.querySelector("#dni").value = "";
+        document.querySelector("#fecha").value = "";
+        document.querySelector("#hora").value = "";
+        document.querySelector("#minuto").value = "";
+        document.querySelector("#duracion").value = "";
+        document.querySelector("#programado").value = "Consulta regular";
+        window.$("#personal").empty().trigger("change");
+        // Paciente
+        document.querySelector("#pac_nom_pri").disabled = false;
+        document.querySelector("#pac_nom_pri").value = "";
+        document.querySelector("#pac_nom_sec").disabled = false;
+        document.querySelector("#pac_nom_sec").value = "";
+        document.querySelector("#pac_ape_pat").disabled = false;
+        document.querySelector("#pac_ape_pat").value = "";
+        document.querySelector("#pac_ape_mat").disabled = false;
+        document.querySelector("#pac_ape_mat").value = "";
+        document.querySelector("#pac_ape_mat").value = "";
+      })()
 
       document.querySelector("#cita-close").click()  // Cerrar formulario cita
       this.getCitas()  // Re render fullcalendar
@@ -347,9 +383,9 @@ class Cita extends React.Component {
         </h1>
       </div>
       {/* FORMULARIO CITA */}
-      <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#default-example-modal-center"></button>
-      <div className="modal fade" id="default-example-modal-center" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered" role="document">
+      <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#modal-center"></button>
+      <div className="modal fade" id="modal-center" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h2 className="modal-title">
@@ -362,11 +398,12 @@ class Cita extends React.Component {
             {/* FORMULARIO CITA */}
             <div className="modal-body" id="cita-form">
               <SelectPersonal state={this.state} />
-              <div className="form-group">
+              <div className="form-group col-md-12">
                 <label className="form-label" htmlFor="paciente">Dni: </label>
                 <input type="text" id="pac_dni" name="paciente" className="form-control form-control-lg" placeholder="Dni del paciente" maxLength="8" required  onChange={(e)=>this.getPaciente(e.target.value)} />
               </div>
               {/* Paciente */}
+              <label className="form-label col-md-12">Paciente: </label>
               <input type="text" id="pac_pk" style={{display:'none'}} defaultValue="" disable="true" />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <input type="text" id="pac_nom_pri" name="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" />
@@ -385,34 +422,47 @@ class Cita extends React.Component {
                 <label className="form-label" htmlFor="date">Fecha: </label>
                 <input type="date" id="date" name="date" className="form-control form-control-lg" required />
               </div>
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <div className="form-group col-md-3" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="hour" style={{display:'block'}}>Hora: </label>
-                <div className="col-md-7" style={{display:'inline-block'}}>
-                  <select id="hour" className="custom-select form-control">
-                    <option value="08" defaultValue>8 AM</option>
-                    <option value="09">9 AM</option>
-                    <option value="10">10 AM</option>
-                    <option value="11">11 AM</option>
-                    <option value="12">12 PM</option>
-                    <option value="13">1 PM</option>
-                    <option value="14">2 PM</option>
-                    <option value="15">3 PM</option>
-                    <option value="16">4 PM</option>
-                    <option value="17">5 PM</option>
-                    <option value="18">6 PM</option>
-                    <option value="19">7 PM</option>
-                    <option value="20">8 PM</option>
-                    <option value="21">9 PM</option>
-                  </select>
-                </div>
-                <div className="col-md-5" style={{display:'inline-block'}}>
-                  <select id="minute" className="custom-select form-control">
-                    <option value="00" defaultValue>00</option>
-                    <option value="15">15</option>
-                    <option value="30">30</option>
-                    <option value="45">45</option>
-                  </select>
-                </div>
+                <select id="hour" className="custom-select col-lg-6">
+                  <option value="08" defaultValue>8 AM</option>
+                  <option value="09">9 AM</option>
+                  <option value="10">10 AM</option>
+                  <option value="11">11 AM</option>
+                  <option value="12">12 PM</option>
+                  <option value="13">1 PM</option>
+                  <option value="14">2 PM</option>
+                  <option value="15">3 PM</option>
+                  <option value="16">4 PM</option>
+                  <option value="17">5 PM</option>
+                  <option value="18">6 PM</option>
+                  <option value="19">7 PM</option>
+                  <option value="20">8 PM</option>
+                  <option value="21">9 PM</option>
+                </select>
+                <select id="minute" className="custom-select col-lg-6">
+                  <option value="00" defaultValue>00</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="45">45</option>
+                </select>
+              </div>
+              <div className="form-group col-md-3" style={{display:'inline-block'}}>
+                <label className="form-label" htmlFor="hour" style={{display:'block'}}>Duración aproximada: </label>
+                <select id="duracion" className="custom-select form-control">
+                  <option value="15" defaultValue>15 minutos</option>
+                  <option value="30">30 minutos</option>
+                  <option value="45">45 minutos</option>
+                  <option value="60">60 minutos</option>
+                  <option value="90">90 minutos</option>
+                  <option value="120">2 horas</option>
+                  <option value="180">3 horas</option>
+                  <option value="240">4 horas</option>
+                </select>
+              </div>
+              <div className="form-group col-md-12">
+                <label className="form-label" htmlFor="simpleinput">Programado</label>
+                <input type="text" id="programado" className="form-control form-control-lg" defaultValue="Consulta regular" />
               </div>
               <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
                   <strong>Ups!</strong> <span>Parece que los datos introducidos no son correctos.</span>
@@ -436,12 +486,23 @@ class Cita extends React.Component {
     // Create calendar object
     let calendarEl = document.querySelector('#calendar');
     let calendar = new Calendar(calendarEl, {
-      locale: 'es',  // https://fullcalendar.io/docs/locale
+      locale: esLocale,  // https://fullcalendar.io/docs/locale
       nowIndicator: true,
       themeSystem: 'bootstrap',
       minTime: "08:00:00",
       maxTime: "21:00:00",
       slotDuration: '00:15:00',  // Tab frequency
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      },
+      slotLabelFormat: {
+        hour: 'numeric',
+        minute: '2-digit',
+        omitZeroMinute: true,
+        hour12: true,
+      },
       plugins: [ timeGridPlugin, listPlugin ],
       header: {
         left: 'prev,next today addEventButton',
@@ -478,24 +539,22 @@ class Cita extends React.Component {
 
 /*** COMPONENTS ***/
 function SelectPersonal(props){
-
-  // const sucursales = [];  // Declare variable to use
-  // for(let a of props.state.sucursales){  // Iterate over all sucursales this user has
-  //   sucursales.push(
-  //     <a key={a.pk}
-  //       onClick={()=>props.changeSucursal(a.pk)}
-  //       className={a.pk==props.state.current_sucursal_pk?"dropdown-item active":"dropdown-item"}>
-  //         {a.direccion}
-  //     </a>
-  //   );
-  // }
+  const personal = [];  // Declare variable to use
+  if(props.state.personal!==false){
+    for(let p of props.state.personal){  // Iterate over all sucursales this user has
+      personal.push(
+        <option key={p.pk}
+        value={p.pk}>
+        {p.nombre_principal+" "+p.ape_paterno+" - "+p.especialidad_descripcion}
+        </option>
+      );
+    }
+  }
   return (
-    <div className="form-group">
+    <div className="form-group col-md-12">
       <label className="form-label" htmlFor="personal">Personal de atención: </label>
       <select id="personal" className="custom-select form-control" multiple>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
+        {personal}
       </select>
     </div>
   )
