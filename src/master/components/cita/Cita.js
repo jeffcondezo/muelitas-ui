@@ -91,6 +91,7 @@ class Cita extends React.Component {
     response_object.forEach((v) => {
       let _data = {};
       _data.title = "Paciente: "+v.paciente_data.nombre_principal;
+      _data.info = v;
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
       let _color = "gray";
@@ -328,11 +329,11 @@ class Cita extends React.Component {
       (()=>{
         // Other values
         document.querySelector("#pac_pk").value = "";
-        document.querySelector("#dni").value = "";
+        document.querySelector("#pac_dni").value = "";
         document.querySelector("#fecha").value = "";
-        document.querySelector("#hora").value = "";
-        document.querySelector("#minuto").value = "";
-        document.querySelector("#duracion").value = "";
+        document.querySelector("#hora").value = "08";
+        document.querySelector("#minuto").value = "00";
+        document.querySelector("#duracion").value = "15";
         document.querySelector("#programado").value = "Consulta regular";
         window.$("#personal").empty().trigger("change");
         // Paciente
@@ -364,7 +365,10 @@ class Cita extends React.Component {
       document.querySelector('div#alert-login').style.display = "none"
     }, 2700)
   }
-
+  getEventInfo(info){
+    let data = info.event._def.extendedProps.info;
+    window.$('#modal_ver_cita').modal('show');
+  }
   render(){
     return(
       <>
@@ -383,8 +387,102 @@ class Cita extends React.Component {
         </h1>
       </div>
       {/* FORMULARIO CITA */}
-      <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#modal-center"></button>
-      <div className="modal fade" id="modal-center" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+      <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#modal-crear_cita"></button>
+      <div className="modal fade" id="modal-crear_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                Programar Cita
+              </h2>
+              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i className="fal fa-times"></i></span>
+              </button>
+            </div>
+            {/* FORMULARIO CITA */}
+            <div className="modal-body" id="cita-form">
+              <SelectPersonal state={this.state} />
+              <div className="form-group col-md-12">
+                <label className="form-label" htmlFor="paciente">Dni: </label>
+                <input type="text" id="pac_dni" name="paciente" className="form-control form-control-lg" placeholder="Dni del paciente" maxLength="8" required  onChange={(e)=>this.getPaciente(e.target.value)} />
+              </div>
+              {/* Paciente */}
+              <label className="form-label col-md-12">Paciente: </label>
+              <input type="text" id="pac_pk" style={{display:'none'}} defaultValue="" disable="true" />
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <input type="text" id="pac_nom_pri" name="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" />
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <input type="text" id="pac_nom_sec" name="pac_nom_sec" className="form-control form-control-lg" placeholder="Nombres secundarios" />
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <input type="text" id="pac_ape_pat" name="pac_ape_pat" className="form-control form-control-lg" placeholder="Apellido Paterno" />
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
+              </div>
+              {/* Fin Paciente */}
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <label className="form-label" htmlFor="date">Fecha: </label>
+                <input type="date" id="date" name="date" className="form-control form-control-lg" required />
+              </div>
+              <div className="form-group col-md-3" style={{display:'inline-block'}}>
+                <label className="form-label" htmlFor="hour" style={{display:'block'}}>Hora: </label>
+                <select id="hour" className="custom-select col-lg-6">
+                  <option value="08" defaultValue>8 AM</option>
+                  <option value="09">9 AM</option>
+                  <option value="10">10 AM</option>
+                  <option value="11">11 AM</option>
+                  <option value="12">12 PM</option>
+                  <option value="13">1 PM</option>
+                  <option value="14">2 PM</option>
+                  <option value="15">3 PM</option>
+                  <option value="16">4 PM</option>
+                  <option value="17">5 PM</option>
+                  <option value="18">6 PM</option>
+                  <option value="19">7 PM</option>
+                  <option value="20">8 PM</option>
+                  <option value="21">9 PM</option>
+                </select>
+                <select id="minute" className="custom-select col-lg-6">
+                  <option value="00" defaultValue>00</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="45">45</option>
+                </select>
+              </div>
+              <div className="form-group col-md-3" style={{display:'inline-block'}}>
+                <label className="form-label" htmlFor="hour" style={{display:'block'}}>Duración aproximada: </label>
+                <select id="duracion" className="custom-select form-control">
+                  <option value="15" defaultValue>15 minutos</option>
+                  <option value="30">30 minutos</option>
+                  <option value="45">45 minutos</option>
+                  <option value="60">60 minutos</option>
+                  <option value="90">90 minutos</option>
+                  <option value="120">2 horas</option>
+                  <option value="180">3 horas</option>
+                  <option value="240">4 horas</option>
+                </select>
+              </div>
+              <div className="form-group col-md-12">
+                <label className="form-label" htmlFor="simpleinput">Programado</label>
+                <input type="text" id="programado" className="form-control form-control-lg" defaultValue="Consulta regular" />
+              </div>
+              <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
+                  <strong>Ups!</strong> <span>Parece que los datos introducidos no son correctos.</span>
+              </div>
+            </div>
+            {/* FIN FORMULARIO CITA */}
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary waves-effect waves-themed" data-dismiss="modal" id="cita-close">Cancelar</button>
+              <button type="button" className="btn btn-primary waves-effect waves-themed" onClick={this.saveCita}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL CITA */}
+      <div className="modal fade" id="modal_ver_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
           <div className="modal-content">
             <div className="modal-header">
@@ -512,6 +610,7 @@ class Cita extends React.Component {
       navLinks: true, // can click day/week names to navigate views
       editable: false,  // Not editable
       eventLimit: true, // allow "more" link when too many events
+      eventClick: this.getEventInfo,
       customButtons: {
         addEventButton: {  // Add Cita
           text: '+',

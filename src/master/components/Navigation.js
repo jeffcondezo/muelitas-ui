@@ -110,6 +110,12 @@ class Navigation extends React.Component {
     select2_script.async = false;
     select2_script.src = "/js/formplugins/select2/select2.bundle.js";
     document.body.appendChild(select2_script);
+    // Fullcalendar Bundle
+    const fullcalendar_script = document.createElement("script");
+    fullcalendar_script.async = false;
+    fullcalendar_script.src = "/js/miscellaneous/fullcalendar/fullcalendar.bundle.js";
+    document.body.appendChild(fullcalendar_script);
+
   }
 }
 
