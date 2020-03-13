@@ -16,6 +16,7 @@ class Cita extends React.Component {
     this.state = {
       calendar: false,
       personal: false,  // This work the same as this.state.calendar
+      calendar_filter: [],
       global: props.state,  // This is only setted first time this component is rendered
     }
   }
@@ -35,7 +36,18 @@ class Cita extends React.Component {
     // HTTP REQUEST
     // Add filter to url
     let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let _filter = ``;  // Filtro
+
+    // Personal filter for cita calendar
+    if(this.state.calendar_filter.length!==0){
+      _filter = `filtro={
+        "sucursal":"${this.state.global.current_sucursal_pk}",
+        "personal":"${String(this.state.calendar_filter)}"
+      }`;
+    }else{  // Regular filter
+      _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    }
+
     let _url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
     let url = _url + '?' + _filter;
     xhr.open('GET', url);
@@ -95,12 +107,12 @@ class Cita extends React.Component {
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
       let _color = "gray";
-      switch(v.estado){
-        case '1': _color = "lightblue"; break;
-        case '2': _color = "tomato"; break;
-        case '3': _color = "purple"; break;
-        case '4': _color = "gray"; break;
-        case '5': _color = "green"; break;
+      switch(v.personal.pk){
+        case 1: _color = "lightblue"; break;
+        case 2: _color = "tomato"; break;
+        case 3: _color = "purple"; break;
+        case 4: _color = "gray"; break;
+        case 5: _color = "green"; break;
       }
       _data.color = _color;
       _calendar.addEvent(_data)  // Add data to fullcalendar
@@ -123,36 +135,36 @@ class Cita extends React.Component {
     }
   }
   handleServerError(){
-    document.querySelector("#cita-close").click()  // Cerrar formulario cita
-    document.querySelector('div#alert-server').style.display = "block"
-    document.querySelector('div#alert-server').classList.remove("fade")
+    document.getElementById("cita-close").click()  // Cerrar formulario cita
+    document.getElementById('alert-server').style.display = "block"
+    document.getElementById('alert-server').classList.remove("fade")
     setTimeout(function(){
-      document.querySelector('div#alert-server').classList.add("fade")
+      document.getElementById('alert-server').classList.add("fade")
     }, 2500)
     setTimeout(function(){
-      document.querySelector('div#alert-server').style.display = "none"
+      document.getElementById('alert-server').style.display = "none"
     }, 2700)
   }
   handlePermissionError(){  // No permission
-    document.querySelector("#cita-close").click()  // Cerrar formulario cita
-    document.querySelector('div#alert-permission').style.display = "block";
-    document.querySelector('div#alert-permission').classList.remove("fade");
+    document.getElementById("cita-close").click()  // Cerrar formulario cita
+    document.getElementById('alert-permission').style.display = "block";
+    document.getElementById('alert-permission').classList.remove("fade");
     setTimeout(function(){
-      document.querySelector('div#alert-permission').classList.add("fade");
+      document.getElementById('alert-permission').classList.add("fade");
     }, 2500);
     setTimeout(function(){
-      document.querySelector('div#alert-permission').style.display = "none";
+      document.getElementById('alert-permission').style.display = "none";
     }, 2700);
     return;
   }
   getPaciente(dni){  // dni value
     if(dni.length<8){
       // Reset paciente data
-      document.querySelector("#pac_pk").value = "";
-      document.querySelector("#pac_nom_pri").disabled = false;
-      document.querySelector("#pac_nom_sec").disabled = false;
-      document.querySelector("#pac_ape_pat").disabled = false;
-      document.querySelector("#pac_ape_mat").disabled = false;
+      document.getElementById("pac_pk").value = "";
+      document.getElementById("pac_nom_pri").disabled = false;
+      document.getElementById("pac_nom_sec").disabled = false;
+      document.getElementById("pac_ape_pat").disabled = false;
+      document.getElementById("pac_ape_mat").disabled = false;
       return;  // if dni is not 8 length
     }
 
@@ -172,23 +184,23 @@ class Cita extends React.Component {
       if(xhr.status===500){this.handleServerError();return;}
       const response_object = JSON.parse(xhr.response);
       if(response_object.length!==1){
-        document.querySelector("#pac_nom_pri").disabled = false;
-        document.querySelector("#pac_nom_sec").disabled = false;
-        document.querySelector("#pac_ape_pat").disabled = false;
-        document.querySelector("#pac_ape_mat").disabled = false;
+        document.getElementById("pac_nom_pri").disabled = false;
+        document.getElementById("pac_nom_sec").disabled = false;
+        document.getElementById("pac_ape_pat").disabled = false;
+        document.getElementById("pac_ape_mat").disabled = false;
         return;
       }
       // Set paciente data and disable inputs
-      document.querySelector("#pac_pk").disabled = true;
-      document.querySelector("#pac_pk").value = response_object[0].pk;
-      document.querySelector("#pac_nom_pri").disabled = true;
-      document.querySelector("#pac_nom_pri").value = response_object[0].nombre_principal;
-      document.querySelector("#pac_nom_sec").disabled = true;
-      document.querySelector("#pac_nom_sec").value = response_object[0].nombre_secundario;
-      document.querySelector("#pac_ape_pat").disabled = true;
-      document.querySelector("#pac_ape_pat").value = response_object[0].ape_paterno;
-      document.querySelector("#pac_ape_mat").disabled = true;
-      document.querySelector("#pac_ape_mat").value = response_object[0].ape_materno;
+      document.getElementById("pac_pk").disabled = true;
+      document.getElementById("pac_pk").value = response_object[0].pk;
+      document.getElementById("pac_nom_pri").disabled = true;
+      document.getElementById("pac_nom_pri").value = response_object[0].nombre_principal;
+      document.getElementById("pac_nom_sec").disabled = true;
+      document.getElementById("pac_nom_sec").value = response_object[0].nombre_secundario;
+      document.getElementById("pac_ape_pat").disabled = true;
+      document.getElementById("pac_ape_pat").value = response_object[0].ape_paterno;
+      document.getElementById("pac_ape_mat").disabled = true;
+      document.getElementById("pac_ape_mat").value = response_object[0].ape_materno;
     }
     xhr.onerror = this.handleServerError;
     xhr.send();  // Send request
@@ -196,7 +208,7 @@ class Cita extends React.Component {
   saveCita = () => {
     // VALIDATIONS FIRST
     // Validate date
-    let _fecha = document.querySelector("#date").value;
+    let _fecha = document.getElementById("date").value;
     let now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
     if(_fecha < now.toJSON().slice(0,10)){
       // Show form error
@@ -205,12 +217,12 @@ class Cita extends React.Component {
     }
 
     // Validate dni & time
-    let _dni = document.querySelector("#pac_dni").value;
+    let _dni = document.getElementById("pac_dni").value;
     if(String(parseInt(_dni)).length!==8){
       this.errorForm("El dni no contiene 8 digitos");  // Show form error
       return;  // Skip function
     }
-    let _hora = document.querySelector("#hour").value;
+    let _hora = document.getElementById("hour").value;
     if(_hora<8 || _hora>21){
       this.errorForm("La hora está fuera del horario de trabajo");  // Show form error
       return;  // Skip function
@@ -229,8 +241,8 @@ class Cita extends React.Component {
 
     // Get PACIENTE
     let _paciente;  // OBTENER
-    if(document.querySelector("#pac_pk").value!==""){ // User is known
-      _paciente = parseInt(document.querySelector("#pac_pk").value); // Set user id
+    if(document.getElementById("pac_pk").value!==""){ // User is known
+      _paciente = parseInt(document.getElementById("pac_pk").value); // Set user id
     }else{ // User is not known
       // Validate paciente form
       /* We use regular expression to check there is only letters and spaces
@@ -238,10 +250,10 @@ class Cita extends React.Component {
       */
       if(
         // Check if second name is not empty
-        document.querySelector("#pac_nom_sec").value !== "" &&
+        document.getElementById("pac_nom_sec").value !== "" &&
         // Check if second name is wrong or is less than 3 characters
-        ((/[^a-zA-Z]/).test(document.querySelector("#pac_nom_sec").value)
-        || document.querySelector("#pac_nom_sec").value.length < 3)
+        ((/[^a-zA-Z]/).test(document.getElementById("pac_nom_sec").value)
+        || document.getElementById("pac_nom_sec").value.length < 3)
       ){
         this.errorForm("El nombre secundario solo pueden contener letras y espacios");
         return;
@@ -249,9 +261,9 @@ class Cita extends React.Component {
       // Check the main values
       let reg_expr = (/^[a-zA-Z][a-zA-Z ]+[a-zA-Z]$/);
       if(
-        !reg_expr.test(document.querySelector("#pac_nom_pri").value) ||
-        !reg_expr.test(document.querySelector("#pac_ape_pat").value) ||
-        !reg_expr.test(document.querySelector("#pac_ape_mat").value)
+        !reg_expr.test(document.getElementById("pac_nom_pri").value) ||
+        !reg_expr.test(document.getElementById("pac_ape_pat").value) ||
+        !reg_expr.test(document.getElementById("pac_ape_mat").value)
       ){
         this.errorForm("Los apellidos y nombres solo pueden contener letras y espacios, como minimo 3 caracteres");
         return;
@@ -261,23 +273,23 @@ class Cita extends React.Component {
       _paciente = {}
       _paciente.dni = _dni;
       _paciente.sexo = "1";
-      _paciente.nombre_principal = document.querySelector("#pac_nom_pri").value;
-      _paciente.nombre_secundario = document.querySelector("#pac_nom_sec").value;
-      _paciente.ape_paterno = document.querySelector("#pac_ape_pat").value;
-      _paciente.ape_materno = document.querySelector("#pac_ape_mat").value;
+      _paciente.nombre_principal = document.getElementById("pac_nom_pri").value;
+      _paciente.nombre_secundario = document.getElementById("pac_nom_sec").value;
+      _paciente.ape_paterno = document.getElementById("pac_ape_pat").value;
+      _paciente.ape_materno = document.getElementById("pac_ape_mat").value;
       // _paciente.sexo = document.querySelector("#pac_genre").value;
       // _paciente.celular = document.querySelector("#pac_celular").value;
     }
     console.log(_paciente);
 
     // Get META
-    let _minutos = document.querySelector("#minute").value;
+    let _minutos = document.getElementById("minute").value;
     let _sucursal = this.state.global.current_sucursal_pk;
     let _origen_cita = "3";  // Origen Web #############
     let _estado = "1";  // Cita Pendiente
     // let _indicaciones = "";
-    let _programado = document.querySelector("#programado").value;
-    let _duracion = document.querySelector("#duracion").value;
+    let _programado = document.getElementById("programado").value;
+    let _duracion = document.getElementById("duracion").value;
     let _hora_fin = (()=>{
       let _minres = parseInt(_duracion)+parseInt(_minutos);
       let _temp_hora = parseInt(_hora)+parseInt(_minres/60);
@@ -328,27 +340,27 @@ class Cita extends React.Component {
       // Reset values
       (()=>{
         // Other values
-        document.querySelector("#pac_pk").value = "";
-        document.querySelector("#pac_dni").value = "";
-        document.querySelector("#fecha").value = "";
-        document.querySelector("#hora").value = "08";
-        document.querySelector("#minuto").value = "00";
-        document.querySelector("#duracion").value = "15";
-        document.querySelector("#programado").value = "Consulta regular";
+        document.getElementById("pac_pk").value = "";
+        document.getElementById("pac_dni").value = "";
+        document.getElementById("date").value = "";
+        document.getElementById("hour").value = "08";
+        document.getElementById("minute").value = "00";
+        document.getElementById("duracion").value = "15";
+        document.getElementById("programado").value = "Consulta regular";
         window.$("#personal").empty().trigger("change");
         // Paciente
-        document.querySelector("#pac_nom_pri").disabled = false;
-        document.querySelector("#pac_nom_pri").value = "";
-        document.querySelector("#pac_nom_sec").disabled = false;
-        document.querySelector("#pac_nom_sec").value = "";
-        document.querySelector("#pac_ape_pat").disabled = false;
-        document.querySelector("#pac_ape_pat").value = "";
-        document.querySelector("#pac_ape_mat").disabled = false;
-        document.querySelector("#pac_ape_mat").value = "";
-        document.querySelector("#pac_ape_mat").value = "";
+        document.getElementById("pac_nom_pri").disabled = false;
+        document.getElementById("pac_nom_pri").value = "";
+        document.getElementById("pac_nom_sec").disabled = false;
+        document.getElementById("pac_nom_sec").value = "";
+        document.getElementById("pac_ape_pat").disabled = false;
+        document.getElementById("pac_ape_pat").value = "";
+        document.getElementById("pac_ape_mat").disabled = false;
+        document.getElementById("pac_ape_mat").value = "";
+        document.getElementById("pac_ape_mat").value = "";
       })()
 
-      document.querySelector("#cita-close").click()  // Cerrar formulario cita
+      document.getElementById("cita-close").click()  // Cerrar formulario cita
       this.getCitas()  // Re render fullcalendar
     };
     xhr.onerror = this.handleServerError;  // Receive server error
@@ -356,19 +368,33 @@ class Cita extends React.Component {
   }
   errorForm(log){
     document.querySelector('div#alert-login span').innerText = log;
-    document.querySelector('div#alert-login').style.display = "block"
-    document.querySelector('div#alert-login').classList.remove("fade")
+    document.getElementById('alert-login').style.display = "block"
+    document.getElementById('alert-login').classList.remove("fade")
     setTimeout(function(){
-      document.querySelector('div#alert-login').classList.add("fade")
+      document.getElementById('alert-login').classList.add("fade")
     }, 2500)
     setTimeout(function(){
-      document.querySelector('div#alert-login').style.display = "none"
+      document.getElementById('alert-login').style.display = "none"
     }, 2700)
   }
   getEventInfo(info){
-    let data = info.event._def.extendedProps.info;
+    let data = info.event.extendedProps.info;
+    console.log(data);
     window.$('#modal_ver_cita').modal('show');
   }
+  setFilter = (personal_pk) => {
+    let personal_array = this.state.calendar_filter;
+    if(personal_array.indexOf(personal_pk)!==-1){  // Personal already exist in calendar filter
+      personal_array.splice(personal_array.indexOf(personal_pk),1);  // remove personal filter
+    }else{  // Personal does not exist in calendar filter
+      personal_array.push(personal_pk);  // add personal filter
+    }
+
+    let clone = Object.assign({}, this.state);
+    clone.calendar_filter = personal_array;
+    this.setState(clone, this.getCitas);
+  }
+
   render(){
     return(
       <>
@@ -383,8 +409,9 @@ class Cita extends React.Component {
       {/* HEADER */}
       <div className="subheader">
         <h1 className="subheader-title">
-          <i className="subheader-icon fal fa-chart-area"></i> Cita <span className="fw-300">Dashboard</span>
+          <i className="subheader-icon fal fa-chart-area"></i> Cita
         </h1>
+        <FilterPersonal state={this.state} setFilter={this.setFilter} />
       </div>
       {/* FORMULARIO CITA */}
       <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#modal-crear_cita"></button>
@@ -481,7 +508,7 @@ class Cita extends React.Component {
         </div>
       </div>
 
-      {/* MODAL CITA */}
+      {/* MODAL INFO CITA */}
       <div className="modal fade" id="modal_ver_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
           <div className="modal-content">
@@ -493,87 +520,17 @@ class Cita extends React.Component {
                 <span aria-hidden="true"><i className="fal fa-times"></i></span>
               </button>
             </div>
-            {/* FORMULARIO CITA */}
-            <div className="modal-body" id="cita-form">
-              <SelectPersonal state={this.state} />
-              <div className="form-group col-md-12">
-                <label className="form-label" htmlFor="paciente">Dni: </label>
-                <input type="text" id="pac_dni" name="paciente" className="form-control form-control-lg" placeholder="Dni del paciente" maxLength="8" required  onChange={(e)=>this.getPaciente(e.target.value)} />
-              </div>
-              {/* Paciente */}
-              <label className="form-label col-md-12">Paciente: </label>
-              <input type="text" id="pac_pk" style={{display:'none'}} defaultValue="" disable="true" />
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_nom_pri" name="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" />
-              </div>
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_nom_sec" name="pac_nom_sec" className="form-control form-control-lg" placeholder="Nombres secundarios" />
-              </div>
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_ape_pat" name="pac_ape_pat" className="form-control form-control-lg" placeholder="Apellido Paterno" />
-              </div>
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
-              </div>
-              {/* Fin Paciente */}
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <label className="form-label" htmlFor="date">Fecha: </label>
-                <input type="date" id="date" name="date" className="form-control form-control-lg" required />
-              </div>
-              <div className="form-group col-md-3" style={{display:'inline-block'}}>
-                <label className="form-label" htmlFor="hour" style={{display:'block'}}>Hora: </label>
-                <select id="hour" className="custom-select col-lg-6">
-                  <option value="08" defaultValue>8 AM</option>
-                  <option value="09">9 AM</option>
-                  <option value="10">10 AM</option>
-                  <option value="11">11 AM</option>
-                  <option value="12">12 PM</option>
-                  <option value="13">1 PM</option>
-                  <option value="14">2 PM</option>
-                  <option value="15">3 PM</option>
-                  <option value="16">4 PM</option>
-                  <option value="17">5 PM</option>
-                  <option value="18">6 PM</option>
-                  <option value="19">7 PM</option>
-                  <option value="20">8 PM</option>
-                  <option value="21">9 PM</option>
-                </select>
-                <select id="minute" className="custom-select col-lg-6">
-                  <option value="00" defaultValue>00</option>
-                  <option value="15">15</option>
-                  <option value="30">30</option>
-                  <option value="45">45</option>
-                </select>
-              </div>
-              <div className="form-group col-md-3" style={{display:'inline-block'}}>
-                <label className="form-label" htmlFor="hour" style={{display:'block'}}>Duración aproximada: </label>
-                <select id="duracion" className="custom-select form-control">
-                  <option value="15" defaultValue>15 minutos</option>
-                  <option value="30">30 minutos</option>
-                  <option value="45">45 minutos</option>
-                  <option value="60">60 minutos</option>
-                  <option value="90">90 minutos</option>
-                  <option value="120">2 horas</option>
-                  <option value="180">3 horas</option>
-                  <option value="240">4 horas</option>
-                </select>
-              </div>
-              <div className="form-group col-md-12">
-                <label className="form-label" htmlFor="simpleinput">Programado</label>
-                <input type="text" id="programado" className="form-control form-control-lg" defaultValue="Consulta regular" />
-              </div>
-              <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
-                  <strong>Ups!</strong> <span>Parece que los datos introducidos no son correctos.</span>
-              </div>
+            <div className="modal-body" id="cita-info-form">
+              BODY
             </div>
-            {/* FIN FORMULARIO CITA */}
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary waves-effect waves-themed" data-dismiss="modal" id="cita-close">Cancelar</button>
-              <button type="button" className="btn btn-primary waves-effect waves-themed" onClick={this.saveCita}>Guardar</button>
+              <button type="button" className="btn btn-secondary waves-effect waves-themed" data-dismiss="modal" id="cita-info-close">Cancelar</button>
+              <button type="button" className="btn btn-primary waves-effect waves-themed" onClick={()=>console.log("GUARDAR")}>Guardar</button>
             </div>
           </div>
         </div>
       </div>
+      {/* FIN MODAL INFO CITA */}
       {/* CALENDAR */}
       <div id="calendar">
       </div>
@@ -637,6 +594,27 @@ class Cita extends React.Component {
 }
 
 /*** COMPONENTS ***/
+function FilterPersonal(props){
+  const personal = [];  // Declare variable to use
+  if(props.state.personal!==false){
+    for(let p of props.state.personal){  // Iterate over all sucursales this user has
+      personal.push(
+        <label
+          key={p.pk}
+          className="btn btn-primary waves-effect waves-themed"
+          onClick={()=>props.setFilter(p.pk)}>
+            <input key={"input"+p.pk} type="checkbox" />
+            {(p.nombre_principal+" "+p.ape_paterno[0]+"."+p.ape_materno[0]+".").toUpperCase()}
+        </label>
+      );
+    }
+  }
+  return (
+    <div className="btn-group btn-group-toggle" data-toggle="buttons">
+      {personal}
+    </div>
+  )
+}
 function SelectPersonal(props){
   const personal = [];  // Declare variable to use
   if(props.state.personal!==false){
@@ -658,7 +636,6 @@ function SelectPersonal(props){
     </div>
   )
 }
-
 
 /* NOTES
 Child components that receive props from parent component should append the data

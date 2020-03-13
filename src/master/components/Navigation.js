@@ -145,15 +145,6 @@ function SelectComponent(props){  // CONTENT
     </main>
   )
 }
-function Home(){
-  return (
-    <Route exact path="/nav/home">
-      <h1> HOME </h1>
-      <li> <Link to="/nav/something">something</Link> </li>
-      <li> <Link to="/nav/anotherone">another one</Link> </li>
-    </Route>
-  )
-}
 /*** PAGE ***/
 function AsideLinks(){
   return (
