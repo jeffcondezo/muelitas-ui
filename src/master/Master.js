@@ -108,13 +108,14 @@ class Master extends React.Component {
             {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLoggedIn()} />}
           </Route>
           <Route path="/nav">  {/* NAVIGATION */}
-            {this.state.logged ? <Navigation state={this.state.user} errorFunc={(a,b)=>this.setError(a,b)} /> : <Redirect to="/login" />}
+            {this.state.logged ? <Navigation user={this.state.user} errorFunc={(a,b)=>this.setError(a,b)} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/error/log">
-            {this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} /> }
+            {/*this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} /> */}
+            <Error />
           </Route>
           <Route>  {/* ROUTE NOT FOUND REDIRECT */}
-            <Redirect to="/" />
+            <Redirect to="/error/log" />
           </Route>
         </Switch>
       </BrowserRouter>
@@ -136,16 +137,30 @@ When generating url with params we should use double quotes ("),
 
 /*** COMPONENTS ***/
 function Home(){
-  return (<div>
+  return (
+    <>
     <h1>Home</h1>
     <Link to="/login">IR AL LOGIN</Link>
-  </div>)
+    </>
+  )
 }
 function Error(props){
   return (
-    <>
-    <h3><b>Error: </b></h3><h4><i>{props.log}</i></h4>
-    </>
+    <div class="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
+      <h1 class="page-error color-fusion-500">
+        ERROR <span class="text-gradient">404</span>
+        <small class="fw-500">
+          Algo salió mal!
+        </small>
+      </h1>
+      <h3 class="fw-500 mb-5">
+        Estamos experimentando <u>dificultades técnicas</u>. Nos disculpamos.
+      </h3>
+      <h4>
+        Estamos trabajando para solucionar este inconveniente. Por favor espere unos momentos e intentelo de nuevo.
+        <br/>
+      </h4>
+    </div>
   )
 }
 

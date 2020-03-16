@@ -15,7 +15,7 @@ class Navigation extends React.Component {
   constructor(props){
     super();
     this.state = {
-      user: props.state,
+      user: props.user,
       error_log: "",
       sucursales: [],
       current_sucursal_pk: -1,
@@ -84,37 +84,12 @@ class Navigation extends React.Component {
     const main_script = document.createElement("script");
     main_script.async = false;
     main_script.src = "/js/vendors.bundle.js";
-    // For body
     document.body.appendChild(main_script);
+
     const main_script2 = document.createElement("script");
     main_script2.async = false;
     main_script2.src = "/js/app.bundle.js";
-    // For body
     document.body.appendChild(main_script2);
-
-    // Select2 for personal choose in Cita
-    /* We declare this elements here 'cuz this is a SPA
-      we use functionalities from these files in component's componentDidMount function
-      so this should be already appended to the main document
-      if we declare this elements inside Cita component
-      it could be executed twice or more and the elements would be duplicated
-    */
-    // CSS
-    const select2_link = document.createElement("link");
-    select2_link.rel = "stylesheet";
-    select2_link.media = "screen, print";
-    select2_link.href = "/css/formplugins/select2/select2.bundle.css";
-    document.head.appendChild(select2_link);
-    // JS
-    const select2_script = document.createElement("script");
-    select2_script.async = false;
-    select2_script.src = "/js/formplugins/select2/select2.bundle.js";
-    document.body.appendChild(select2_script);
-    // Fullcalendar Bundle
-    const fullcalendar_script = document.createElement("script");
-    fullcalendar_script.async = false;
-    fullcalendar_script.src = "/js/miscellaneous/fullcalendar/fullcalendar.bundle.js";
-    document.body.appendChild(fullcalendar_script);
 
   }
 }
@@ -1690,6 +1665,9 @@ Handle routes params
   let { topicId } = useParams();
 React only update real DOM when virtual DOM has changed, and only update that little change between it's versions
   https://stackoverflow.com/questions/24718709/reactjs-does-render-get-called-any-time-setstate-is-called
+When we need to execute a function from DOM Events (onclick, onchange, etc)
+  we should declare 'em as arrow function to access to 'this', otherwise we cann't
+  ()=>{this.prop}
 */
 
 /* EXPORT NAVIGATION */

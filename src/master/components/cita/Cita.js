@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 // Calendar components
 import { Calendar } from '@fullcalendar/core';  // Class
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -16,9 +16,13 @@ class Cita extends React.Component {
     this.state = {
       calendar: false,
       personal: false,  // This work the same as this.state.calendar
+      selected_cita: false,  // Cita shown in Cita info modal
       calendar_filter: [],
       global: props.state,  // This is only setted first time this component is rendered
     }
+    this.color_personal = [
+      "#ffc241", "#9acffa", "#21dfcb", "#b19dce", "#fe9ecb", "tomato"
+    ];
   }
   UNSAFE_componentWillReceiveProps(nextProps){
     let clone = Object.assign({}, this.state)  // Clone this.state object
@@ -42,10 +46,14 @@ class Cita extends React.Component {
     if(this.state.calendar_filter.length!==0){
       _filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
+        "estado":"1",
         "personal":"${String(this.state.calendar_filter)}"
       }`;
     }else{  // Regular filter
-      _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+      _filter = `filtro={
+        "sucursal":"${this.state.global.current_sucursal_pk}",
+        "estado":"1"
+      }`;
     }
 
     let _url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
@@ -79,11 +87,10 @@ class Cita extends React.Component {
 
       // Convert response to json object
       const response_object = JSON.parse(xhr.response);
-      console.log(response_object);
 
       let clone = Object.assign({}, this.state);
       clone.personal = response_object;
-      this.setState(clone);
+      this.setState(clone, this.getCitas);  // Render citas after personal is setted
     }
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send();  // Send request
@@ -100,21 +107,21 @@ class Cita extends React.Component {
     // Get this calendar
     let _calendar = this.state.calendar;
     _calendar.removeAllEvents()  // Remove current events in fullcalendar
+
+    // Set event
     response_object.forEach((v) => {
       let _data = {};
-      _data.title = "Paciente: "+v.paciente_data.nombre_principal;
+      _data.title =
+      `Paciente: ${v.paciente_data.nombre_principal}
+      ${v.programado}`;
       _data.info = v;
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
-      let _color = "gray";
-      switch(v.personal.pk){
-        case 1: _color = "lightblue"; break;
-        case 2: _color = "tomato"; break;
-        case 3: _color = "purple"; break;
-        case 4: _color = "gray"; break;
-        case 5: _color = "green"; break;
-      }
-      _data.color = _color;
+
+      // Choose color according personal
+      let _inx_personal = this.state.personal.findIndex(p => p.pk === v.personal.pk)
+      _data.color = _inx_personal!==-1 ? this.color_personal[_inx_personal] : "gray";
+
       _calendar.addEvent(_data)  // Add data to fullcalendar
     });
     _calendar.render();
@@ -126,7 +133,7 @@ class Cita extends React.Component {
       if(response.length===1){  // Error code
         switch(response[0]){
           case 'CRUCE_DE_CITAS':
-            alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise la lista de actividades por personal y escoja otro horario")
+            alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise o actualice la lista de actividades por personal y escoja otro horario")
             break;
           default: return;
         }
@@ -235,8 +242,15 @@ class Cita extends React.Component {
       return;
     }
     let _personal = [];
-    personal_.forEach((personal) => {
+    let _personal_atencion = "";
+    personal_.forEach((personal, inx) => {
       _personal.push(personal.id);
+
+      // Personal name to programado
+      let _personal_name = personal.text.split(" -")[0];
+      if(inx===personal_.length-1) _personal_atencion+=" y "; else
+      if(inx>0) _personal_atencion+=", ";
+      _personal_atencion += _personal_name;
     });
 
     // Get PACIENTE
@@ -289,6 +303,8 @@ class Cita extends React.Component {
     let _estado = "1";  // Cita Pendiente
     // let _indicaciones = "";
     let _programado = document.getElementById("programado").value;
+    // Add personal to 'programado'
+    if(_personal.length>1) _programado += `\nAtendido por ${_personal_atencion}`;
     let _duracion = document.getElementById("duracion").value;
     let _hora_fin = (()=>{
       let _minres = parseInt(_duracion)+parseInt(_minutos);
@@ -366,7 +382,7 @@ class Cita extends React.Component {
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send(JSON.stringify(data));  // Send request
   }
-  errorForm(log){
+  errorForm = log => {
     document.querySelector('div#alert-login span').innerText = log;
     document.getElementById('alert-login').style.display = "block"
     document.getElementById('alert-login').classList.remove("fade")
@@ -376,11 +392,6 @@ class Cita extends React.Component {
     setTimeout(function(){
       document.getElementById('alert-login').style.display = "none"
     }, 2700)
-  }
-  getEventInfo(info){
-    let data = info.event.extendedProps.info;
-    console.log(data);
-    window.$('#modal_ver_cita').modal('show');
   }
   setFilter = (personal_pk) => {
     let personal_array = this.state.calendar_filter;
@@ -394,26 +405,86 @@ class Cita extends React.Component {
     clone.calendar_filter = personal_array;
     this.setState(clone, this.getCitas);
   }
+  getEventInfo = (info) => {
+    let data = info.event.extendedProps.info;
+    let clone = Object.assign({}, this.state);
+    clone.selected_cita = data;
+    this.setState(clone, ()=>{
+      window.$('#modal_ver_cita').modal('show');
+    });
+  }
+  annulCita = (cita_pk, status) => {
+    let data = {};
+    data['estado'] = status;
+    // Send data to create cita
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
+    // Json type content 'cuz we may send paciente data object
+    xhr.setRequestHeader('Content-type', 'application/json')
+    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
+    xhr.onload = (xhr)=>{
+      xhr = xhr.target
+      if(xhr.status===400){this.handleBadRequest(xhr);return;}
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
+
+      window.$('#modal_ver_cita').modal('close');
+      alert("Cita anulada",status);
+      this.getCitas()  // Re render fullcalendar
+    };
+    xhr.onerror = this.handleServerError;  // Receive server error
+    xhr.send(JSON.stringify(data));  // Send request
+
+  }
+  finishCita = (cita_pk) => {
+    let data = {};
+    data['estado'] = '5';
+    // Send data to create cita
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
+    // Json type content 'cuz we may send paciente data object
+    xhr.setRequestHeader('Content-type', 'application/json')
+    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
+    xhr.onload = (xhr)=>{
+      xhr = xhr.target
+      if(xhr.status===400){this.handleBadRequest(xhr);return;}
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
+
+      window.$('#modal_ver_cita').modal('close');
+      alert("Cita finalizada");
+      this.getCitas()  // Re render fullcalendar
+    };
+    xhr.onerror = this.handleServerError;  // Receive server error
+    xhr.send(JSON.stringify(data));  // Send request
+  }
+  addOdontograma = (cita_pk) => {
+    console.log("Odontograma", cita_pk);
+  }
+  addProcedure = (cita_pk) => {
+    console.log("Procedure", cita_pk);
+  }
 
   render(){
     return(
-      <>
-      {/* alerts */}
+    <>
+      {/* ALERTS */}
       <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
           <strong>Error</strong> No se ha podido establecer conexión con el servidor.
       </div>
       <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
           <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
       </div>
-      {/* end alerts */}
+
       {/* HEADER */}
       <div className="subheader">
         <h1 className="subheader-title">
           <i className="subheader-icon fal fa-chart-area"></i> Cita
         </h1>
-        <FilterPersonal state={this.state} setFilter={this.setFilter} />
+        <FilterPersonal state={this.state} setFilter={this.setFilter} color_personal={this.color_personal} />
       </div>
-      {/* FORMULARIO CITA */}
+
+      {/* FORMULARIO CITA (modal) */}
       <button id="toggleModal" style={{display:"none"}} data-toggle="modal" data-target="#modal-crear_cita"></button>
       <div className="modal fade" id="modal-crear_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -508,88 +579,92 @@ class Cita extends React.Component {
         </div>
       </div>
 
-      {/* MODAL INFO CITA */}
-      <div className="modal fade" id="modal_ver_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
-        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2 className="modal-title">
-                Programar Cita
-              </h2>
-              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true"><i className="fal fa-times"></i></span>
-              </button>
-            </div>
-            <div className="modal-body" id="cita-info-form">
-              BODY
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary waves-effect waves-themed" data-dismiss="modal" id="cita-info-close">Cancelar</button>
-              <button type="button" className="btn btn-primary waves-effect waves-themed" onClick={()=>console.log("GUARDAR")}>Guardar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* FIN MODAL INFO CITA */}
+      {/* INFO CITA (modal) */}
+      <InfoCita cita={this.state.selected_cita}
+        annulCita={this.annulCita}
+        finishCita={this.finishCita}
+        addOdontograma={this.addOdontograma}
+        addProcedure={this.addProcedure} />
+
       {/* CALENDAR */}
       <div id="calendar">
       </div>
-      </>
+    </>
     )
   }
   componentDidMount(){
-    // Create calendar object
-    let calendarEl = document.querySelector('#calendar');
-    let calendar = new Calendar(calendarEl, {
-      locale: esLocale,  // https://fullcalendar.io/docs/locale
-      nowIndicator: true,
-      themeSystem: 'bootstrap',
-      minTime: "08:00:00",
-      maxTime: "21:00:00",
-      slotDuration: '00:15:00',  // Tab frequency
-      eventTimeFormat: {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      },
-      slotLabelFormat: {
-        hour: 'numeric',
-        minute: '2-digit',
-        omitZeroMinute: true,
-        hour12: true,
-      },
-      plugins: [ timeGridPlugin, listPlugin ],
-      header: {
-        left: 'prev,next today addEventButton',
-        center: 'title',
-        right: 'timeGridWeek,timeGridDay,listWeek'
-      },
-      navLinks: true, // can click day/week names to navigate views
-      editable: false,  // Not editable
-      eventLimit: true, // allow "more" link when too many events
-      eventClick: this.getEventInfo,
-      customButtons: {
-        addEventButton: {  // Add Cita
-          text: '+',
-          click: function(){
-            document.querySelector('button#toggleModal').click()
+    // Fullcalendar Bundle
+    const fullcalendar_script = document.createElement("script");
+    fullcalendar_script.async = false;
+    fullcalendar_script.onload = ()=>{
+      // Create calendar object
+      let calendarEl = document.querySelector('#calendar');
+      let calendar = new Calendar(calendarEl, {
+        locale: esLocale,  // https://fullcalendar.io/docs/locale
+        nowIndicator: true,
+        themeSystem: 'bootstrap',  // Does not work
+        minTime: "08:00:00",
+        maxTime: "21:00:00",
+        slotDuration: '00:15:00',  // Tab frequency
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        },
+        slotLabelFormat: {
+          hour: 'numeric',
+          minute: '2-digit',
+          omitZeroMinute: true,
+          hour12: true,
+        },
+        plugins: [ timeGridPlugin, listPlugin ],
+        header: {
+          left: 'prev,next today addEventButton',
+          center: 'title',
+          right: 'timeGridWeek,timeGridDay,listWeek'
+        },
+        navLinks: true, // can click day/week names to navigate views
+        editable: false,  // Not editable
+        eventLimit: true, // allow "more" link when too many events
+        eventClick: this.getEventInfo,
+        customButtons: {
+          addEventButton: {  // Add Cita
+            text: '+',
+            click: function(){
+              document.querySelector('button#toggleModal').click()
+            }
           }
-        }
-      },
-      eventColor: 'tomato',  // Default event color
-    });
+        },
+        eventColor: 'tomato',  // Default event color
+      });
 
-    // Handle calendar, citas and personal
-    let clone = Object.assign({}, this.state)  // Clone this.state object
-    clone.calendar = calendar  // Change attribute's value
-    this.setState(clone)  // Save change (re-render)
-    this.getCitas();
-    this.getPersonal();
+      // Handle calendar, citas and personal
+      let clone = Object.assign({}, this.state)  // Clone this.state object
+      clone.calendar = calendar  // Change attribute's value
+      this.setState(clone, this.getPersonal)  // Save change (re-render)
+    };
+    fullcalendar_script.src = "/js/miscellaneous/fullcalendar/fullcalendar.bundle.js";
+    document.body.appendChild(fullcalendar_script);
 
-    // Set select2 for personal
-    window.$("#personal").select2({
-      dropdownParent: window.$("#personal").parent()
-    });
+    // Select2 for personal choose in Cita
+    // CSS
+    const select2_link = document.createElement("link");
+    select2_link.rel = "stylesheet";
+    select2_link.media = "screen, print";
+    select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+    document.head.appendChild(select2_link);
+    // JS
+    const select2_script = document.createElement("script");
+    select2_script.async = false;
+    select2_script.onload = ()=>{
+      // Set select2 for personal
+      window.$("#personal").select2({
+        dropdownParent: window.$("#personal").parent()
+      });
+    };
+    select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+    document.body.appendChild(select2_script);
+
   }
 }
 
@@ -598,13 +673,20 @@ function FilterPersonal(props){
   const personal = [];  // Declare variable to use
   if(props.state.personal!==false){
     for(let p of props.state.personal){  // Iterate over all sucursales this user has
+      // Choose color according personal
+      let _inx_personal = props.state.personal.findIndex(_p => _p.pk === p.pk)
+      let _color = _inx_personal!==-1 ? props.color_personal[_inx_personal] : "gray";
+
       personal.push(
         <label
           key={p.pk}
           className="btn btn-primary waves-effect waves-themed"
           onClick={()=>props.setFilter(p.pk)}>
             <input key={"input"+p.pk} type="checkbox" />
-            {(p.nombre_principal+" "+p.ape_paterno[0]+"."+p.ape_materno[0]+".").toUpperCase()}
+            <span
+            style={{color:_color, fontSize:"1.1em", filter:"contrast(2)"}}>
+              <b>{(p.nombre_principal+" "+p.ape_paterno[0]+"."+p.ape_materno[0]+".").toUpperCase()}</b>
+            </span>
         </label>
       );
     }
@@ -635,6 +717,155 @@ function SelectPersonal(props){
       </select>
     </div>
   )
+}
+function InfoCita(props){
+  const [annulCita, setAnnulCita] = useState({toCheck: false, show: false});
+  useEffect(()=>{  // To call after render
+    if(annulCita.show===true){  // Show annulCita modal
+      window.$('#modal_ver_cita').modal('show');
+    }
+  });
+
+  if(!annulCita.toCheck){  // Regular behavior
+    if(!props.cita) return "";
+    let _hora = props.cita.hora.slice(0,5);
+    _hora += props.cita.hora_fin ? " - "+props.cita.hora_fin.slice(0,5) : "";
+    let _pac_nombre = props.cita.paciente_data.nombre_principal
+    _pac_nombre += props.cita.paciente_data.nombre_secundario ? " "+props.cita.paciente_data.nombre_secundario : " ";
+    _pac_nombre += (props.cita.paciente_data.ape_paterno+" "+props.cita.paciente_data.ape_materno).toUpperCase();
+    let _personal = props.cita.personal.nombre_principal;
+    _personal += " "+props.cita.personal.ape_paterno;
+    _personal += " "+props.cita.personal.ape_materno;
+    _personal += " - "+props.cita.personal.especialidad_descripcion;
+    let _celular = props.cita.paciente_data.celular ? props.cita.paciente_data.celular : false;
+    let _direccion = props.cita.paciente_data.direccion ? props.cita.paciente_data.direccion : false;
+    let _indicaciones = props.cita.paciente_data.indicaciones ? props.cita.paciente_data.indicaciones : false;
+
+    function assureAnnul(func, cita_pk, state){  // Assure annul function
+      let clone = {};
+      clone.toCheck = true;
+      clone.show = false;
+      clone.callback = func;
+      clone.cita_pk = cita_pk;
+      clone.state = state;
+      setAnnulCita(clone);
+    }
+    return (
+      <div className="modal fade" id="modal_ver_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <span className="modal-title fw-500" style={{fontSize:'2em'}}>
+                Información Cita
+              </span>
+              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i className="fal fa-times"></i></span>
+              </button>
+            </div>
+            <div className="modal-body" id="cita-info-form">
+              <h6>
+                <b>Paciente:</b> {_pac_nombre}
+              </h6>
+              <h6>
+                <b>DNI:</b> {props.cita.paciente_data.dni}
+              </h6>
+              <h6>
+                <b>Fecha:</b> {props.cita.fecha}
+              </h6>
+              <h6>
+                <b>Hora:</b> {_hora}
+              </h6>
+              {_celular ? <h6><b>Celular:</b> {_celular}</h6>:""}
+              {_direccion ? <h6><b>Direccion:</b> {_direccion}</h6>:""}
+              <h6>
+                <b>Personal:</b> {_personal}
+              </h6>
+              {_indicaciones ? <h6><b>Indicaciones:</b> {_indicaciones}</h6>:""}
+              <h6>
+                <b>Programado:</b> {props.cita.programado}
+              </h6>
+              <br/>
+            </div>
+            <div className="modal-footer">
+              {/* Odontograma */}
+              <div className="btn-group">
+                <a onClick={()=>props.addOdontograma(props.cita.pk)}
+                  title="Odontograma"
+                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed">
+                    <i className="fal fa-bug"></i>
+                </a>
+                <a onClick={()=>props.addProcedure(props.cita.pk)}
+                  title="Procedimiento Odontologico"
+                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed">
+                    <i className="fal fa-plus"></i>
+                </a>
+              </div>
+              {/* Estado cita */}
+              <div className="btn-group">
+                <button
+                  type="button"
+                  className="btn btn-primary waves-effect waves-themed"
+                  onClick={()=>props.finishCita(props.cita.pk)}>
+                  Concluir
+                </button>
+                <button type="button" className="btn btn-primary dropdown-toggle dropdown-toggle-split waves-effect waves-themed" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                </button>
+                <div className="dropdown-menu">
+                  <a className="dropdown-item" data-dismiss="modal"
+                    onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 3)}>Anular cita</a>
+                  <a className="dropdown-item" data-dismiss="modal"
+                    onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 2)}>Anulado por cliente</a>
+                  <a className="dropdown-item" data-dismiss="modal"
+                    onClick={()=>props.annulCita(props.cita.pk, 4)}>Paciente no se presento</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }else{  // Annul cita
+    function annul(){
+      let clone = {};
+      clone.toCheck = false;
+      clone.show = false;
+      setAnnulCita(clone);
+
+      // Call annul function (callback)
+      annulCita.callback(annulCita.cita_pk, annulCita.state);
+    }
+    function cancelAnnul(){
+      let clone = Object.assign({}, annulCita);
+      clone.toCheck = false;
+      clone.show = true;
+      setAnnulCita(clone);
+    }
+    return (
+      <div className="modal modal-alert show" id="modal_anular_cita" tabIndex="-1" role="dialog" style={{display: "block", paddingRight: "15px"}} aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Anular cita</h5>
+              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i className="fal fa-times"></i></span>
+              </button>
+            </div>
+            <div className="modal-body">
+              Esta seguro que quiere anular la cita?
+            </div>
+            <div className="modal-footer">
+              <button type="button" data-dismiss="modal"
+                className="btn btn-secondary waves-effect waves-themed"
+                onClick={()=>cancelAnnul()}>Cancelar</button>
+              <button type="button"
+                className="btn btn-primary waves-effect waves-themed"
+                onClick={()=>annul()}>Anular</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 }
 
 /* NOTES
