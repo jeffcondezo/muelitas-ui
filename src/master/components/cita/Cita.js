@@ -21,7 +21,7 @@ class Cita extends React.Component {
       global: props.state,  // This is only setted first time this component is rendered
     }
     this.color_personal = [
-      "#ffc241", "#9acffa", "#21dfcb", "#b19dce", "#fe9ecb", "tomato"
+      "#6e4e9e", "#179c8e", "#0c7cd5", "#ffb20e", "#fc077a", "#363636"
     ];
   }
   UNSAFE_componentWillReceiveProps(nextProps){
@@ -31,7 +31,10 @@ class Cita extends React.Component {
     // Save change (re-render)
     // Shall we re render calendar?
     if(this.state.global.current_sucursal_pk!==nextProps.state.current_sucursal_pk){
-      this.setState(clone, this.getCitas)  // Re render calendar
+      if(!this.state.calendar)  // First execution calendar == false so not render calendar
+        this.setState(clone)
+      else
+        this.setState(clone, this.getCitas)  // Re render calendar
     }else{  // Something else has changed
       this.setState(clone)  // Only update this.state
     }
@@ -294,7 +297,6 @@ class Cita extends React.Component {
       // _paciente.sexo = document.querySelector("#pac_genre").value;
       // _paciente.celular = document.querySelector("#pac_celular").value;
     }
-    console.log(_paciente);
 
     // Get META
     let _minutos = document.getElementById("minute").value;
@@ -333,7 +335,6 @@ class Cita extends React.Component {
       data['paciente'] = _paciente;
     else if(typeof(_paciente)==='object')
       data['paciente_obj'] = _paciente;
-    console.log(data);
 
     // Send data to create cita
     let xhr = new XMLHttpRequest();
@@ -418,7 +419,7 @@ class Cita extends React.Component {
     data['estado'] = status;
     // Send data to create cita
     let xhr = new XMLHttpRequest();
-    xhr.open('POST', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
+    xhr.open('PUT', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
     // Json type content 'cuz we may send paciente data object
     xhr.setRequestHeader('Content-type', 'application/json')
     xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
@@ -428,20 +429,19 @@ class Cita extends React.Component {
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
 
-      window.$('#modal_ver_cita').modal('close');
+      window.$('#modal_ver_cita').modal('hide');
       alert("Cita anulada",status);
       this.getCitas()  // Re render fullcalendar
     };
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send(JSON.stringify(data));  // Send request
-
   }
   finishCita = (cita_pk) => {
     let data = {};
     data['estado'] = '5';
     // Send data to create cita
     let xhr = new XMLHttpRequest();
-    xhr.open('POST', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
+    xhr.open('PUT', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
     // Json type content 'cuz we may send paciente data object
     xhr.setRequestHeader('Content-type', 'application/json')
     xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
@@ -451,7 +451,7 @@ class Cita extends React.Component {
       if(xhr.status===403){this.handlePermissionError();return;}
       if(xhr.status===500){this.handleServerError();return;}
 
-      window.$('#modal_ver_cita').modal('close');
+      window.$('#modal_ver_cita').modal('hide');
       alert("Cita finalizada");
       this.getCitas()  // Re render fullcalendar
     };
@@ -600,9 +600,10 @@ class Cita extends React.Component {
       // Create calendar object
       let calendarEl = document.querySelector('#calendar');
       let calendar = new Calendar(calendarEl, {
+        plugins: [ timeGridPlugin, listPlugin , 'bootstrap' ],
         locale: esLocale,  // https://fullcalendar.io/docs/locale
         nowIndicator: true,
-        themeSystem: 'bootstrap',  // Does not work
+        themeSystem: 'bootstrap',
         minTime: "08:00:00",
         maxTime: "21:00:00",
         slotDuration: '00:15:00',  // Tab frequency
@@ -617,7 +618,6 @@ class Cita extends React.Component {
           omitZeroMinute: true,
           hour12: true,
         },
-        plugins: [ timeGridPlugin, listPlugin ],
         header: {
           left: 'prev,next today addEventButton',
           center: 'title',
@@ -722,7 +722,24 @@ function InfoCita(props){
   const [annulCita, setAnnulCita] = useState({toCheck: false, show: false});
   useEffect(()=>{  // To call after render
     if(annulCita.show===true){  // Show annulCita modal
+      window.$('#modal_ver_cita').data('bs.modal')._config.backdrop = true;
+      window.$('#modal_ver_cita').data('bs.modal')._config.keyboard = true;
       window.$('#modal_ver_cita').modal('show');
+    }else if(annulCita.toCheck===true){
+      /* Confirm annul modal can't close by 'esc' and by clicking backdrop
+      window.$('#modal_anular_cita').data('bs.modal')._config.backdrop = 'static';
+      window.$('#modal_anular_cita').data('bs.modal')._config.keyboard = false;
+      BUG: _config.keyboard = false // Does not work because conflict with mmodal's backdrop
+      FIX: hide and show alert modal so _config is set correctly
+      */
+      /* Hide event
+      window.$('#modal_anular_cita').on('hidden.bs.modal', function(){})
+      ERROR: this event listener is setted more than once and may cause performance troubles
+      */
+      window.$('#modal_anular_cita').data('bs.modal')._config.backdrop = 'static';
+      window.$('#modal_anular_cita').data('bs.modal')._config.keyboard = false;
+      window.$('#modal_anular_cita').modal('hide');
+      window.$('#modal_anular_cita').modal('show');
     }
   });
 
@@ -730,7 +747,7 @@ function InfoCita(props){
     if(!props.cita) return "";
     let _hora = props.cita.hora.slice(0,5);
     _hora += props.cita.hora_fin ? " - "+props.cita.hora_fin.slice(0,5) : "";
-    let _pac_nombre = props.cita.paciente_data.nombre_principal
+    let _pac_nombre = props.cita.paciente_data.nombre_principal;
     _pac_nombre += props.cita.paciente_data.nombre_secundario ? " "+props.cita.paciente_data.nombre_secundario : " ";
     _pac_nombre += (props.cita.paciente_data.ape_paterno+" "+props.cita.paciente_data.ape_materno).toUpperCase();
     let _personal = props.cita.personal.nombre_principal;
@@ -742,6 +759,7 @@ function InfoCita(props){
     let _indicaciones = props.cita.paciente_data.indicaciones ? props.cita.paciente_data.indicaciones : false;
 
     function assureAnnul(func, cita_pk, state){  // Assure annul function
+      // window.$('#modal_ver_cita').data('bs.modal')._backdrop.remove()
       let clone = {};
       clone.toCheck = true;
       clone.show = false;
@@ -791,12 +809,16 @@ function InfoCita(props){
               <div className="btn-group">
                 <a onClick={()=>props.addOdontograma(props.cita.pk)}
                   title="Odontograma"
-                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed">
-                    <i className="fal fa-bug"></i>
+                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed"
+                  style={{margin: "0 4px"}}>
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="tooth" className="svg-inline--fa fa-tooth fa-w-14" role="img" viewBox="0 0 448 512" style={{width: "60%"}}>
+                    <path fill="currentColor" d="M443.98 96.25c-11.01-45.22-47.11-82.06-92.01-93.72-32.19-8.36-63 5.1-89.14 24.33-3.25 2.39-6.96 3.73-10.5 5.48l28.32 18.21c7.42 4.77 9.58 14.67 4.8 22.11-4.46 6.95-14.27 9.86-22.11 4.8L162.83 12.84c-20.7-10.85-43.38-16.4-66.81-10.31-44.9 11.67-81 48.5-92.01 93.72-10.13 41.62-.42 80.81 21.5 110.43 23.36 31.57 32.68 68.66 36.29 107.35 4.4 47.16 10.33 94.16 20.94 140.32l7.8 33.95c3.19 13.87 15.49 23.7 29.67 23.7 13.97 0 26.15-9.55 29.54-23.16l34.47-138.42c4.56-18.32 20.96-31.16 39.76-31.16s35.2 12.85 39.76 31.16l34.47 138.42c3.39 13.61 15.57 23.16 29.54 23.16 14.18 0 26.48-9.83 29.67-23.7l7.8-33.95c10.61-46.15 16.53-93.16 20.94-140.32 3.61-38.7 12.93-75.78 36.29-107.35 21.95-29.61 31.66-68.8 21.53-110.43z"></path>
+                  </svg>
                 </a>
                 <a onClick={()=>props.addProcedure(props.cita.pk)}
                   title="Procedimiento Odontologico"
-                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed">
+                  className="btn btn-warning btn-icon rounded-circle waves-effect waves-themed"
+                  style={{margin: "0 4px"}}>
                     <i className="fal fa-plus"></i>
                 </a>
               </div>
@@ -811,11 +833,11 @@ function InfoCita(props){
                 <button type="button" className="btn btn-primary dropdown-toggle dropdown-toggle-split waves-effect waves-themed" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 </button>
                 <div className="dropdown-menu">
-                  <a className="dropdown-item" data-dismiss="modal"
+                  <a className="dropdown-item"
                     onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 3)}>Anular cita</a>
-                  <a className="dropdown-item" data-dismiss="modal"
+                  <a className="dropdown-item"
                     onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 2)}>Anulado por cliente</a>
-                  <a className="dropdown-item" data-dismiss="modal"
+                  <a className="dropdown-item"
                     onClick={()=>props.annulCita(props.cita.pk, 4)}>Paciente no se presento</a>
                 </div>
               </div>
@@ -846,7 +868,7 @@ function InfoCita(props){
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Anular cita</h5>
-              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+              <button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={()=>cancelAnnul()}>
                 <span aria-hidden="true"><i className="fal fa-times"></i></span>
               </button>
             </div>
@@ -857,7 +879,7 @@ function InfoCita(props){
               <button type="button" data-dismiss="modal"
                 className="btn btn-secondary waves-effect waves-themed"
                 onClick={()=>cancelAnnul()}>Cancelar</button>
-              <button type="button"
+              <button type="button" data-dismiss="modal"
                 className="btn btn-primary waves-effect waves-themed"
                 onClick={()=>annul()}>Anular</button>
             </div>
