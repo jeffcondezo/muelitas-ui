@@ -16,11 +16,12 @@ class Master extends React.Component {
     this.state = {
       logged: false,  // User is loged in?
       user: {},
-      error_log: "",
+      error_log: false,
     }
     // Check if user is already loged
     if(!this.state.logged && localStorage.hasOwnProperty('access_token'))
       this.checkAlreadyLogged()  // Token cookie already exists?
+    let asd = this.state;
   }
   checkAlreadyLogged(){  // Token exists and this.state.logged = false
     // Send token to check if it's alright
@@ -29,21 +30,18 @@ class Master extends React.Component {
     let xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://127.0.0.1:8000/maestro/tokenexist/');
     xhr.onload = (xhr) => {
-      if(xhr.target.response==="delete"){  // If token is wrong
+      xhr = xhr.target;
+      if(xhr.response==="delete"){  // If token is wrong
         localStorage.removeItem("access_token");  // Delete token
         return;
       }
-      if(xhr.target.status===0){
-        console.log("CONEXIÓN CON EL SERVIDOR FAILED");
-        return;
-      }
-      if(xhr.target.status===500){
-        console.log(xhr.target.status);
-        return;
-      }
+      if(xhr.status===0){this.handleServerError();return;}
+      if(xhr.status===400){this.handleBadRequest();return;}
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
 
       // If token is alright set this.state with user data
-      const response_object = JSON.parse(xhr.target.response);
+      const response_object = JSON.parse(xhr.response);
 
       // Change attribute's value
       let clone = Object.assign({}, this.state)  // Clone this.state object
@@ -51,9 +49,7 @@ class Master extends React.Component {
       clone.user = response_object  // Set user data
       this.setState(clone)  // Save change (re-render)
     }
-    xhr.onerror = (xhr) => {
-      console.log(xhr.target.status);
-    }
+    xhr.onerror = this.handleServerError;
     xhr.send(a);  // Send request
   }
   setLoggedIn(){
@@ -63,22 +59,19 @@ class Master extends React.Component {
     let xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://127.0.0.1:8000/maestro/tokenexist/');
     xhr.onload = (xhr) => {
+      xhr = xhr.target;
       // Posible errors
-      if(xhr.target.response==="delete"){  // If token is wrong
+      if(xhr.response==="delete"){  // If token is wrong
         localStorage.removeItem("access_token");  // Delete token
         return;
       }
-      if(xhr.target.status===0){
-        this.setError("CONEXIÓN CON EL SERVIDOR FAILED");
-        return;
-      }
-      if(xhr.target.status===500){
-        this.setError(xhr.target.status);
-        return;
-      }
+      if(xhr.status===0){this.handleServerError();return;}
+      if(xhr.status===400){this.handleBadRequest();return;}
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
 
       // If token is alright set this.state with user data
-      const response_object = JSON.parse(xhr.target.response);
+      const response_object = JSON.parse(xhr.response);
 
       // Change attribute's value
       let clone = Object.assign({}, this.state)  // Clone this.state object
@@ -86,18 +79,28 @@ class Master extends React.Component {
       clone.user = response_object  // Set user data
       this.setState(clone)  // Save change (re-render)
     }
-    xhr.onerror = (xhr) => {
-      this.setError(xhr.target.status);
-    }
+    xhr.onerror = this.handleServerError;
     xhr.send(a);  // Send request
   }
-  setError(log, from){
-    if(from===undefined) from = "";
-    let clone = Object.assign({}, this.state)  // Clone this.state object
-    clone.error_log = String(log)  // Change attribute's value
-    this.setState(clone)  // Save change (re-render)
+  handleBadRequest(){
+    this.setError("BAD REQUEST ERROR");
   }
-  render(){  /*** RENDER ***/
+  handlePermissionError(){
+    this.setError("PERMISSION ERROR");
+  }
+  handleServerError(){
+    this.setError("SERVER ERROR");
+  }
+  setError(log){
+    console.log(this);
+    return;
+    let clone = Object.assign({}, this.state)
+    clone.error_log = String(log)
+    // Save error log and redirect to error page
+    this.setState(clone, this.history.push('/error/log'))
+  }
+
+  render(){
     return (
       <BrowserRouter>  {/* Interface for Routes */}
         <Switch>  {/* SWITCH: area to be changed by Link */}
@@ -108,11 +111,10 @@ class Master extends React.Component {
             {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLoggedIn()} />}
           </Route>
           <Route path="/nav">  {/* NAVIGATION */}
-            {this.state.logged ? <Navigation user={this.state.user} errorFunc={(a,b)=>this.setError(a,b)} /> : <Redirect to="/login" />}
+            {this.state.logged ? <Navigation user={this.state.user} errorFunc={this.setError} /> : <Redirect to="/login" />}
           </Route>
           <Route path="/error/log">
-            {/*this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} /> */}
-            <Error />
+            {this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} />}
           </Route>
           <Route>  {/* ROUTE NOT FOUND REDIRECT */}
             <Redirect to="/error/log" />
@@ -133,6 +135,8 @@ Change some class.state attributes:
   this.setState(clone)  // Save change (re-render)
 When generating url with params we should use double quotes ("),
   instead of single quotes (')
+// We does not add withRouter to this component 'cuz this is the one that owns BrowserRouter
+//   and already has this.history property
 */
 
 /*** COMPONENTS ***/
@@ -146,14 +150,14 @@ function Home(){
 }
 function Error(props){
   return (
-    <div class="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
-      <h1 class="page-error color-fusion-500">
-        ERROR <span class="text-gradient">404</span>
-        <small class="fw-500">
-          Algo salió mal!
+    <div className="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
+      <h1 className="page-error color-fusion-500">
+        ERROR <span className="text-gradient">404</span>
+        <small className="fw-500">
+          {props.log ? props.log : "Algo salió mal!"}
         </small>
       </h1>
-      <h3 class="fw-500 mb-5">
+      <h3 className="fw-500 mb-5">
         Estamos experimentando <u>dificultades técnicas</u>. Nos disculpamos.
       </h3>
       <h4>

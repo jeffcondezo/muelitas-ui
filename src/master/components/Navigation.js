@@ -4,30 +4,33 @@ import {
   Switch,  // Allow to change only content
   Route,  // Route handling
   Redirect,  // Redirect url
-  Link
+  Link,  // Alternative to HTML element 'a'
+  withRouter  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
 
 // Components to import
 import Cita from './cita/Cita';
+import Odontograma from './odontograma/Odontograma';
 
 class Navigation extends React.Component {
   constructor(props){
     super();
     this.state = {
       user: props.user,
-      error_log: "",
-      sucursales: [],
-      current_sucursal_pk: -1,
+      sucursales: [],  // User's sucursal
+      current_sucursal_pk: -1,  // Current enviroment sucursal
       profile_pic: "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg",
+      error_log: false,  // Server error
+      redirect: false,  // Redirect object, default: false
     }
-    this.errorFunc = (a,b)=>props.errorFunc(a,b)
     this.setPersonalInfo()
   }
   setPersonalInfo(){
     let xhr = new XMLHttpRequest();
     let _filter = `filtro={"usuario":"${this.state.user.pk}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
+    // let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
+    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignarA/';  // GENERAR ERROR EN MASTER
     let url = _url + '?' + _filter;
     xhr.open('GET', url);
     // xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
@@ -35,11 +38,7 @@ class Navigation extends React.Component {
       xhr = xhr.target
       if(xhr.status!==200){  // Error
         // Send error log to Master
-        this.errorFunc(xhr.statusText, document.location.href);
-        // Change this state to re render and return redirect to ERROR PAGE
-        let clone = Object.assign({}, this.state);
-        clone.error_log = String("--changed--");
-        this.setState(clone);
+        this.props.errorFunc(xhr.statusText);
         return;
       }
       // Parse from json response
@@ -61,15 +60,23 @@ class Navigation extends React.Component {
     clone.current_sucursal_pk = pk;
     this.setState(clone);
   }
+  redirectTo(url, data){
+    let clone = Object.assign({}, this.state);
+    clone.redirect = data;
+    this.setState(clone, this.props.history.push(url));
+  }
+
   render(){
-    if(this.state.error_log!=="") return <Redirect to="/error/log" />
     return (
       <div>
         <div className="page-wrapper">
           <div className="page-inner">
             <BrowserRouter>
               <Aside state={this.state} />
-              <PageContent state={this.state} changeSucursal={this.changeSucursal} />
+              <PageContent
+                state={this.state}
+                changeSucursal={this.changeSucursal}
+                redirectTo={this.redirectTo} />
             </BrowserRouter>
           </div>
         </div>
@@ -99,19 +106,24 @@ function SelectComponent(props){  // CONTENT
   return (
     <main id="js-page-content" role="main" className="page-content">
       <Switch>
-        {/*routes.map((route, index)=>{console.log(route,index);return(  // Generate each Route inside Switch
+        {/*
+        routes.map((route, index)=>{console.log(route,index);return(  // Generate each Route inside Switch
           <Route
             key={index}
             path={route.path}
             exact={route.exact}
             children={<route.main />}
           />
-        )})*/}
+        )})
+        */}
         <Route exact path="/nav/home">
           <h1> HOME </h1>
         </Route>
         <Route path="/nav/cita">
-          <Cita state={props.state} />
+          <Cita state={props.state} redirectTo={props.redirectTo} />
+        </Route>
+        <Route path="/nav/odontograma">
+          <Odontograma />
         </Route>
         <Route>
           <Redirect to="/nav/home" />
@@ -127,8 +139,13 @@ function AsideLinks(){
     <div>
       <li className="nav-title">Principales paginas</li>
       <li>
-        <Link title="Search Results" data-filter-tags="pages search results" to='/nav/cita'>
-          <span className="nav-link-text" data-i18n="nav.pages_search_results">CITA</span>
+        <Link data-filter-tags="cita" to='/nav/cita'>
+          <span className="nav-link-text">CITA</span>
+        </Link>
+      </li>
+      <li>
+        <Link data-filter-tags="odontograma" to='/nav/odontograma'>
+          <span className="nav-link-text">ODONTOGRAMA</span>
         </Link>
       </li>
       <li>
@@ -252,7 +269,7 @@ function PageContent(props){
   return (
     <div className="page-content-wrapper">
         <PageHeader state={props.state} changeSucursal={props.changeSucursal} />
-        <SelectComponent state={props.state} />
+        <SelectComponent state={props.state} redirectTo={props.redirectTo} />
         <PageFooter />
 
         <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">
@@ -1671,4 +1688,4 @@ When we need to execute a function from DOM Events (onclick, onchange, etc)
 */
 
 /* EXPORT NAVIGATION */
-export default Navigation;
+export default withRouter(Navigation);
