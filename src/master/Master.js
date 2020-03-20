@@ -4,7 +4,8 @@ import {
   Switch,  // Allow to change only content
   Route,  // Route handling
   Redirect,  // Redirect url
-  Link  // Alternative to a element for Router usage
+  Link,  // Alternative to a element for Router usage
+  useHistory  // Allow us access to history object
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 // Components
 import Login from './login/Login';
@@ -18,12 +19,12 @@ class Master extends React.Component {
       user: {},
       error_log: false,
     }
+    this.error = false
     // Check if user is already loged
     if(!this.state.logged && localStorage.hasOwnProperty('access_token'))
       this.checkAlreadyLogged()  // Token cookie already exists?
-    let asd = this.state;
   }
-  checkAlreadyLogged(){  // Token exists and this.state.logged = false
+  checkAlreadyLogged(){
     // Send token to check if it's alright
     let a = new FormData();
     a.append("key", localStorage["access_token"]);
@@ -49,7 +50,7 @@ class Master extends React.Component {
       clone.user = response_object  // Set user data
       this.setState(clone)  // Save change (re-render)
     }
-    xhr.onerror = this.handleServerError;
+    xhr.onerror = () => this.handleServerError();
     xhr.send(a);  // Send request
   }
   setLoggedIn(){
@@ -79,30 +80,39 @@ class Master extends React.Component {
       clone.user = response_object  // Set user data
       this.setState(clone)  // Save change (re-render)
     }
-    xhr.onerror = this.handleServerError;
+    xhr.onerror = () => this.handleServerError();
     xhr.send(a);  // Send request
   }
+  setError(log){
+    let clone = Object.assign({}, this.state)
+    clone.error_log = log
+    this.setState(clone)
+  }
   handleBadRequest(){
+    this.error = true
     this.setError("BAD REQUEST ERROR");
   }
   handlePermissionError(){
+    this.error = true
     this.setError("PERMISSION ERROR");
   }
   handleServerError(){
+    this.error = true
     this.setError("SERVER ERROR");
-  }
-  setError(log){
-    console.log(this);
-    return;
-    let clone = Object.assign({}, this.state)
-    clone.error_log = String(log)
-    // Save error log and redirect to error page
-    this.setState(clone, this.history.push('/error/log'))
   }
 
   render(){
+    // if(this.error) return <Error log={this.state.error_log} />
     return (
       <BrowserRouter>  {/* Interface for Routes */}
+        {(()=>{
+          // Print error in case this.error flag is true
+          if(this.error){
+            console.log("ERROR: TRUE");
+            this.error = false;
+            return <Redirect to="/error/log" />
+          }
+        })()}
         <Switch>  {/* SWITCH: area to be changed by Link */}
           <Route exact path="/">
             <Home />  {/* No need of middleware */}
@@ -111,7 +121,9 @@ class Master extends React.Component {
             {this.state.logged ? <Redirect to="/nav" /> : <Login onClick={()=>this.setLoggedIn()} />}
           </Route>
           <Route path="/nav">  {/* NAVIGATION */}
-            {this.state.logged ? <Navigation user={this.state.user} errorFunc={this.setError} /> : <Redirect to="/login" />}
+            {this.state.logged ?
+              <Navigation user={this.state.user} errorFunc={(log)=>this.setError(log)} /> :
+              <Redirect to="/login" />}
           </Route>
           <Route path="/error/log">
             {this.state.error_log==="" ? <Redirect to="/nav" /> : <Error log={this.state.error_log} />}
@@ -135,8 +147,6 @@ Change some class.state attributes:
   this.setState(clone)  // Save change (re-render)
 When generating url with params we should use double quotes ("),
   instead of single quotes (')
-// We does not add withRouter to this component 'cuz this is the one that owns BrowserRouter
-//   and already has this.history property
 */
 
 /*** COMPONENTS ***/
@@ -149,6 +159,8 @@ function Home(){
   )
 }
 function Error(props){
+  let a = useHistory();
+  console.log(a);
   return (
     <div className="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
       <h1 className="page-error color-fusion-500">
