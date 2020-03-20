@@ -5,23 +5,24 @@ import {
   Route,  // Route handling
   Redirect,  // Redirect url
   Link,  // Alternative to HTML element 'a'
-  withRouter  // Allow us access to route props
+  withRouter,  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
 
 // Components to import
 import Cita from './cita/Cita';
 import Odontograma from './odontograma/Odontograma';
+import Procedimiento from './procedimiento/Procedimiento';
 
 class Navigation extends React.Component {
   constructor(props){
     super();
+    props.errorFunc(false)
     this.state = {
       user: props.user,
       sucursales: [],  // User's sucursal
       current_sucursal_pk: -1,  // Current enviroment sucursal
       profile_pic: "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg",
-      error_log: false,  // Server error
       redirect: false,  // Redirect object, default: false
     }
     this.setPersonalInfo()
@@ -29,8 +30,7 @@ class Navigation extends React.Component {
   setPersonalInfo(){
     let xhr = new XMLHttpRequest();
     let _filter = `filtro={"usuario":"${this.state.user.pk}"}`;
-    // let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignarA/';  // GENERAR ERROR EN MASTER
+    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
     let url = _url + '?' + _filter;
     xhr.open('GET', url);
     // xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
@@ -38,7 +38,7 @@ class Navigation extends React.Component {
       xhr = xhr.target
       if(xhr.status!==200){  // Error
         // Send error log to Master
-        this.props.errorFunc(xhr.statusText);
+        this.setError(xhr.statusText);
         return;
       }
       // Parse from json response
@@ -60,10 +60,17 @@ class Navigation extends React.Component {
     clone.current_sucursal_pk = pk;
     this.setState(clone);
   }
+  setError(log){
+    // Save error log and redirect to error page
+    this.props.history.push('/error/log')
+    this.props.errorFunc(log);
+  }
   redirectTo(url, data){
+    console.log(this);
     let clone = Object.assign({}, this.state);
     clone.redirect = data;
     this.setState(clone, this.props.history.push(url));
+    // this.props.history added by withRouter inside BrowserRouter
   }
 
   render(){
@@ -71,13 +78,12 @@ class Navigation extends React.Component {
       <div>
         <div className="page-wrapper">
           <div className="page-inner">
-            <BrowserRouter>
-              <Aside state={this.state} />
-              <PageContent
-                state={this.state}
-                changeSucursal={this.changeSucursal}
-                redirectTo={this.redirectTo} />
-            </BrowserRouter>
+            <Aside state={this.state} />
+            <PageContent
+              state={this.state}
+              changeSucursal={this.changeSucursal}
+              redirectTo={(a,b)=>this.redirectTo(a,b)}
+              history={this.props.history} />
           </div>
         </div>
         <FloatShortcut />
@@ -106,16 +112,6 @@ function SelectComponent(props){  // CONTENT
   return (
     <main id="js-page-content" role="main" className="page-content">
       <Switch>
-        {/*
-        routes.map((route, index)=>{console.log(route,index);return(  // Generate each Route inside Switch
-          <Route
-            key={index}
-            path={route.path}
-            exact={route.exact}
-            children={<route.main />}
-          />
-        )})
-        */}
         <Route exact path="/nav/home">
           <h1> HOME </h1>
         </Route>
@@ -123,7 +119,24 @@ function SelectComponent(props){  // CONTENT
           <Cita state={props.state} redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/odontograma">
-          <Odontograma />
+          {(()=>{  // Exe func
+            // Not comming from redirect
+            if(!props.state.redirect && props.history.location.pathname==="/nav/odontograma"){
+              props.history.goBack();
+            }else{  // Redirect from Cita
+              return <Odontograma />
+            }
+          })()}
+        </Route>
+        <Route path="/nav/procedimiento">
+        {(()=>{  // Exe func
+          // Not comming from redirect
+          if(!props.state.redirect && props.history.location.pathname==="/nav/procedimiento"){
+            props.history.goBack();
+          }else{  // Redirect from Cita
+            return <Procedimiento />
+          }
+        })()}
         </Route>
         <Route>
           <Redirect to="/nav/home" />
@@ -269,7 +282,7 @@ function PageContent(props){
   return (
     <div className="page-content-wrapper">
         <PageHeader state={props.state} changeSucursal={props.changeSucursal} />
-        <SelectComponent state={props.state} redirectTo={props.redirectTo} />
+        <SelectComponent state={props.state} redirectTo={props.redirectTo} history={props.history} />
         <PageFooter />
 
         <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">

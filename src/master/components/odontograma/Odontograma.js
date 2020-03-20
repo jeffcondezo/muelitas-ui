@@ -1,5 +1,6 @@
 import React from 'react';
 import { withRouter } from "react-router-dom";  // Allow us access to route props
+
 class Odontograma extends React.Component {
   constructor(props){
     super();

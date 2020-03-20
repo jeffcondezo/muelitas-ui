@@ -15,13 +15,14 @@ class Cita extends React.Component {
     super();
     this.state = {
       calendar: false,
-      personal: false,  // This work the same as this.state.calendar
+      personal: false,
+      procedimiento: false,
       selected_cita: false,  // Cita shown in Cita info modal
       calendar_filter: [],
       global: props.state,  // This is only setted first time this component is rendered
     }
     this.color_personal = [
-      "#6e4e9e", "#179c8e", "#0c7cd5", "#ffb20e", "#fc077a", "#363636"
+      "#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"
     ];
     this.redirectTo = props.redirectTo;
   }
@@ -31,14 +32,43 @@ class Cita extends React.Component {
 
     // Save change (re-render)
     // Shall we re render calendar?
-    if(this.state.global.current_sucursal_pk!==nextProps.state.current_sucursal_pk){
+    if(this.state.global.current_sucursal_pk!==nextProps.state.current_sucursal_pk){  // Sucursal has changed
       if(!this.state.calendar)  // First execution calendar == false so not render calendar
-        this.setState(clone)
+        this.setState(clone, this.getProcedimiento)  // Get procedimientos according new sucursal
       else
         this.setState(clone, this.getCitas)  // Re render calendar
     }else{  // Something else has changed
       this.setState(clone)  // Only update this.state
     }
+  }
+  // This.props functions
+  getPersonal(){
+    // HTTP REQUEST
+    // Add filter to url
+    let xhr = new XMLHttpRequest();
+    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let _url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
+    let url = _url + '?' + _filter;
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
+    /* We use arrow function instead of memory function declaration to avoid
+      problems with two 'this' objects inside the called function
+    */
+    xhr.onload = (xhr) => {
+      xhr = xhr.target;
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===400){this.handleServerError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
+
+      // Convert response to json object
+      const response_object = JSON.parse(xhr.response);
+
+      let clone = Object.assign({}, this.state);
+      clone.personal = response_object;
+      this.setState(clone, this.getCitas);  // Render citas after personal is setted
+    }
+    xhr.onerror = this.handleServerError;  // Receive server error
+    xhr.send();  // Send request
   }
   getCitas(){
     // HTTP REQUEST
@@ -71,42 +101,18 @@ class Cita extends React.Component {
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send();  // Send request
   }
-  getPersonal(){
-    // HTTP REQUEST
-    // Add filter to url
-    let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    /* We use arrow function instead of memory function declaration to avoid
-      problems with two 'this' objects inside the called function
-    */
-    xhr.onload = (xhr) => {
-      xhr = xhr.target;
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===400){this.handleServerError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
-
-      // Convert response to json object
-      const response_object = JSON.parse(xhr.response);
-
-      let clone = Object.assign({}, this.state);
-      clone.personal = response_object;
-      this.setState(clone, this.getCitas);  // Render citas after personal is setted
-    }
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send();  // Send request
-  }
   handleCitaResponse(xhr){
     xhr = xhr.target;
     if(xhr.status===403){this.handlePermissionError();return;}
     if(xhr.status===400){this.handleServerError();return;}
     if(xhr.status===500){this.handleServerError();return;}
 
+    // Call sucursal's procedimientos
+    this.getProcedimiento();
+
     // Convert response to json object
     const response_object = JSON.parse(xhr.response);
+    console.log(response_object);
 
     // Get this calendar
     let _calendar = this.state.calendar;
@@ -115,9 +121,7 @@ class Cita extends React.Component {
     // Set event
     response_object.forEach((v) => {
       let _data = {};
-      _data.title =
-      `Paciente: ${v.paciente_data.nombre_principal}
-      ${v.programado}`;
+      _data.title = v.programado;
       _data.info = v;
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
@@ -130,6 +134,32 @@ class Cita extends React.Component {
     });
     _calendar.render();
   }
+  getProcedimiento(){
+    let xhr = new XMLHttpRequest();
+    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let _url = process.env.REACT_APP_PROJECT_API+'maestro/procedimiento/precio/';
+    let url = _url + '?' + _filter;
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
+    xhr.onload = (xhr) => {
+      xhr = xhr.target;
+      if(xhr.status===403){this.handlePermissionError();return;}
+      if(xhr.status===400){this.handleServerError();return;}
+      if(xhr.status===500){this.handleServerError();return;}
+
+      // Convert response to json object
+      const response_object = JSON.parse(xhr.response);
+      if(response_object.length<1) return;
+
+      // Save in this.state
+      let clone = Object.assign({}, this.state);
+      clone.procedimiento = response_object
+      this.setState(clone);
+    }
+    xhr.onerror = this.handleServerError;
+    xhr.send();  // Send request
+  }
+  // Errors
   handleBadRequest(xhr){
     let response = JSON.parse(xhr.responseText)
     console.log(response);
@@ -150,25 +180,32 @@ class Cita extends React.Component {
     document.getElementById('alert-server').style.display = "block"
     document.getElementById('alert-server').classList.remove("fade")
     setTimeout(function(){
-      document.getElementById('alert-server').classList.add("fade")
+      if(document.getElementById('alert-server'))
+        document.getElementById('alert-server').classList.add("fade")
     }, 2500)
     setTimeout(function(){
-      document.getElementById('alert-server').style.display = "none"
+      if(document.getElementById('alert-server'))
+        document.getElementById('alert-server').style.display = "none"
     }, 2700)
   }
-  handlePermissionError(){  // No permission
+  handlePermissionError(){
+    // No permission
     document.getElementById("cita-close").click()  // Cerrar formulario cita
     document.getElementById('alert-permission').style.display = "block";
     document.getElementById('alert-permission').classList.remove("fade");
     setTimeout(function(){
-      document.getElementById('alert-permission').classList.add("fade");
+      if(document.getElementById('alert-permission'))
+        document.getElementById('alert-permission').classList.add("fade");
     }, 2500);
     setTimeout(function(){
-      document.getElementById('alert-permission').style.display = "none";
+      if(document.getElementById('alert-permission'))
+        document.getElementById('alert-permission').style.display = "none";
     }, 2700);
     return;
   }
-  getPaciente(dni){  // dni value
+  // Cita functions, arrow function type so we can access to its properties
+  getPaciente = (e) => {
+    let dni = e.target.value;  // Get dni
     if(dni.length<8){
       // Reset paciente data
       document.getElementById("pac_pk").value = "";
@@ -215,6 +252,40 @@ class Cita extends React.Component {
     }
     xhr.onerror = this.handleServerError;
     xhr.send();  // Send request
+  }
+  errorForm = log => {
+    document.querySelector('div#alert-login span').innerText = log;
+    document.getElementById('alert-login').style.display = "block"
+    document.getElementById('alert-login').classList.remove("fade")
+    setTimeout(function(){
+      if(document.getElementById('alert-login'))
+        document.getElementById('alert-login').classList.add("fade")
+    }, 2500)
+    setTimeout(function(){
+      if(document.getElementById('alert-login'))
+        document.getElementById('alert-login').style.display = "none"
+    }, 2700)
+  }
+  cancelCitaForm = () => {  // Reset values
+    // Other values
+    document.getElementById("pac_pk").value = "";
+    document.getElementById("pac_dni").value = "";
+    document.getElementById("date").value = "";
+    document.getElementById("hour").value = "08";
+    document.getElementById("minute").value = "00";
+    document.getElementById("duracion").value = "15";
+    document.getElementById("programado").value = '1';
+    window.$("#personal").empty().trigger("change");  // Set personal to empty
+    // Paciente
+    document.getElementById("pac_nom_pri").disabled = false;
+    document.getElementById("pac_nom_pri").value = "";
+    document.getElementById("pac_nom_sec").disabled = false;
+    document.getElementById("pac_nom_sec").value = "";
+    document.getElementById("pac_ape_pat").disabled = false;
+    document.getElementById("pac_ape_pat").value = "";
+    document.getElementById("pac_ape_mat").disabled = false;
+    document.getElementById("pac_ape_mat").value = "";
+    document.getElementById("pac_ape_mat").value = "";
   }
   saveCita = () => {
     // VALIDATIONS FIRST
@@ -305,7 +376,7 @@ class Cita extends React.Component {
     let _origen_cita = "3";  // Origen Web #############
     let _estado = "1";  // Cita Pendiente
     // let _indicaciones = "";
-    let _programado = document.getElementById("programado").value;
+    let _programado = document.getElementById("programado").selectedOptions[0].text;
     // Add personal to 'programado'
     if(_personal.length>1) _programado += `\nAtendido por ${_personal_atencion}`;
     let _duracion = document.getElementById("duracion").value;
@@ -353,30 +424,7 @@ class Cita extends React.Component {
       if(xhr.statusText!=="Created"){
         alert("IDK")
       }
-
       alert("Cita creada exitosamente");
-      // Reset values
-      (()=>{
-        // Other values
-        document.getElementById("pac_pk").value = "";
-        document.getElementById("pac_dni").value = "";
-        document.getElementById("date").value = "";
-        document.getElementById("hour").value = "08";
-        document.getElementById("minute").value = "00";
-        document.getElementById("duracion").value = "15";
-        document.getElementById("programado").value = "Consulta regular";
-        window.$("#personal").empty().trigger("change");
-        // Paciente
-        document.getElementById("pac_nom_pri").disabled = false;
-        document.getElementById("pac_nom_pri").value = "";
-        document.getElementById("pac_nom_sec").disabled = false;
-        document.getElementById("pac_nom_sec").value = "";
-        document.getElementById("pac_ape_pat").disabled = false;
-        document.getElementById("pac_ape_pat").value = "";
-        document.getElementById("pac_ape_mat").disabled = false;
-        document.getElementById("pac_ape_mat").value = "";
-        document.getElementById("pac_ape_mat").value = "";
-      })()
 
       document.getElementById("cita-close").click()  // Cerrar formulario cita
       this.getCitas()  // Re render fullcalendar
@@ -384,29 +432,7 @@ class Cita extends React.Component {
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send(JSON.stringify(data));  // Send request
   }
-  errorForm = log => {
-    document.querySelector('div#alert-login span').innerText = log;
-    document.getElementById('alert-login').style.display = "block"
-    document.getElementById('alert-login').classList.remove("fade")
-    setTimeout(function(){
-      document.getElementById('alert-login').classList.add("fade")
-    }, 2500)
-    setTimeout(function(){
-      document.getElementById('alert-login').style.display = "none"
-    }, 2700)
-  }
-  setFilter = (personal_pk) => {
-    let personal_array = this.state.calendar_filter;
-    if(personal_array.indexOf(personal_pk)!==-1){  // Personal already exist in calendar filter
-      personal_array.splice(personal_array.indexOf(personal_pk),1);  // remove personal filter
-    }else{  // Personal does not exist in calendar filter
-      personal_array.push(personal_pk);  // add personal filter
-    }
-
-    let clone = Object.assign({}, this.state);
-    clone.calendar_filter = personal_array;
-    this.setState(clone, this.getCitas);
-  }
+  // Cita detail modal functions
   getEventInfo = (info) => {
     let data = info.event.extendedProps.info;
     let clone = Object.assign({}, this.state);
@@ -414,6 +440,20 @@ class Cita extends React.Component {
     this.setState(clone, ()=>{
       window.$('#modal_ver_cita').modal('show');
     });
+  }
+  addOdontograma = (cita_pk) => {
+    let url = "/nav/odontograma";
+    let data = {
+      cita_pk: cita_pk,
+    };
+    this.redirectTo(url, data);
+  }
+  addProcedure = (cita_pk) => {
+    let url = "/nav/procedimiento";
+    let data = {
+      cita_pk: cita_pk,
+    };
+    this.redirectTo(url, data);
   }
   annulCita = (cita_pk, status) => {
     let data = {};
@@ -459,18 +499,22 @@ class Cita extends React.Component {
     xhr.onerror = this.handleServerError;  // Receive server error
     xhr.send(JSON.stringify(data));  // Send request
   }
-  addOdontograma = (cita_pk) => {
-    let url = "/nav/odontograma";
-    let data = {
-      cita_pk: cita_pk,
-    };
-    this.redirectTo(url, data);
-  }
-  addProcedure = (cita_pk) => {
-    console.log("Procedure", cita_pk);
+  // Global functions
+  setFilter = (personal_pk) => {
+    let personal_array = this.state.calendar_filter;
+    if(personal_array.indexOf(personal_pk)!==-1){  // Personal already exist in calendar filter
+      personal_array.splice(personal_array.indexOf(personal_pk),1);  // remove personal filter
+    }else{  // Personal does not exist in calendar filter
+      personal_array.push(personal_pk);  // add personal filter
+    }
+
+    let clone = Object.assign({}, this.state);
+    clone.calendar_filter = personal_array;
+    this.setState(clone, this.getCitas);
   }
 
   render(){
+    // console.log(this.state);  // Test this.state rendered
     return(
     <>
       {/* ALERTS */}
@@ -507,7 +551,9 @@ class Cita extends React.Component {
               <SelectPersonal state={this.state} />
               <div className="form-group col-md-12">
                 <label className="form-label" htmlFor="paciente">Dni: </label>
-                <input type="text" id="pac_dni" name="paciente" className="form-control form-control-lg" placeholder="Dni del paciente" maxLength="8" required  onChange={(e)=>this.getPaciente(e.target.value)} />
+                <input type="text" id="pac_dni" name="paciente" required
+                  className="form-control form-control-lg" maxLength="8"
+                  placeholder="Dni del paciente" onChange={this.getPaciente} />
               </div>
               {/* Paciente */}
               <label className="form-label col-md-12">Paciente: </label>
@@ -525,6 +571,7 @@ class Cita extends React.Component {
                 <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
               </div>
               {/* Fin Paciente */}
+              <SelectProcedimiento state={this.state} />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="date">Fecha: </label>
                 <input type="date" id="date" name="date" className="form-control form-control-lg" required />
@@ -567,18 +614,16 @@ class Cita extends React.Component {
                   <option value="240">4 horas</option>
                 </select>
               </div>
-              <div className="form-group col-md-12">
-                <label className="form-label" htmlFor="simpleinput">Programado</label>
-                <input type="text" id="programado" className="form-control form-control-lg" defaultValue="Consulta regular" />
-              </div>
               <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
                   <strong>Ups!</strong> <span>Parece que los datos introducidos no son correctos.</span>
               </div>
             </div>
             {/* FIN FORMULARIO CITA */}
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary waves-effect waves-themed" data-dismiss="modal" id="cita-close">Cancelar</button>
-              <button type="button" className="btn btn-primary waves-effect waves-themed" onClick={this.saveCita}>Guardar</button>
+              <button type="button" data-dismiss="modal" onClick={this.cancelCitaForm}
+                className="btn btn-secondary waves-effect waves-themed" id="cita-close">Cancelar</button>
+              <button type="button" onClick={this.saveCita}
+                className="btn btn-primary waves-effect waves-themed">Guardar</button>
             </div>
           </div>
         </div>
@@ -707,9 +752,8 @@ function SelectPersonal(props){
   if(props.state.personal!==false){
     for(let p of props.state.personal){  // Iterate over all sucursales this user has
       personal.push(
-        <option key={p.pk}
-        value={p.pk}>
-        {p.nombre_principal+" "+p.ape_paterno+" - "+p.especialidad_descripcion}
+        <option key={p.pk} value={p.pk}>
+          {p.nombre_principal+" "+p.ape_paterno+" - "+p.especialidad_descripcion}
         </option>
       );
     }
@@ -717,8 +761,39 @@ function SelectPersonal(props){
   return (
     <div className="form-group col-md-12">
       <label className="form-label" htmlFor="personal">Personal de atención: </label>
-      <select id="personal" className="custom-select form-control" multiple>
+      <select id="personal" className="custom-select form-control custom-select-lg" multiple>
         {personal}
+      </select>
+    </div>
+  )
+}
+function SelectProcedimiento(props){
+  const procedimiento = [];
+  let CONSULTA_REGULAR = 1;  // DB consulta regular regiter's pk
+  if(props.state.procedimiento!==false){
+    for(let p of props.state.procedimiento){
+      // Consulta
+      if(p.procedimiento_data.pk === CONSULTA_REGULAR){
+        procedimiento.push(
+          <option key={CONSULTA_REGULAR} value={CONSULTA_REGULAR} defaultValue>
+            CONSULTA REGULAR
+          </option>
+        )
+        continue;
+      }
+      // Regular execution
+      procedimiento.push(
+        <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
+          {p.procedimiento_data.nombre.toUpperCase()}
+        </option>
+      );
+    }
+  }
+  return (
+    <div className="form-group col-md-12">
+      <label className="form-label" htmlFor="programado">Programado: </label>
+      <select id="programado" className="custom-select form-control custom-select-lg">
+        {procedimiento}
       </select>
     </div>
   )
@@ -764,7 +839,6 @@ function InfoCita(props){
     let _indicaciones = props.cita.paciente_data.indicaciones ? props.cita.paciente_data.indicaciones : false;
 
     function assureAnnul(func, cita_pk, state){  // Assure annul function
-      // window.$('#modal_ver_cita').data('bs.modal')._backdrop.remove()
       let clone = {};
       clone.toCheck = true;
       clone.show = false;
