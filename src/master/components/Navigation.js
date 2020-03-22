@@ -124,7 +124,7 @@ function SelectComponent(props){  // CONTENT
             if(!props.state.redirect && props.history.location.pathname==="/nav/odontograma"){
               props.history.goBack();
             }else{  // Redirect from Cita
-              return <Odontograma />
+              return <Odontograma data={props.state.redirect} />
             }
           })()}
         </Route>
@@ -134,7 +134,7 @@ function SelectComponent(props){  // CONTENT
           if(!props.state.redirect && props.history.location.pathname==="/nav/procedimiento"){
             props.history.goBack();
           }else{  // Redirect from Cita
-            return <Procedimiento />
+            return <Procedimiento data={props.state.redirect} />
           }
         })()}
         </Route>
