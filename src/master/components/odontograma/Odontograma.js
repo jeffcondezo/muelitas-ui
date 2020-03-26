@@ -9,7 +9,6 @@ class Odontograma extends React.Component {
       ctx: false,
       teeth: false,
     }
-    console.log(props);
     // Objects properties
     this.scale = .9;
     this.settings = {
@@ -83,6 +82,14 @@ class Odontograma extends React.Component {
         {key: 75, orientation: 'D', type: 0, root: 2, incidents: [{component: 11, type: 2, value:1}]},
       ],
     }
+    this.odontogram_squares = {
+      square_top: null,
+      square_bottom: null
+    }
+    this.currentTooth = {
+      tooth: null,
+      path: null
+    }
   }
   // Classes
   Tooth = class {
@@ -115,10 +122,12 @@ class Odontograma extends React.Component {
       _y = this.orientation=='U' ? y-(data_space+data_height) : y-data_height+height;
       _data_area.rect(x, _y, width, data_height);
       this.data_area = _data_area;
-      // Tooth key
-      if(this.orientation=='U') this.ctx.strokeText(this.key, x-6+width/2, y-data_space+12);
-      else if(this.orientation=='D') this.ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-3);
 
+      // General area
+      let _area = new Path2D();
+      _y = this.orientation=='U' ? y : y-(data_space+data_height);  // Fix pixel
+      _area.rect(x, _y, width, height);
+      this.area = _area;
       // Root area
       let _root_area = new Path2D();
       _y = this.orientation=='U' ? y : y-data_space-2;  // Fix pixel
@@ -156,34 +165,83 @@ class Odontograma extends React.Component {
         tooth_line_right = 2/3;
       }
 
-      // Top stroke
+      // Top part
       let tooth_top = new Path2D();
       tooth_top.moveTo(x, y);
       tooth_top.lineTo(x+width*tooth_line_left, y+height*tooth_line_up);
       tooth_top.lineTo(x+width*tooth_line_right, y+height*tooth_line_up);
       tooth_top.lineTo(x+width, y);
       this.tooth_top = tooth_top;
-      // Bottom stroke
+      // Bottom part
       let tooth_bottom = new Path2D();
       tooth_bottom.moveTo(x, y+height);
       tooth_bottom.lineTo(x+width*tooth_line_left, y+height*tooth_line_down);
       tooth_bottom.lineTo(x+width*tooth_line_right, y+height*tooth_line_down);
       tooth_bottom.lineTo(x+width, y+height);
       this.tooth_bottom = tooth_bottom;
-      // Left line
+      // Left part
       let tooth_left = new Path2D();
       tooth_left.moveTo(x, y);
       tooth_left.lineTo(x+width*tooth_line_left, y+height*tooth_line_up);
       tooth_left.lineTo(x+width*tooth_line_left, y+height*tooth_line_down);
       tooth_left.lineTo(x, y+height);
       this.tooth_left = tooth_left;
-      // Right line
+      // Right part
       let tooth_right = new Path2D();
       tooth_right.moveTo(x+width, y);
       tooth_right.lineTo(x+width*tooth_line_right, y+height*tooth_line_up);
       tooth_right.lineTo(x+width*tooth_line_right, y+height*tooth_line_down);
       tooth_right.lineTo(x+width, y+height);
       this.tooth_right = tooth_right;
+      // Center part
+      let tooth_center = new Path2D();
+      let tooth_center_tl = new Path2D();
+      let tooth_center_tr = new Path2D();
+      let tooth_center_bl = new Path2D();
+      let tooth_center_br = new Path2D();
+      if(this.body==2){
+        // Center area
+        tooth_center.moveTo(x+width*tooth_line_left, y+height*tooth_line_up);
+        tooth_center.lineTo(x+width*tooth_line_right, y+height*tooth_line_up);
+        tooth_center.lineTo(x+width*tooth_line_right, y+height*tooth_line_down);
+        tooth_center.lineTo(x+width*tooth_line_left, y+height*tooth_line_down);
+        // Center top left
+        tooth_center_tl.moveTo(x+width*tooth_line_left, y+height*tooth_line_up);
+        tooth_center_tl.lineTo(x+width/2, y+height*tooth_line_up);
+        tooth_center_tl.lineTo(x+width/2, y+height/2);
+        tooth_center_tl.lineTo(x+width*tooth_line_left, y+height/2);
+        // Center top right
+        tooth_center_tr.lineTo(x+width/2, y+height*tooth_line_up);
+        tooth_center_tr.lineTo(x+width*tooth_line_right, y+height*tooth_line_up);
+        tooth_center_tr.lineTo(x+width*tooth_line_right, y+height/2);
+        tooth_center_tr.lineTo(x+width/2, y+height/2);
+        // Center bottom right
+        tooth_center_br.moveTo(x+width/2, y+height/2);
+        tooth_center_br.lineTo(x+width*tooth_line_right, y+height/2);
+        tooth_center_br.lineTo(x+width*tooth_line_right, y+height*tooth_line_down);
+        tooth_center_br.lineTo(x+width/2, y+height*tooth_line_down);
+        // Center bottom left
+        tooth_center_bl.moveTo(x+width*tooth_line_left, y+height/2);
+        tooth_center_bl.lineTo(x+width/2, y+height/2);
+        tooth_center_bl.lineTo(x+width/2, y+height*tooth_line_down);
+        tooth_center_bl.lineTo(x+width*tooth_line_left, y+height*tooth_line_down);
+      }
+      this.tooth_center = tooth_center;
+      this.tooth_center_tl = tooth_center_tl;
+      this.tooth_center_tr = tooth_center_tr;
+      this.tooth_center_bl = tooth_center_bl;
+      this.tooth_center_br = tooth_center_br;
+    }
+    drawKey(){
+      let x = this.x;
+      let y = this.y;
+      let width = this.body==2 ? this.settings.width*1.3 : this.settings.width;  // Fix width by body
+      let height = this.settings.height;
+      let data_height = this.settings.data_height;
+      let data_space = this.settings.data_space;
+      // Tooth key
+      if(this.orientation=='U') this.ctx.strokeText(this.key, x-6+width/2, y-data_space+12);
+      else if(this.orientation=='D') this.ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-3);
     }
     strokeBold(e){
       this.ctx.beginPath(); this.ctx.lineWidth = 1.5;  // Bold line width
@@ -492,6 +550,7 @@ class Odontograma extends React.Component {
       this.molarBase();
 
       this.ctx.stroke(this.data_area);
+      this.drawKey();
       this.drawIncidents();
     }
   }
@@ -588,6 +647,7 @@ class Odontograma extends React.Component {
       this.premolarBase();
 
       this.ctx.stroke(this.data_area);
+      this.drawKey();
       this.drawIncidents();
     }
   }
@@ -665,6 +725,19 @@ class Odontograma extends React.Component {
       this.ctx.stroke(this.data_area);
       this.drawIncidents();
     }
+    draw(){
+      this.ctx.strokeStyle = "#000";
+      this.strokeBold(this.tooth);
+      this.strokeBold(this.tooth_top);
+      this.strokeBold(this.tooth_bottom);
+      this.strokeBold(this.tooth_left);
+      this.strokeBold(this.tooth_right);
+      this.drawRoot();
+
+      this.ctx.stroke(this.data_area);
+      this.drawKey();
+      this.drawIncidents();
+    }
   }
   Incisor = class extends this.Tooth {
     constructor(settings, ctx, x, y, key, orientation, incidents){
@@ -689,7 +762,7 @@ class Odontograma extends React.Component {
       _root.moveTo(x, y+height);
       _root.lineTo(x+width/2, y);
       _root.lineTo(x+width, y+height);
-      this.root = _root;
+      this.root = [_root];
     }
     draw(){
       this.ctx.strokeStyle = "#000";
@@ -698,9 +771,10 @@ class Odontograma extends React.Component {
       this.strokeBold(this.tooth_bottom);
       this.strokeBold(this.tooth_left);
       this.strokeBold(this.tooth_right);
-      this.ctx.stroke(this.root);
+      this.ctx.stroke(this.root[0]);
 
       this.ctx.stroke(this.data_area);
+      this.drawKey();
       this.drawIncidents();
     }
   }
@@ -725,6 +799,7 @@ class Odontograma extends React.Component {
     )/2;  // Half of the total space left
     let _top = 30;
     let _build_data;
+    let _last_tooth;
 
     // Upper teeth
     let upper_teeth = [];
@@ -750,6 +825,14 @@ class Odontograma extends React.Component {
       a.draw();
       upper_teeth.push(a);
     });
+    // Genereate square_top
+    let _square_top = new Path2D();
+    _last_tooth = upper_teeth[upper_teeth.length-1];
+    _square_top.moveTo(_left, _top-this.settings.data_space-this.settings.data_height);
+    _square_top.lineTo(_left, _top+this.settings.height);
+    _square_top.lineTo(_last_tooth.x+this.settings.width*(_last_tooth.body==2?1.3:1), _top+this.settings.height);
+    _square_top.lineTo(_last_tooth.x+this.settings.width*(_last_tooth.body==2?1.3:1), _top-this.settings.data_space-this.settings.data_height);
+    this.odontogram_squares.square_top = _square_top;
 
     // Lower teeth
     let lower_teeth = [];
@@ -775,11 +858,112 @@ class Odontograma extends React.Component {
       a.draw();
       lower_teeth.push(a);
     });
+    // Genereate square_top
+    let _square_bottom = new Path2D();
+    _last_tooth = lower_teeth[lower_teeth.length-1];
+    _square_bottom.moveTo(_left, _top-this.settings.data_space-this.settings.data_height);
+    _square_bottom.lineTo(_left, _top+this.settings.height);
+    _square_bottom.lineTo(_last_tooth.x+this.settings.width*(_last_tooth.body==2?1.3:1), _top+this.settings.height);
+    _square_bottom.lineTo(_last_tooth.x+this.settings.width*(_last_tooth.body==2?1.3:1), _top-this.settings.data_space-this.settings.data_height);
+    this.odontogram_squares.square_bottom = _square_bottom;
 
     // Save in this.state
     let clone = Object.assign({}, this.state);
     clone.teeth = {upper_teeth: upper_teeth, lower_teeth: lower_teeth};
     this.setState(clone, ()=>console.log(this));
+  }
+  mouseInCanvas(e){
+    console.log(this, e);
+    let ctx = this.state.ctx;
+    let odontogram_el = ctx.canvas;
+    let x = e.offsetX;
+    let y = e.offsetY;
+    // Check if mouse is in big squares
+    let top = ctx.isPointInPath(this.odontogram_squares.square_top, x, y);
+    let bottom = ctx.isPointInPath(this.odontogram_squares.square_bottom, x, y);
+    if(top || bottom){
+      // Clear canvas area
+      // ctx.clearRect(0,0,odontogram_el.width, odontogram_el.height)
+      ctx.fillStyle = "skyblue";
+      let check_in_teeth;
+      if(top){  // Square TOP is hover
+        check_in_teeth = this.state.teeth.upper_teeth;  // Check in upper_teeth
+      }else if(bottom){  // Square BOTTOM is hover
+        check_in_teeth = this.state.teeth.lower_teeth;  // Check in lower_teeth
+      }
+
+      let noevenone = check_in_teeth.some((e) => {
+        let isIn = ctx.isPointInPath(e.area, x, y);  // Is point in tooth area?
+        if(isIn){  // Point is in tooth area
+          // If it's not the current tooth (point has moved to other tooth)
+          if(this.currentTooth.tooth && e!=this.currentTooth.tooth) this.clearTooth();  // Clear tooth
+
+          // Check if mouse is over root or tooth
+          let e_selected;
+          let root_area = ctx.isPointInPath(e.root_area, x, y);
+          let tooth = ctx.isPointInPath(e.tooth, x, y);
+          let paths;
+          if(root_area){
+            e_selected = e.root_area;
+            paths = e.root;
+          }else if(tooth){
+            e_selected = e.tooth;
+            paths = [
+              e.tooth_top,
+              e.tooth_bottom,
+              e.tooth_left,
+              e.tooth_right,
+              // e.tooth_center,
+              e.tooth_center_tl,
+              e.tooth_center_tr,
+              e.tooth_center_bl,
+              e.tooth_center_br,
+            ];
+          }
+
+          // Check what path is mouse over
+          paths.some((path) => {
+            let found = ctx.isPointInPath(path, x, y);  // Is point in tooth area?
+            if(found){
+              // If it's not the current path (point has moved to other tooth component)
+              if(this.currentTooth.path && path!=this.currentTooth.path) this.clearTooth();  // Clear tooth
+              this.currentTooth.tooth = e;  // Save this as current tooth
+
+              // Print tooth part
+              ctx.fill(path);
+              this.currentTooth.path = path;
+
+              return true;
+            }
+            return false;
+          });
+
+          return true;  // End loop
+        }
+        return false;  // Continue loop
+      });
+      console.log(noevenone);
+      if(!noevenone && this.currentTooth.tooth) this.clearTooth();
+      /**/
+    }else if(this.currentTooth.tooth) this.clearTooth();
+  }
+  clearTooth(){
+    // Clear tooth
+    let margin = 2;
+    this.state.ctx.clearRect(
+      this.currentTooth.tooth.x-margin,
+      this.currentTooth.tooth.y-this.settings.data_height-this.settings.data_space-margin,
+      this.settings.width*(this.currentTooth.tooth.body==2?1.3:1)+margin*2,
+      this.settings.height+this.settings.data_height+this.settings.data_space+margin*2
+    );
+    this.currentTooth.tooth.draw();
+    // Remove current tooth reference
+    this.currentTooth.tooth = null;
+    this.currentTooth.path = null;
+  }
+  toothPartClickHandle(){
+    if(!this.currentTooth.tooth) return;
+    console.log("currentTooth:", this.currentTooth);
   }
 
   render(){
@@ -815,6 +999,9 @@ class Odontograma extends React.Component {
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     let ctx = odontogram_el.getContext('2d');
+    odontogram_el.onmouseenter = ()=>{odontogram_el.onmousemove = (e)=>{this.mouseInCanvas(e)}}
+    odontogram_el.onmouseleave = ()=>{odontogram_el.onmousemove = null}
+    odontogram_el.onclick = ()=>{this.toothPartClickHandle()};
 
     let clone = Object.assign({}, this.state);
     clone.ctx = ctx;
