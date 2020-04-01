@@ -119,14 +119,15 @@ function SelectComponent(props){  // CONTENT
           <Cita state={props.state} redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/odontograma">
-          {(()=>{  // Exe func
+          <Odontograma data={{cita: 7, user: 4}} />
+          {/*(()=>{  // Exe func
             // Not comming from redirect
             if(!props.state.redirect && props.history.location.pathname==="/nav/odontograma"){
               props.history.goBack();
             }else{  // Redirect from Cita
               return <Odontograma data={props.state.redirect} />
             }
-          })()}
+          })()*/}
         </Route>
         <Route path="/nav/procedimiento">
         {(()=>{  // Exe func
