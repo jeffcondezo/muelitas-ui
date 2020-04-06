@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // General properties
 let teeth;
 let ctx;  // Context 2d
 // Objects properties
-let scale = .9;
-let settings = {
+const scale = .9;
+const settings = {
   strokeColor: "#777",
   tooth_spacing: 7*scale,
   width: 30*scale,
@@ -1150,8 +1150,8 @@ class Molar extends Tooth {
       ctx.stroke(i);
     });
   }
-  draw(){
-    ctx.strokeStyle = settings.strokeColor;
+  draw(color=settings.strokeColor, data=true){
+    ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1160,8 +1160,11 @@ class Molar extends Tooth {
     this.drawRoot();
     this.molarBase();
 
-    ctx.stroke(this.data_area);
-    this.drawKey();
+    if(data){
+      // Ugly at redraw
+      ctx.stroke(this.data_area);
+      this.drawKey();
+    }
   }
 }
 class Premolar extends Tooth {
@@ -1244,8 +1247,8 @@ class Premolar extends Tooth {
       ctx.stroke(i);
     });
   }
-  draw(){
-    ctx.strokeStyle = settings.strokeColor;
+  draw(color=settings.strokeColor, data=true){
+    ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1254,8 +1257,11 @@ class Premolar extends Tooth {
     this.drawRoot();
     this.premolarBase();
 
-    ctx.stroke(this.data_area);
-    this.drawKey();
+    if(data){
+      // Ugly at redraw
+      ctx.stroke(this.data_area);
+      this.drawKey();
+    }
   }
 }
 class Canine extends Tooth {
@@ -1320,8 +1326,8 @@ class Canine extends Tooth {
       ctx.stroke(i);
     });
   }
-  draw(){
-    ctx.strokeStyle = settings.strokeColor;
+  draw(color=settings.strokeColor, data=true){
+    ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1329,8 +1335,11 @@ class Canine extends Tooth {
     this.strokeBold(this.tooth_right);
     this.drawRoot();
 
-    ctx.stroke(this.data_area);
-    this.drawKey();
+    if(data){
+      // Ugly at redraw
+      ctx.stroke(this.data_area);
+      this.drawKey();
+    }
   }
 }
 class Incisor extends Tooth {
@@ -1358,8 +1367,8 @@ class Incisor extends Tooth {
     _root.lineTo(x+width, y+height);
     this.root = [_root];
   }
-  draw(){
-    ctx.strokeStyle = settings.strokeColor;
+  draw(color=settings.strokeColor, data=true){
+    ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1367,85 +1376,119 @@ class Incisor extends Tooth {
     this.strokeBold(this.tooth_right);
     ctx.stroke(this.root[0]);
 
-    ctx.stroke(this.data_area);
-    this.drawKey();
+    if(data){
+      // Ugly at redraw
+      ctx.stroke(this.data_area);
+      this.drawKey();
+    }
   }
+}
+// Incident types
+const incident_type = {
+  component_tooth: [4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37],  // tooth
+  component_array: [1, 3, 8, 9, 24],  // component []
+  component: [2, 34, 35],  // component
+  type1: [1, 2, 4, 26],  // value (int)
+  type2: [3, 11, 29, 30, 32, 35],  // value (bool)
+  type3: [8, 28, 36],  // value (obj {log, state})
+  type4: [4],  // value (obj {xo, yo, xf, yf})
+  type5: [14, 15, 21, 37],  // value (character {'R', 'L'})
+  type6: [31, 33, 34]  // value (obj {amount, state})
 }
 
 function Odontograma(props){
-  let cita = props.data.cita;
+  // let cita = props.data.cita;
   // Odontogram data
   let build_data = {
     build_adult_top: [
-      {key: 18, orientation: 'U', type: 0, root: 3, incidents: [{component: [53, 54, 13], type: 1, value:3}]},
-      {key: 17, orientation: 'U', type: 0, root: 3, incidents: [{component: [511, 512, 521, 522, 531, 553, 554, 542], type: 3, value:true}]},
-      {key: 16, orientation: 'U', type: 0, root: 3, incidents: [{type: 4, value:{xo: 2, yo: 22, xf: 26, yf: 58}}]},
-      {key: 15, orientation: 'U', type: 1, root: 1, incidents: [{type: 6}]},
-      {key: 14, orientation: 'U', type: 2, root: 2, incidents: [{type: 7}]},
-      {key: 13, orientation: 'U', type: 3, incidents: [{component: [12, 14], type: 8, value: {log: 2, state: true}}]},
-      {key: 12, orientation: 'U', type: 3, incidents: [{component: [10, 20, 111, 113, 115], type: 9}]},
-      {key: 11, orientation: 'U', type: 3, incidents: [{type: 11, value: true}, {type: 24, component: [112, 114, 115]}]},
-      {key: 21, orientation: 'U', type: 3, incidents: [{type: 12}, {type: 36, value: {log: 3, state: false}}]},
-      {key: 22, orientation: 'U', type: 3, incidents: [{type: 13}, {type: 29, value: true}]},
-      {key: 23, orientation: 'U', type: 3, incidents: [{type: 14, value: 'R'}]},
-      {key: 24, orientation: 'U', type: 1, root: 2, incidents: [{type: 15, value: 'R'}, {type: 14, value: 'L'}]},
-      {key: 25, orientation: 'U', type: 1, root: 1, incidents: [{type: 16, value: 3}, {type: 16, value: 4}, {type: 22}]},
-      {key: 26, orientation: 'U', type: 0, root: 3, incidents: [{type: 17}]},
-      {key: 27, orientation: 'U', type: 0, root: 3, incidents: [{type: 21, value: 'R'}]},
-      {key: 28, orientation: 'U', type: 0, root: 3, incidents: [{type: 21, value: 'L'}, {type: 33, value: {amount: 4, state: false}}]},
+      {key: 18, orientation: 'U', type: 0, root: 3},
+      {key: 17, orientation: 'U', type: 0, root: 3},
+      {key: 16, orientation: 'U', type: 0, root: 3},
+      {key: 15, orientation: 'U', type: 1, root: 1},
+      {key: 14, orientation: 'U', type: 2, root: 2},
+      {key: 13, orientation: 'U', type: 3},
+      {key: 12, orientation: 'U', type: 3},
+      {key: 11, orientation: 'U', type: 3},
+      {key: 21, orientation: 'U', type: 3},
+      {key: 22, orientation: 'U', type: 3},
+      {key: 23, orientation: 'U', type: 3},
+      {key: 24, orientation: 'U', type: 1, root: 2},
+      {key: 25, orientation: 'U', type: 1, root: 1},
+      {key: 26, orientation: 'U', type: 0, root: 3},
+      {key: 27, orientation: 'U', type: 0, root: 3},
+      {key: 28, orientation: 'U', type: 0, root: 3},
     ],
     build_kid_top: [
-      {key: 55, orientation: 'U', type: 0, root: 3, incidents: [{component: 13, type: 2, value: 1}]},
-      {key: 54, orientation: 'U', type: 0, root: 3, incidents: [{component: 12, type: 2, value: 1}]},
-      {key: 53, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 52, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 51, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 61, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 62, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 63, orientation: 'U', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 64, orientation: 'U', type: 0, root: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 65, orientation: 'U', type: 0, root: 3, incidents: [{component: 11, type: 2, value: 1}]},
+      {key: 55, orientation: 'U', type: 0, root: 3},
+      {key: 54, orientation: 'U', type: 0, root: 3},
+      {key: 53, orientation: 'U', type: 3},
+      {key: 52, orientation: 'U', type: 3},
+      {key: 51, orientation: 'U', type: 3},
+      {key: 61, orientation: 'U', type: 3},
+      {key: 62, orientation: 'U', type: 3},
+      {key: 63, orientation: 'U', type: 3},
+      {key: 64, orientation: 'U', type: 0, root: 3},
+      {key: 65, orientation: 'U', type: 0, root: 3},
     ],
     build_adult_bottom: [
-      {key: 48, orientation: 'D', type: 0, root: 2, incidents: [{type: 23}, {type: 30, value: false}]},
-      {key: 47, orientation: 'D', type: 0, root: 2, incidents: [{type: 24, component: [541, 542, 532, 552, 521]}]},
-      {key: 46, orientation: 'D', type: 0, root: 2, incidents: [{type: 7}]},
-      {key: 45, orientation: 'D', type: 1, root: 1, incidents: [{type: 25}]},
-      {key: 44, orientation: 'D', type: 1, root: 1, incidents: [{type: 26, value: 5}]},
-      {key: 43, orientation: 'D', type: 3, incidents: [{type: 27}]},
-      {key: 42, orientation: 'D', type: 3, incidents: [{type: 28, value: {log: 5, state: true}}]},
-      {key: 41, orientation: 'D', type: 3, incidents: [{type: 29, value: true}]},
-      {key: 31, orientation: 'D', type: 3, incidents: [{type: 15, value: 'R'}]},
-      {key: 32, orientation: 'D', type: 3, incidents: [{type: 37, value: 'R'}]},
-      {key: 33, orientation: 'D', type: 3, incidents: [{type: 37, value: 'L'}]},
-      {key: 34, orientation: 'D', type: 1, root: 1, incidents: []},
-      {key: 35, orientation: 'D', type: 1, root: 1, incidents: [{type: 15, value: 'R'}]},
-      {key: 36, orientation: 'D', type: 0, root: 2, incidents: []},
-      {key: 37, orientation: 'D', type: 0, root: 2, incidents: [{type: 37, value: 'R'}, {type: 36, value: {log: 3, state: false}}]},
-      {key: 38, orientation: 'D', type: 0, root: 2, incidents: [{type: 37, value: 'L'}, {type: 31, value: {amount: 6, state: true}}]},
+      {key: 48, orientation: 'D', type: 0, root: 2},
+      {key: 47, orientation: 'D', type: 0, root: 2},
+      {key: 46, orientation: 'D', type: 0, root: 2},
+      {key: 45, orientation: 'D', type: 1, root: 1},
+      {key: 44, orientation: 'D', type: 1, root: 1},
+      {key: 43, orientation: 'D', type: 3},
+      {key: 42, orientation: 'D', type: 3},
+      {key: 41, orientation: 'D', type: 3},
+      {key: 31, orientation: 'D', type: 3},
+      {key: 32, orientation: 'D', type: 3},
+      {key: 33, orientation: 'D', type: 3},
+      {key: 34, orientation: 'D', type: 1, root: 1},
+      {key: 35, orientation: 'D', type: 1, root: 1},
+      {key: 36, orientation: 'D', type: 0, root: 2},
+      {key: 37, orientation: 'D', type: 0, root: 2},
+      {key: 38, orientation: 'D', type: 0, root: 2},
     ],
     build_kid_bottom: [
-      {key: 85, orientation: 'D', type: 0, root: 2, incidents: [{component: 12, type: 2, value: 1}]},
-      {key: 84, orientation: 'D', type: 0, root: 2, incidents: [{component: 12, type: 2, value: 1}]},
-      {key: 83, orientation: 'D', type: 3, incidents: []},
-      {key: 82, orientation: 'D', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 81, orientation: 'D', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 71, orientation: 'D', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 72, orientation: 'D', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 73, orientation: 'D', type: 3, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 74, orientation: 'D', type: 0, root: 2, incidents: [{component: 11, type: 2, value: 1}]},
-      {key: 75, orientation: 'D', type: 0, root: 2, incidents: [{component: 11, type: 2, value: 1}]},
+      {key: 85, orientation: 'D', type: 0, root: 2},
+      {key: 84, orientation: 'D', type: 0, root: 2},
+      {key: 83, orientation: 'D', type: 3},
+      {key: 82, orientation: 'D', type: 3},
+      {key: 81, orientation: 'D', type: 3},
+      {key: 71, orientation: 'D', type: 3},
+      {key: 72, orientation: 'D', type: 3},
+      {key: 73, orientation: 'D', type: 3},
+      {key: 74, orientation: 'D', type: 0, root: 2},
+      {key: 75, orientation: 'D', type: 0, root: 2},
     ]
   }
-  let odontogram_squares = {
-    square_top: null,
-    square_bottom: null
-  }
+  let odontogram_squares = useRef({square_top: null, square_bottom: null}).current;
+  /* We want to keep these values even when any state change, so we declare 'em as Ref
+    We initialize its value and reference it's 'current' attribute (which is the actual value)
+    declaring to useRef().current directly only works on objects
+  */
   // Main variables
-  let currentTooth = {tooth: null, path: null};
+  let currentTooth = useRef({tooth: null, path: null, preserve: false}).current;
   let [teethState, setTeeth] = useState(false);  // Tooth data, redraw incidents
+  // Panel state
+  let [incident, setIncident] = useState(false);
+  // DOM variables
+  let odontogram_type = useRef();
 
   function genTeeth(type='A'){
+    // Change global variables value when change odontogram type
+    teeth = [];  // Reset teeth array
+    /* This way does not work
+      we can not re declare a useRef.current object, we can only modify it's attributes
+      currentTooth = {tooth: null, path: null, preserve: false};
+      Other solution could be do not declare currentTooth variable as useRef().current
+      but we would have to add '.current' to every usage
+      which is kinda annoying cuz' it'd be more like an object instead of a variable
+     */
+    currentTooth.tooth = null;
+    currentTooth.path = null;
+    currentTooth.preserve = false;
+    odontogram_type.current = type;  // DOM odontogram type indicator
+
     // General
     let _left = (
       // Odontogram element width
@@ -1455,7 +1498,6 @@ function Odontograma(props){
     )/2;  // Half of the total space left
     let _top = 30;
     let _build_data;
-    teeth = [];  // Reset teeth array
 
     // Upper teeth
     let upper_teeth = [];
@@ -1532,7 +1574,9 @@ function Odontograma(props){
     });
     drawAllIncidents();
   }
-  function mouseInCanvas(e){
+  function mouseInCanvas(e, check=false){
+    if(currentTooth.tooth && currentTooth.preserve && !check) return;  // Skip when tooth is selected
+
     let x = e.offsetX;
     let y = e.offsetY;
     // Check if mouse is in big squares
@@ -1553,47 +1597,9 @@ function Odontograma(props){
           // If it's not the current tooth (point has moved to other tooth)
           if(currentTooth.tooth && e!=currentTooth.tooth) clearTooth();  // Clear tooth
 
-          // Check if mouse is over root or tooth
-          let e_selected;
-          let root_area = ctx.isPointInPath(e.root_area, x, y);
-          let tooth = ctx.isPointInPath(e.tooth, x, y);
-          let paths;
-          if(root_area){
-            e_selected = e.root_area;
-            paths = e.root;
-          }else if(tooth){
-            e_selected = e.tooth;
-            paths = [
-              e.tooth_top,
-              e.tooth_bottom,
-              e.tooth_left,
-              e.tooth_right,
-              // e.tooth_center,
-              e.tooth_center_tl,
-              e.tooth_center_tr,
-              e.tooth_center_bl,
-              e.tooth_center_br,
-            ];
-          }
-
-          // Check what path is mouse over
-          let _noevenone = paths.some((path) => {
-            let found = ctx.isPointInPath(path, x, y);  // Is point in tooth area?
-            if(found){
-              // If it's not the current path (point has moved to other tooth component)
-              if(currentTooth.path && path!=currentTooth.path) clearTooth();  // Clear tooth
-              currentTooth.tooth = e;  // Save this as current tooth
-              ctx.fillStyle = "skyblue";
-
-              // Print tooth part
-              ctx.fill(path);
-              currentTooth.path = path;
-
-              return true;
-            }
-            return false;
-          });
-          if(!_noevenone && currentTooth.tooth) clearTooth();  // Fix draw when no path is pointed
+          // Stroke tooth
+          e.draw("lightblue", false);
+          currentTooth.tooth = e;  // Save this as current tooth
 
           return true;  // End loop
         }
@@ -1602,8 +1608,11 @@ function Odontograma(props){
       if(!noevenone && currentTooth.tooth) clearTooth();  // Fix draw when no tooth is pointer
 
     }else if(currentTooth.tooth) clearTooth();
+    console.log(currentTooth);
   }
   function clearTooth(){
+    if(currentTooth.preserve) return;  // Preserve selected tooth
+
     // Clear tooth
     let margin = 2;
 
@@ -1629,8 +1638,17 @@ function Odontograma(props){
     currentTooth.tooth = null;
     currentTooth.path = null;
   }
-  function toothPartClickHandle(){
-    if(!currentTooth.tooth) return;
+  function toothPartClickHandle(e){
+    console.log("click", currentTooth);
+    if(!currentTooth.tooth) return;  // Skip when there is no current tooth
+    let ct = Object.assign({}, currentTooth);  // Clone of currentTooth
+    currentTooth.preserve = false;  // Allow to change tooth at click
+    mouseInCanvas(e, true);
+    if(!currentTooth.tooth) return;  // Skip when click in empty area
+    if(currentTooth.tooth.key===ct.tooth.key)  // Same tooth
+      currentTooth.preserve = !ct.preserve;  // Switch preserve tooth
+    else  // Other tooth clicked
+      currentTooth.preserve = true;  // Select this tooth
     console.log("currentTooth:", currentTooth);
   }
   function drawAllIncidents(_teeth=false){
@@ -1645,9 +1663,9 @@ function Odontograma(props){
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
-    odontogram_el.onmouseenter = ()=>{odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}}
-    odontogram_el.onmouseleave = ()=>{odontogram_el.onmousemove = null}
-    odontogram_el.onclick = ()=>{toothPartClickHandle()};
+    // Add event listener
+    odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
+    odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
     genTeeth('A');
   }, []);
   // Run after teeth has changed
@@ -1655,6 +1673,13 @@ function Odontograma(props){
     if(!teeth) return;
     printTeeth();  // Draw odontogram
   }, [teethState]);
+  // Click listener in canvas
+  useEffect(() => {
+    if(!ctx) return;  // Ctx is not defined
+    if(incident){  // Add event listener
+      ctx.canvas.onclick = (e)=>{toothPartClickHandle(e);}
+    }
+  }, [incident]);
 
   return (
     <>
@@ -1668,20 +1693,88 @@ function Odontograma(props){
           </svg> Odontograma
         </h1>
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <label className="btn btn-info waves-effect waves-themed active" onClick={()=>genTeeth('A')}>
+          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>genTeeth('A')}>
             <input type="radio" name="odontogram_type" defaultChecked /> Adulto
           </label>
-          <label className="btn btn-info waves-effect waves-themed" onClick={()=>genTeeth('K')}>
+          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>genTeeth('K')}>
             <input type="radio" name="odontogram_type" /> Infante
           </label>
         </div>
       </div>
       <div>
         <div className="odontogram_container">
-          <canvas id="odontogram" width="800" height="530"></canvas>
+          <canvas id="odontogram" width="800" height="530" style={{background: "#CCC"}}></canvas>
         </div>
+        {(()=>{
+          if(incident)
+            return <IncidentForm tooth={currentTooth.tooth} incident={incident} setIncident={setIncident} />
+          else return <IncidentPanel setIncident={setIncident} />
+        })()}
       </div>
     </>
+  );
+}
+
+function IncidentForm(props){
+  console.log(props);
+  // Type of component select
+  let select_type;
+  const inc_code = props.incident;
+  if( incident_type.component.includes(inc_code) ){ select_type = 1; }
+  else if( incident_type.component_array.includes(inc_code) ){ select_type = 2; }
+  else if( incident_type.component_tooth.includes(inc_code) ){ select_type = 3; }
+  else return;
+
+  // Form fields
+  const elements = [];
+  if(incident_type.type1.includes(inc_code)){
+    elements.push(
+      <h3 key={"type1_"+inc_code}>INT VALUE</h3>
+    );
+  }
+  if(incident_type.type2.includes(inc_code)){
+    elements.push(
+      <h3 key={"type2_"+inc_code}>BOOL VALUE</h3>
+    );
+  }
+  if(incident_type.type3.includes(inc_code)){
+    elements.push(
+      <h3 key={"type3_"+inc_code}>OBJ: log, state</h3>
+    );
+  }
+  if(incident_type.type4.includes(inc_code)){
+    elements.push(
+      <h3 key={"type4_"+inc_code}>DRAW FRACTURE</h3>
+    );
+  }
+  if(incident_type.type5.includes(inc_code)){
+    elements.push(
+      <h3 key={"type5_"+inc_code}>'R' or 'L'</h3>
+    );
+  }
+  if(incident_type.type6.includes(inc_code)){
+    elements.push(
+      <h3 key={"type6_"+inc_code}>OBJ: amount, state</h3>
+    );
+  }
+
+
+  return (
+    <div>
+      <h1>incident form</h1>
+      {elements}
+      <button onClick={()=>props.setIncident(false)}>return</button>
+    </div>
+  );
+}
+function IncidentPanel(props){
+  return (
+    <div className="incident-panel">
+      <li><button onClick={()=>props.setIncident(1)}>Numero uno</button></li>
+      <li><button onClick={()=>props.setIncident(2)}>Numero dos</button></li>
+      <li><button onClick={()=>props.setIncident(3)}>Numero tres</button></li>
+      <li><button onClick={()=>props.setIncident(4)}>Numero cuatro</button></li>
+    </div>
   );
 }
 
