@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  BrowserRouter,  // Router needed && Allow history of visited pages
   Switch,  // Allow to change only content
   Route,  // Route handling
   Redirect,  // Redirect url
@@ -70,7 +69,7 @@ class Navigation extends React.Component {
     let clone = Object.assign({}, this.state);
     clone.redirect = data;
     this.setState(clone, this.props.history.push(url));
-    // this.props.history added by withRouter inside BrowserRouter
+    // this.props.history provided withRouter
   }
 
   render(){

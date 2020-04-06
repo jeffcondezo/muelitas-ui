@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef , useCallback } from 'react';
 
 // General properties
 let teeth;
@@ -14,6 +14,70 @@ const settings = {
   data_height: 35*scale,
   data_space: 80*scale,
 }
+// Odontogram constant data
+let build_data = {
+  build_adult_top: [
+    {key: 18, orientation: 'U', type: 0, root: 3},
+    {key: 17, orientation: 'U', type: 0, root: 3},
+    {key: 16, orientation: 'U', type: 0, root: 3},
+    {key: 15, orientation: 'U', type: 1, root: 1},
+    {key: 14, orientation: 'U', type: 2, root: 2},
+    {key: 13, orientation: 'U', type: 3},
+    {key: 12, orientation: 'U', type: 3},
+    {key: 11, orientation: 'U', type: 3},
+    {key: 21, orientation: 'U', type: 3},
+    {key: 22, orientation: 'U', type: 3},
+    {key: 23, orientation: 'U', type: 3},
+    {key: 24, orientation: 'U', type: 1, root: 2},
+    {key: 25, orientation: 'U', type: 1, root: 1},
+    {key: 26, orientation: 'U', type: 0, root: 3},
+    {key: 27, orientation: 'U', type: 0, root: 3},
+    {key: 28, orientation: 'U', type: 0, root: 3},
+  ],
+  build_kid_top: [
+    {key: 55, orientation: 'U', type: 0, root: 3},
+    {key: 54, orientation: 'U', type: 0, root: 3},
+    {key: 53, orientation: 'U', type: 3},
+    {key: 52, orientation: 'U', type: 3},
+    {key: 51, orientation: 'U', type: 3},
+    {key: 61, orientation: 'U', type: 3},
+    {key: 62, orientation: 'U', type: 3},
+    {key: 63, orientation: 'U', type: 3},
+    {key: 64, orientation: 'U', type: 0, root: 3},
+    {key: 65, orientation: 'U', type: 0, root: 3},
+  ],
+  build_adult_bottom: [
+    {key: 48, orientation: 'D', type: 0, root: 2},
+    {key: 47, orientation: 'D', type: 0, root: 2},
+    {key: 46, orientation: 'D', type: 0, root: 2},
+    {key: 45, orientation: 'D', type: 1, root: 1},
+    {key: 44, orientation: 'D', type: 1, root: 1},
+    {key: 43, orientation: 'D', type: 3},
+    {key: 42, orientation: 'D', type: 3},
+    {key: 41, orientation: 'D', type: 3},
+    {key: 31, orientation: 'D', type: 3},
+    {key: 32, orientation: 'D', type: 3},
+    {key: 33, orientation: 'D', type: 3},
+    {key: 34, orientation: 'D', type: 1, root: 1},
+    {key: 35, orientation: 'D', type: 1, root: 1},
+    {key: 36, orientation: 'D', type: 0, root: 2},
+    {key: 37, orientation: 'D', type: 0, root: 2},
+    {key: 38, orientation: 'D', type: 0, root: 2},
+  ],
+  build_kid_bottom: [
+    {key: 85, orientation: 'D', type: 0, root: 2},
+    {key: 84, orientation: 'D', type: 0, root: 2},
+    {key: 83, orientation: 'D', type: 3},
+    {key: 82, orientation: 'D', type: 3},
+    {key: 81, orientation: 'D', type: 3},
+    {key: 71, orientation: 'D', type: 3},
+    {key: 72, orientation: 'D', type: 3},
+    {key: 73, orientation: 'D', type: 3},
+    {key: 74, orientation: 'D', type: 0, root: 2},
+    {key: 75, orientation: 'D', type: 0, root: 2},
+  ]
+}
+let odontogram_squares = {square_top: null, square_bottom: null};
 // Classes
 class Tooth {
   constructor(x, y, key, orientation, body, incidents){
@@ -30,8 +94,7 @@ class Tooth {
   drawBase(){
     let x = this.x;
     let y = this.y;
-    let body = this.body;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;  // Fix width by body
+    let width = this.body===2 ? settings.width*1.3 : settings.width;  // Fix width by body
     let height = settings.height;
     let root_height = settings.root_height;
     let data_height = settings.data_height;
@@ -40,23 +103,23 @@ class Tooth {
 
     // Data area
     let _data_area = new Path2D();
-    _y = this.orientation=='U' ? y-(data_space+data_height) : y-data_height+height;
+    _y = this.orientation==='U' ? y-(data_space+data_height) : y-data_height+height;
     _data_area.rect(x, _y, width, data_height);
     this.data_area = _data_area;
 
     // General area
     let _area = new Path2D();
-    _y = this.orientation=='U' ? y : y-(data_space+data_height);
+    _y = this.orientation==='U' ? y : y-(data_space+data_height);
     _area.rect(x, _y, width, height);
     this.area = _area;
     // Root area
     let _root_area = new Path2D();
-    _y = this.orientation=='U' ? y : y-data_space-2;  // Fix pixel
+    _y = this.orientation==='U' ? y : y-data_space-2;  // Fix pixel
     _root_area.rect(x, _y, width, root_height);
     this.root_area = _root_area;
     // Tooth area
     let _tooth = new Path2D();
-    _y = this.orientation=='U' ? y+root_height : y-(data_space+data_height);
+    _y = this.orientation==='U' ? y+root_height : y-(data_space+data_height);
     _tooth.rect(x, _y, width, height-root_height);
     this.tooth = _tooth;
   }
@@ -65,21 +128,20 @@ class Tooth {
     let y = this.y;
     let data_height = settings.data_height;
     let data_space = settings.data_space;
-    y = this.orientation=='U' ? y+settings.root_height : y-(data_space+data_height);
-    let root = this.root;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;  // Fix width by body
+    y = this.orientation==='U' ? y+settings.root_height : y-(data_space+data_height);
+    let width = this.body===2 ? settings.width*1.3 : settings.width;  // Fix width by body
     let height = settings.height-settings.root_height;
     // line into tooth
     let tooth_line_up = 0;
     let tooth_line_down = 0;
     let tooth_line_right = 0;
     let tooth_line_left = 0;
-    if(this.body==2){
+    if(this.body===2){
       tooth_line_up = 1/4;
       tooth_line_down = 3/4;
       tooth_line_left = 1/4;
       tooth_line_right = 3/4;
-    }else if(this.body==1){
+    }else if(this.body===1){
       tooth_line_up = 1/2;
       tooth_line_down = 1/2;
       tooth_line_left = 1/3;
@@ -128,7 +190,7 @@ class Tooth {
     let tooth_center_tr = new Path2D();
     let tooth_center_bl = new Path2D();
     let tooth_center_br = new Path2D();
-    if(this.body==2){
+    if(this.body===2){
       // Center area
       tooth_center.moveTo(x+width*tooth_line_left, y+height*tooth_line_up);
       tooth_center.lineTo(x+width*tooth_line_right, y+height*tooth_line_up);
@@ -222,7 +284,7 @@ class Tooth {
     let line_ccb = new Path2D();  // Center center bottom
     let line_ccl = new Path2D();  // Center center left
     let line_ccc = new Path2D();  // Center center line
-    if(this.body==2){
+    if(this.body===2){
       // Center top 1
       line_ct1.moveTo(x+width*tooth_line_left, y+height*tooth_line_up);
       line_ct1.lineTo(x+width/2, y+height*tooth_line_up);
@@ -281,14 +343,14 @@ class Tooth {
   drawKey(){
     let x = this.x;
     let y = this.y;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;  // Fix width by body
+    let width = this.body===2 ? settings.width*1.3 : settings.width;  // Fix width by body
     let height = settings.height;
     let data_height = settings.data_height;
     let data_space = settings.data_space;
     // Tooth key
     ctx.strokeStyle = settings.strokeColor;
-    if(this.orientation=='U') ctx.strokeText(this.key, x-6+width/2, y-data_space+18);
-    else if(this.orientation=='D') ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-10);
+    if(this.orientation==='U') ctx.strokeText(this.key, x-6+width/2, y-data_space+18);
+    else if(this.orientation==='D') ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-10);
   }
   strokeBold(e){
     ctx.beginPath(); ctx.lineWidth = 1.5;  // Bold line width
@@ -335,6 +397,7 @@ class Tooth {
         case 553: component.push(this.tooth_lines[18]); break;  // line_ccb
         case 554: component.push(this.tooth_lines[19]); break;  // line_ccl
         case 115: component.push(this.tooth_lines[20]); break;  // line_ccc
+        default: break;
       }
     });
     if(component.length===1) component = component[0];  // Fix num to array
@@ -388,6 +451,7 @@ class Tooth {
         case 35: _txt = this.inc_PT(component, v.value); break;
         case 36: _txt = this.inc_TP(component, v.value); break;
         case 37: _txt = this.inc_Transposicion(component, v.value); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: incident type not found in key ${v.key}`); break;
       }
       if(_txt) data.push(_txt);  // Add to tooth incident data when method returned
     });
@@ -399,7 +463,7 @@ class Tooth {
       let height = settings.height;
       let data_height = settings.data_height;
       let data_space = settings.data_space;
-      y = this.orientation=='U' ? y-(data_space+data_height) : y-data_height+height;
+      y = this.orientation==='U' ? y-(data_space+data_height) : y-data_height+height;
       ctx.strokeStyle = d.color;
       ctx.strokeText(d.log, x, y);
     });
@@ -416,6 +480,7 @@ class Tooth {
       case 2: txt = "CE"; break;
       case 3: txt = "CD"; break;
       case 4: txt = "CDP"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: "red"};
   }
@@ -429,6 +494,7 @@ class Tooth {
       case 3: txt = "O"; break;
       case 4: txt = "D"; break;
       case 5: txt = "Fluorosis"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: "blue"};
   }
@@ -444,7 +510,7 @@ class Tooth {
   }
   inc_Fractura(c, v){  // 5.3.4  Fractura
     let y = this.y;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       v.yo *= -1;
       v.yf *= -1;
       y += settings.height - (settings.data_space+settings.data_height);
@@ -465,10 +531,10 @@ class Tooth {
     return {log: "FFP", color: "blue"};
   }
   inc_PDAusente(c, v){  // 5.3.6  Pieza dentaria ausente
-    let width = settings.width*(this.body==2?1.3:1);
+    let width = settings.width*(this.body===2?1.3:1);
     let height = settings.height;
     let y = this.y;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y += settings.height - (settings.data_height+settings.data_space);
     }
@@ -484,10 +550,10 @@ class Tooth {
   }
   inc_PDErupcion(c, v){  // 5.3.7  Pieza dentaria en erupción
     let height = settings.height
-    let width = settings.width*(this.body==2?1.3:1);
+    let width = settings.width*(this.body===2?1.3:1);
     let y = this.y;
     let x = this.x;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y += settings.height - (settings.data_height+settings.data_space) - 3;
     }
@@ -540,6 +606,7 @@ class Tooth {
       case 4: txt = "IM"; break;
       case 5: txt = "IE"; break;
       case 6: txt = "C"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: color};
   }
@@ -561,9 +628,9 @@ class Tooth {
     else if(!direction) _teeth = teeth.lower_teeth;
     let last_index = _teeth.length-1;
     let last_width = settings.width;
-    if(_teeth[last_index].body==2) last_width*=1.3;
+    if(_teeth[last_index].body===2) last_width*=1.3;
     let y = this.y;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y -= settings.data_space+settings.root_height+settings.data_height;
     }
 
@@ -577,7 +644,7 @@ class Tooth {
   inc_PDSupernumeraria(c, v){  // 5.3.11  Pieza dentaria supernumeraria
     let x = this.x + (v ? settings.width : 0);
     let y = this.y;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y += settings.height - (settings.data_height+settings.data_space);
     }
 
@@ -593,7 +660,7 @@ class Tooth {
     let y = this.y + settings.height+30;
     let x = this.x + settings.width/2;
     let height = 25;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y -= settings.height*2+settings.data_space+settings.data_height;
     }
@@ -614,7 +681,7 @@ class Tooth {
     let y = this.y + settings.height+5;
     let x = this.x + settings.width/2;
     let height = 25;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y -= settings.height+settings.data_space+settings.data_height+10;
     }
@@ -632,7 +699,6 @@ class Tooth {
     ctx.stroke();
   }
   inc_Diastema(c, v){  // 5.3.14  Diastema
-    let tooth_space = settings.tooth_spacing;
     let diastema_space = 2;
     let width = settings.width;
     let radius = settings.width;
@@ -640,7 +706,7 @@ class Tooth {
     let y = this.y + settings.root_height + (settings.height - settings.root_height)/2;
     let left = x + width - diastema_space;
     let right = x + diastema_space;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y -= settings.root_height+settings.data_space+settings.data_height;
     }
 
@@ -648,7 +714,7 @@ class Tooth {
     ctx.strokeStyle = "blue";
     ctx.beginPath();
     if(v==='R'){
-      right += this.body==2 ? width*.3 : 0;
+      right += this.body===2 ? width*.3 : 0;
       ctx.arc(right, y, radius, -40*Math.PI/180, 40*Math.PI/180);
     }else if(v==='L'){
       ctx.arc(left, y, radius, 140*Math.PI/180, 220*Math.PI/180);
@@ -657,18 +723,18 @@ class Tooth {
   }
   inc_Giroversion(c, v){  // 5.3.15  Giroversión
     let cy = this.y;
-    let y = this.y + settings.height + (this.body==2 ? 8 : 9);
-    let width = this.body==2 ? settings.width*1.3/2 : settings.width/2;
-    let x = this.x + width - (v=='R' ? this.body==2 ? -18 : -14 : this.body==2 ? 19 : 15);
-    let angel_o = this.body==2 ? 65 : 70;
-    let angel_f = this.body==2 ? 115 : 110;
-    let _sign = v=='R' ? 1 : -1;
-    if(this.orientation=='D'){
+    let y = this.y + settings.height + (this.body===2 ? 8 : 9);
+    let width = this.body===2 ? settings.width*1.3/2 : settings.width/2;
+    let x = this.x + width - (v==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
+    let angel_o = this.body===2 ? 65 : 70;
+    let angel_f = this.body===2 ? 115 : 110;
+    let _sign = v==='R' ? 1 : -1;
+    if(this.orientation==='D'){
       y -= settings.data_space + settings.data_height + settings.height + 19;
-      cy -= settings.data_space + (this.body==2 ? 6 : 3);
+      cy -= settings.data_space + (this.body===2 ? 6 : 3);
       angel_o += 180;
       angel_f += 180;
-    }else if(this.orientation=='U'){
+    }else if(this.orientation==='U'){
       cy += settings.root_height;
     }
 
@@ -690,6 +756,7 @@ class Tooth {
       case 3: txt = "V"; break;
       case 4: txt = "P"; break;
       case 5: txt = "L"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: "blue"};
   }
@@ -697,11 +764,10 @@ class Tooth {
     let data_space = settings.data_space;
     let x = this.x;
     let y = this.y - data_space;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;
-    let height = settings.height;
-    if(this.orientation=='D'){
+    let width = this.body===2 ? settings.width*1.3 : settings.width;
+    if(this.orientation==='D'){
       y += data_space + settings.root_height - 8;
-    }else if(this.orientation=='U'){
+    }else if(this.orientation==='U'){
       y += 22;
     }
 
@@ -725,12 +791,12 @@ class Tooth {
   }
   inc_Fusion(c, v){  // 5.3.21  Fusión
     let data_space = settings.data_space;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;
+    let width = this.body===2 ? settings.width*1.3 : settings.width;
     let x = this.x + width/2;
     let y = this.y - data_space - 7;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y += data_space + settings.root_height - 8;
-    }else if(this.orientation=='U'){
+    }else if(this.orientation==='U'){
       y += 21;
     }
     let sign1 = 1;
@@ -749,12 +815,12 @@ class Tooth {
   }
   inc_Geminacion(c, v){  // 5.3.22  Geminación
     let data_space = settings.data_space;
-    let width = this.body==2 ? settings.width*1.3 : settings.width;
+    let width = this.body===2 ? settings.width*1.3 : settings.width;
     let x = this.x + width/2;
     let y = this.y - data_space - 7;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y += data_space + settings.root_height - 8;
-    }else if(this.orientation=='U'){
+    }else if(this.orientation==='U'){
       y += 21;
     }
 
@@ -803,15 +869,16 @@ class Tooth {
       case 3: txt = "CMC"; break;
       case 4: txt = "CV"; break;
       case 5: txt = "CJ"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: "blue"};
   }
   inc_EM(c, v){  // 5.3.29  Espigo muñon
     let y = this.y;
-    let width = settings.width*(this.body==2 ? 1.3 : 1);
+    let width = settings.width*(this.body===2 ? 1.3 : 1);
     let height = settings.height;
     let sign = 1;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y -= settings.data_space+settings.data_height+height;
       sign = -1;
@@ -826,7 +893,7 @@ class Tooth {
     ctx.stroke();
     // Draw square
     ctx.lineWidth = 3;
-    if(this.body==2){
+    if(this.body===2){
       ctx.stroke(this.tooth_center);
     }else{
       let long = 12
@@ -851,7 +918,7 @@ class Tooth {
     ctx.strokeStyle = v.state ? "blue" : "red";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    let width = settings.width*(_teeth[start_index].body==2 ? 1.3 : 1);
+    let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Rectangle
     ctx.rect(_teeth[start_index].x, y-height/2, height, height)
     ctx.moveTo(_teeth[start_index].x+height, y);
@@ -873,10 +940,9 @@ class Tooth {
     let _teeth = [];
     if(direction) _teeth = teeth.upper_teeth;
     else if(!direction) _teeth = teeth.lower_teeth;
-    let last_index = _teeth.length-1;
     let y = this.y - 10;
     let height = 15;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y -= 20;
     }
@@ -886,7 +952,7 @@ class Tooth {
     ctx.beginPath();
     ctx.moveTo(_teeth.upper_teeth.x, y);
     _teeth.forEach((_tooth) => {
-      let width = settings.width*(_tooth.body==2 ? 1.3 : 1);
+      let width = settings.width*(_tooth.body===2 ? 1.3 : 1);
       ctx.lineTo(_tooth.x, y);
       ctx.lineTo(_tooth.x+width/2, y-height);
       ctx.lineTo(_tooth.x+width+settings.tooth_spacing/2, y);
@@ -904,7 +970,7 @@ class Tooth {
     let start_index = _teeth.length-v.amount;
     let y = this.y - 25;
     let height = 15;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
     }
 
@@ -913,7 +979,7 @@ class Tooth {
     ctx.beginPath();
     // Left corner
     ctx.moveTo(_teeth[start_index].x, y+height);
-    let width = settings.width*(_teeth[start_index].body==2 ? 1.3 : 1);
+    let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     ctx.lineTo(_teeth[start_index].x, y);
     ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y);
     // Right corner
@@ -930,14 +996,14 @@ class Tooth {
     let start_index = _teeth.length-v.amount;
     let y = this.y - 25;
     let height = 5;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
     }
 
     ctx.strokeStyle = v.state ? "blue" : "red";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    let width = settings.width*(_teeth[start_index].body==2 ? 1.3 : 1);
+    let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Outter line
     ctx.moveTo(_teeth[start_index].x, y);
     ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y);
@@ -957,14 +1023,14 @@ class Tooth {
     let start_index = 0;
     let y = this.y - 25;
     let height = 5;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
     }
 
     ctx.strokeStyle = v.state ? "blue" : "red";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    let width = settings.width*(_teeth[start_index].body==2 ? 1.3 : 1);
+    let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Outter line
     ctx.moveTo(_teeth[start_index].x, y);
     ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y);
@@ -977,10 +1043,10 @@ class Tooth {
   }
   inc_TP(c, v){  // 5.3.36  Tratamiento pulpar
     let y = this.y;
-    let width = settings.width*(this.body==2 ? 1.3 : 1);
+    let width = settings.width*(this.body===2 ? 1.3 : 1);
     let height = settings.height;
     let sign = 1;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       height *= -1;
       y -= settings.data_space+settings.data_height+height;
       sign = -1;
@@ -996,13 +1062,13 @@ class Tooth {
     // Draw square
     ctx.fillStyle = "blue";
     ctx.beginPath();
-    if(this.body==2){
-      if(v.log==3) ctx.fill(this.tooth_center);
+    if(this.body===2){
+      if(v.log===3) ctx.fill(this.tooth_center);
       else ctx.stroke(this.tooth_center);
     }else{
       let long = 12
       ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
-      if(v.log==3) ctx.fill();
+      if(v.log===3) ctx.fill();
       else ctx.stroke();
     }
 
@@ -1011,52 +1077,53 @@ class Tooth {
       case 1: txt = "TC"; break;
       case 2: txt = "PC"; break;
       case 3: txt = "PP"; break;
+      default: txt = ""; break;
     }
     return {log: txt, color: v.state?"blue":"red"};
   }
   inc_Transposicion(c, v){  // 5.3.37  Transposición
-    let y = this.y + settings.height + (this.body==2 ? 10 : 9);
-    let width = this.body==2 ? settings.width*1.3/2 : settings.width/2;
-    let x = this.x + width - (v=='R' ? this.body==2 ? -18 : -14 : this.body==2 ? 19 : 15);
-    let angel_o = this.body==2 ? 65 : 70;
-    let angel_f = this.body==2 ? 115 : 110;
-    let _sign = v=='R' ? 1 : -1;
-    let rad_y = this.body==2 ? 180 : 300;
-    let rad_x = this.body==2 ? 50 : 50;
+    let y = this.y + settings.height + (this.body===2 ? 10 : 9);
+    let width = this.body===2 ? settings.width*1.3/2 : settings.width/2;
+    let x = this.x + width - (v==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
+    let angel_o = this.body===2 ? 65 : 70;
+    let angel_f = this.body===2 ? 115 : 110;
+    let _sign = v==='R' ? 1 : -1;
+    let rad_y = this.body===2 ? 180 : 300;
+    let rad_x = this.body===2 ? 50 : 50;
     let cy = this.y;
     let _sign_y = 1;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y -= settings.data_space + settings.data_height + settings.height + 19;
-      cy -= settings.data_space + (this.body==2 ? 6 : 3);
-      cy += rad_y*(this.body==2 ? 17/24 : 39/48);  // Fix cy by angle
+      cy -= settings.data_space + (this.body===2 ? 6 : 3);
+      cy += rad_y*(this.body===2 ? 17/24 : 39/48);  // Fix cy by angle
       angel_o += 180;
       angel_f += 180;
       ctx.strokeStyle = "blue";
-    }else if(this.orientation=='U'){
+    }else if(this.orientation==='U'){
       ctx.strokeStyle = "green";
       cy += settings.root_height;
-      cy -= rad_y*(this.body==2 ? 33/48 : 39/48);  // Fix cy by angle
+      cy -= rad_y*(this.body===2 ? 33/48 : 39/48);  // Fix cy by angle
       _sign_y *= -1;
     }
     let cx = this.x;
-    if(v=='R'){
-      cx += settings.width/(this.body==2?2:3);
-      x += settings.width/(this.body==2?2:3) + 2;
-    }else if(v=='L'){
-      cx -= settings.width/(this.body==2?2:3);
-      x -= settings.width/(this.body==2?2:3) + 1;
+    if(v==='R'){
+      cx += settings.width/(this.body===2?2:3);
+      x += settings.width/(this.body===2?2:3) + 2;
+    }else if(v==='L'){
+      cx -= settings.width/(this.body===2?2:3);
+      x -= settings.width/(this.body===2?2:3) + 1;
     }
 
     ctx.lineWidth = 3;
     // ctx.strokeStyle = "blue";
     ctx.beginPath();
     ctx.ellipse(cx+width, cy, rad_x, rad_y, 0, angel_o*Math.PI/180, angel_f*Math.PI/180);
-    if(v=='R') ctx.moveTo(x+2, y+_sign_y*2);
-    if(v=='L') ctx.moveTo(x-2, y+_sign_y*2);
-    if(this.body==2) ctx.lineTo(x-10*_sign, y-_sign_y*6);
+    if(v==='R') ctx.moveTo(x+2, y+_sign_y*2);
+    if(v==='L') ctx.moveTo(x-2, y+_sign_y*2);
+    if(this.body===2) ctx.lineTo(x-10*_sign, y-_sign_y*6);
     else ctx.lineTo(x-6*_sign, y-_sign_y*3);
     ctx.moveTo(x, y+_sign_y*2);
-    if(this.body==2) ctx.lineTo(x+6*_sign, y-_sign_y*8);
+    if(this.body===2) ctx.lineTo(x+6*_sign, y-_sign_y*8);
     else ctx.lineTo(x+4*_sign, y-_sign_y*6);
     ctx.stroke();
   }
@@ -1073,7 +1140,7 @@ class Molar extends Tooth {
     let y = this.y;
     let data_height = settings.data_height;
     let data_space = settings.data_space;
-    y = this.orientation=='U' ? y+settings.root_height : y-(data_space+data_height);
+    y = this.orientation==='U' ? y+settings.root_height : y-(data_space+data_height);
     let width = settings.width*1.3;
     let height = settings.height-settings.root_height;
 
@@ -1097,7 +1164,7 @@ class Molar extends Tooth {
     let root = this._root;
     let data_height = settings.data_height;
     let data_space = settings.data_space;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y = y-(data_space + data_height)+settings.height;  // Fix pixel
       height *= -1;
     }
@@ -1105,7 +1172,7 @@ class Molar extends Tooth {
     // Root area
     let _root = [];
     let _temp;
-    if(root==3){
+    if(root===3){
       // Left
       _temp = new Path2D();
       _temp.moveTo(x+width*0/8, y+height);
@@ -1128,7 +1195,7 @@ class Molar extends Tooth {
       _temp.lineTo(x+width*5/8, y+height/2);
       _temp.lineTo(x+width*6/8, y+height);
       _root.push(_temp);
-    }else if(root==2){
+    }else if(root===2){
       // Left
       _temp = new Path2D();
       _temp.moveTo(x+width*0/4, y+height);
@@ -1179,7 +1246,7 @@ class Premolar extends Tooth {
     let y = this.y+settings.root_height;  // Y coordinate of tooth
     let width = settings.width*1.3;
     let height = settings.height-settings.root_height;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y = y+settings.height-(settings.data_space+settings.data_height+settings.root_height*2);  // Fix pixel
       height *= -1;
     }
@@ -1201,7 +1268,7 @@ class Premolar extends Tooth {
     let data_height = settings.data_height;
     let data_space = settings.data_space;
     let direction = ["1", "4", "5", "8"].includes(String(this.key)[0]);
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y = y-(data_space + data_height)+settings.height;  // Fix pixel
       height *= -1;
     }
@@ -1209,13 +1276,13 @@ class Premolar extends Tooth {
     // Root area
     let _root = [];
     let _temp;
-    if(root==1){
+    if(root===1){
       _temp = new Path2D();
       _temp.moveTo(x+width*1/4, y+height);
       _temp.lineTo(x+width*2/4, y);
       _temp.lineTo(x+width*3/4, y+height);
       _root.push(_temp);
-    }else if(root==2){
+    }else if(root===2){
       // Behind
       _temp = new Path2D();
       _temp.moveTo(x+width*1/5, y+height);
@@ -1280,7 +1347,7 @@ class Canine extends Tooth {
     let data_height = settings.data_height;
     let data_space = settings.data_space;
     let direction = ["1", "4", "5", "8"].includes(String(this.key)[0]);
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y = y-(data_space + data_height)+settings.height;  // Fix pixel
       height *= -1;
     }
@@ -1288,13 +1355,13 @@ class Canine extends Tooth {
     // Root area
     let _root = [];
     let _temp;
-    if(root==1){
+    if(root===1){
       _temp = new Path2D();
       _temp.moveTo(x+width*1/4, y+height);
       _temp.lineTo(x+width*2/4, y);
       _temp.lineTo(x+width*3/4, y+height);
       _root.push(_temp);
-    }else if(root==2){
+    }else if(root===2){
       // Behind
       _temp = new Path2D();
       _temp.moveTo(x+width*1/5, y+height);
@@ -1355,7 +1422,7 @@ class Incisor extends Tooth {
     let height = settings.root_height;
     let data_height = settings.data_height;
     let data_space = settings.data_space;
-    if(this.orientation=='D'){
+    if(this.orientation==='D'){
       y = y-(data_space + data_height)+settings.height;  // Fix pixel
       height *= -1;
     }
@@ -1395,73 +1462,48 @@ const incident_type = {
   type5: [14, 15, 21, 37],  // value (character {'R', 'L'})
   type6: [31, 33, 34]  // value (obj {amount, state})
 }
+const inc_functions = [
+  "Lesión de caries dental",
+  "Defectos del desarrollo del esmalte",
+  "Sellantes",
+  "Fractura",
+  "Fosas y fisuras profundas",
+  "Pieza dentaria ausente",
+  "Pieza dentaria en erupción",
+  "Restauración definitiva",
+  "Restauración temporal",
+  "Edentulo total",
+  "Pieza dentaria supernumeraria",
+  "Pieza dentaria extruida",
+  "Pieza dentaria intruida",
+  "Diastema",
+  "Giroversión",
+  "Posición dentaria",
+  "Pieza dentaria en clavija",
+  "Pieza dentaria ectópica",
+  "Macrodoncia",
+  "Microdoncia",
+  "Fusión",
+  "Geminación",
+  "Impactación",
+  "Superficie desgastada",
+  "Remanente radicular",
+  "Movilidad patológica",
+  "Corona temporal",
+  "Corona",
+  "Espigon - Muñon",
+  "Implante dental",
+  "Aparato ortodóntico fijo",
+  "Aparato ortodóntico removible",
+  "Prótesis fija",
+  "Prótesis removible",
+  "Prótesis total",
+  "Tratamiento pulpar",
+  "Transposición"
+];
 
 function Odontograma(props){
   // let cita = props.data.cita;
-  // Odontogram data
-  let build_data = {
-    build_adult_top: [
-      {key: 18, orientation: 'U', type: 0, root: 3},
-      {key: 17, orientation: 'U', type: 0, root: 3},
-      {key: 16, orientation: 'U', type: 0, root: 3},
-      {key: 15, orientation: 'U', type: 1, root: 1},
-      {key: 14, orientation: 'U', type: 2, root: 2},
-      {key: 13, orientation: 'U', type: 3},
-      {key: 12, orientation: 'U', type: 3},
-      {key: 11, orientation: 'U', type: 3},
-      {key: 21, orientation: 'U', type: 3},
-      {key: 22, orientation: 'U', type: 3},
-      {key: 23, orientation: 'U', type: 3},
-      {key: 24, orientation: 'U', type: 1, root: 2},
-      {key: 25, orientation: 'U', type: 1, root: 1},
-      {key: 26, orientation: 'U', type: 0, root: 3},
-      {key: 27, orientation: 'U', type: 0, root: 3},
-      {key: 28, orientation: 'U', type: 0, root: 3},
-    ],
-    build_kid_top: [
-      {key: 55, orientation: 'U', type: 0, root: 3},
-      {key: 54, orientation: 'U', type: 0, root: 3},
-      {key: 53, orientation: 'U', type: 3},
-      {key: 52, orientation: 'U', type: 3},
-      {key: 51, orientation: 'U', type: 3},
-      {key: 61, orientation: 'U', type: 3},
-      {key: 62, orientation: 'U', type: 3},
-      {key: 63, orientation: 'U', type: 3},
-      {key: 64, orientation: 'U', type: 0, root: 3},
-      {key: 65, orientation: 'U', type: 0, root: 3},
-    ],
-    build_adult_bottom: [
-      {key: 48, orientation: 'D', type: 0, root: 2},
-      {key: 47, orientation: 'D', type: 0, root: 2},
-      {key: 46, orientation: 'D', type: 0, root: 2},
-      {key: 45, orientation: 'D', type: 1, root: 1},
-      {key: 44, orientation: 'D', type: 1, root: 1},
-      {key: 43, orientation: 'D', type: 3},
-      {key: 42, orientation: 'D', type: 3},
-      {key: 41, orientation: 'D', type: 3},
-      {key: 31, orientation: 'D', type: 3},
-      {key: 32, orientation: 'D', type: 3},
-      {key: 33, orientation: 'D', type: 3},
-      {key: 34, orientation: 'D', type: 1, root: 1},
-      {key: 35, orientation: 'D', type: 1, root: 1},
-      {key: 36, orientation: 'D', type: 0, root: 2},
-      {key: 37, orientation: 'D', type: 0, root: 2},
-      {key: 38, orientation: 'D', type: 0, root: 2},
-    ],
-    build_kid_bottom: [
-      {key: 85, orientation: 'D', type: 0, root: 2},
-      {key: 84, orientation: 'D', type: 0, root: 2},
-      {key: 83, orientation: 'D', type: 3},
-      {key: 82, orientation: 'D', type: 3},
-      {key: 81, orientation: 'D', type: 3},
-      {key: 71, orientation: 'D', type: 3},
-      {key: 72, orientation: 'D', type: 3},
-      {key: 73, orientation: 'D', type: 3},
-      {key: 74, orientation: 'D', type: 0, root: 2},
-      {key: 75, orientation: 'D', type: 0, root: 2},
-    ]
-  }
-  let odontogram_squares = useRef({square_top: null, square_bottom: null}).current;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1474,107 +1516,117 @@ function Odontograma(props){
   // DOM variables
   let odontogram_type = useRef();
 
-  function genTeeth(type='A'){
-    // Change global variables value when change odontogram type
-    teeth = [];  // Reset teeth array
-    /* This way does not work
+  /* We use useCallback to avoid re declaration of methods (has no return)
+    makes a better performance
+    source:
+      https://reactjs.org/docs/hooks-reference.html#usecallback
+      https://stackoverflow.com/a/57294726/12322283
+    Also we declare empty dependencies..
+    'cuz this functions do not need to be declared after some variable change
+  */
+  const genTeeth = useCallback((type='A') => {
+      // Change global variables value when change odontogram type
+      teeth = [];  // Reset teeth array
+      /* This way does not work
       we can not re declare a useRef.current object, we can only modify it's attributes
       currentTooth = {tooth: null, path: null, preserve: false};
       Other solution could be do not declare currentTooth variable as useRef().current
       but we would have to add '.current' to every usage
       which is kinda annoying cuz' it'd be more like an object instead of a variable
-     */
-    currentTooth.tooth = null;
-    currentTooth.path = null;
-    currentTooth.preserve = false;
-    odontogram_type.current = type;  // DOM odontogram type indicator
+      */
+      currentTooth.tooth = null;
+      currentTooth.path = null;
+      currentTooth.preserve = false;
+      odontogram_type.current = type;  // DOM odontogram type indicator
 
-    // General
-    let _left = (
-      // Odontogram element width
-      ctx.canvas.width-
-      // Tooth with plus tooth spacing
-      (settings.width+settings.tooth_spacing)*(2+ (type=='A'?16:10))
-    )/2;  // Half of the total space left
-    let _top = 30;
-    let _build_data;
+      // General
+      let _left = (
+        // Odontogram element width
+        ctx.canvas.width-
+        // Tooth with plus tooth spacing
+        (settings.width+settings.tooth_spacing)*(2+ (type==='A'?16:10))
+      )/2;  // Half of the total space left
+      let _top = 30;
+      let _build_data;
 
-    // Upper teeth
-    let upper_teeth = [];
-    _top += settings.data_height+settings.data_space;
-    _build_data = type=='A' ? build_data.build_adult_top : build_data.build_kid_top;
-    _build_data.forEach((v)=>{
-      // Calc coordinates
-      let _x = _left;
-      if(upper_teeth.length){
-        let last_tooth = upper_teeth[upper_teeth.length-1];
-        _x = last_tooth.x + settings.tooth_spacing;
-        _x += last_tooth.body==2 ? settings.width*1.3 : settings.width;
-      }
+      // Upper teeth
+      let upper_teeth = [];
+      _top += settings.data_height+settings.data_space;
+      _build_data = type==='A' ? build_data.build_adult_top : build_data.build_kid_top;
+      _build_data.forEach((v)=>{
+        // Calc coordinates
+        let _x = _left;
+        if(upper_teeth.length){
+          let last_tooth = upper_teeth[upper_teeth.length-1];
+          _x = last_tooth.x + settings.tooth_spacing;
+          _x += last_tooth.body===2 ? settings.width*1.3 : settings.width;
+        }
 
-      // Create object with properties
-      let a;
-      switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
-      }
-      upper_teeth.push(a);
-    });
-    teeth.upper_teeth = upper_teeth;
-    // Genereate square_top
-    odontogram_squares.square_top = new Path2D();
-    let _last_tooth = upper_teeth[upper_teeth.length-1];
-    odontogram_squares.square_top.moveTo(_left-15, _top-settings.data_space-settings.data_height-32);
-    odontogram_squares.square_top.lineTo(_left-15, _top+settings.height+32);
-    odontogram_squares.square_top.lineTo(_last_tooth.x+settings.width*(_last_tooth.body==2?1.3:1)+15, _top+settings.height+32);
-    odontogram_squares.square_top.lineTo(_last_tooth.x+settings.width*(_last_tooth.body==2?1.3:1)+15, _top-settings.data_space-settings.data_height-32);
-    odontogram_squares.square_top.closePath();
+        // Create object with properties
+        let a;
+        switch(v.type){
+          case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+          default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+        }
+        upper_teeth.push(a);
+      });
+      teeth.upper_teeth = upper_teeth;
+      // Genereate square_top
+      odontogram_squares.square_top = new Path2D();
+      let _last_tooth = upper_teeth[upper_teeth.length-1];
+      odontogram_squares.square_top.moveTo(_left-15, _top-settings.data_space-settings.data_height-32);
+      odontogram_squares.square_top.lineTo(_left-15, _top+settings.height+32);
+      odontogram_squares.square_top.lineTo(_last_tooth.x+settings.width*(_last_tooth.body===2?1.3:1)+15, _top+settings.height+32);
+      odontogram_squares.square_top.lineTo(_last_tooth.x+settings.width*(_last_tooth.body===2?1.3:1)+15, _top-settings.data_space-settings.data_height-32);
+      odontogram_squares.square_top.closePath();
 
-    // Lower teeth
-    let lower_teeth = [];
-    _top *= 3;  // Dependant of canvas
-    _build_data = type=='A' ? build_data.build_adult_bottom : build_data.build_kid_bottom;
-    _build_data.forEach((v)=>{
-      // Calc coordinates
-      let _x = _left;
-      if(lower_teeth.length){
-        let last_tooth = lower_teeth[lower_teeth.length-1];
-        _x = last_tooth.x + settings.tooth_spacing;
-        _x += last_tooth.body==2 ? settings.width*1.3 : settings.width;
-      }
+      // Lower teeth
+      let lower_teeth = [];
+      _top *= 3;  // Dependant of canvas
+      _build_data = type==='A' ? build_data.build_adult_bottom : build_data.build_kid_bottom;
+      _build_data.forEach((v)=>{
+        // Calc coordinates
+        let _x = _left;
+        if(lower_teeth.length){
+          let last_tooth = lower_teeth[lower_teeth.length-1];
+          _x = last_tooth.x + settings.tooth_spacing;
+          _x += last_tooth.body===2 ? settings.width*1.3 : settings.width;
+        }
 
-      // Create object with properties
-      let a;
-      switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
-      }
-      lower_teeth.push(a);
-    });
-    teeth.lower_teeth = lower_teeth;
-    // Genereate square_bottom
-    odontogram_squares.square_bottom = new Path2D();
-    _last_tooth = lower_teeth[lower_teeth.length-1];
-    odontogram_squares.square_bottom.moveTo(_left-15, _top-settings.data_space-settings.data_height-32);
-    odontogram_squares.square_bottom.lineTo(_left-15, _top+settings.height+32);
-    odontogram_squares.square_bottom.lineTo(_last_tooth.x+settings.width*(_last_tooth.body==2?1.3:1)+15, _top+settings.height+32);
-    odontogram_squares.square_bottom.lineTo(_last_tooth.x+settings.width*(_last_tooth.body==2?1.3:1)+15, _top-settings.data_space-settings.data_height-32);
-    odontogram_squares.square_bottom.closePath();
+        // Create object with properties
+        let a;
+        switch(v.type){
+          case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
+          case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+          default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+        }
+        lower_teeth.push(a);
+      });
+      teeth.lower_teeth = lower_teeth;
+      // Genereate square_bottom
+      odontogram_squares.square_bottom = new Path2D();
+      _last_tooth = lower_teeth[lower_teeth.length-1];
+      odontogram_squares.square_bottom.moveTo(_left-15, _top-settings.data_space-settings.data_height-32);
+      odontogram_squares.square_bottom.lineTo(_left-15, _top+settings.height+32);
+      odontogram_squares.square_bottom.lineTo(_last_tooth.x+settings.width*(_last_tooth.body===2?1.3:1)+15, _top+settings.height+32);
+      odontogram_squares.square_bottom.lineTo(_last_tooth.x+settings.width*(_last_tooth.body===2?1.3:1)+15, _top-settings.data_space-settings.data_height-32);
+      odontogram_squares.square_bottom.closePath();
 
-    setTeeth(teeth);
-  }
-  function printTeeth(){
+      setTeeth(teeth);
+  }, []);
+  const printTeeth = useCallback(() => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);  // Clear canvas
     [...teeth.upper_teeth, ...teeth.lower_teeth].forEach((tooth) => {
       tooth.draw();
     });
     drawAllIncidents();
-  }
-  function mouseInCanvas(e, check=false){
+  }, []);
+  const mouseInCanvas = useCallback((e, check=false) => {
     if(currentTooth.tooth && currentTooth.preserve && !check) return;  // Skip when tooth is selected
 
     let x = e.offsetX;
@@ -1608,13 +1660,9 @@ function Odontograma(props){
       if(!noevenone && currentTooth.tooth) clearTooth();  // Fix draw when no tooth is pointer
 
     }else if(currentTooth.tooth) clearTooth();
-    console.log(currentTooth);
-  }
-  function clearTooth(){
+  }, []);
+  const clearTooth = useCallback(() => {
     if(currentTooth.preserve) return;  // Preserve selected tooth
-
-    // Clear tooth
-    let margin = 2;
 
     // Erase all block
     ctx.fillStyle = ctx.canvas.style.background ? ctx.canvas.style.background : "white";
@@ -1637,9 +1685,9 @@ function Odontograma(props){
     // Remove current tooth reference
     currentTooth.tooth = null;
     currentTooth.path = null;
-  }
-  function toothPartClickHandle(e){
-    console.log("click", currentTooth);
+  }, []);
+  const toothPartClickHandle = useCallback((e, inc_code=-1) => {
+    console.log("click", currentTooth, inc_code);
     if(!currentTooth.tooth) return;  // Skip when there is no current tooth
     let ct = Object.assign({}, currentTooth);  // Clone of currentTooth
     currentTooth.preserve = false;  // Allow to change tooth at click
@@ -1650,13 +1698,13 @@ function Odontograma(props){
     else  // Other tooth clicked
       currentTooth.preserve = true;  // Select this tooth
     console.log("currentTooth:", currentTooth);
-  }
-  function drawAllIncidents(_teeth=false){
+  }, []);
+  const drawAllIncidents = useCallback((_teeth=false) => {
     _teeth = _teeth===false ? [...teeth.upper_teeth, ...teeth.lower_teeth] : _teeth;
     _teeth.forEach((tooth) => {
       tooth.drawIncidents();
     });
-  }
+  }, []);
 
   // Only run after first render
   useEffect(() => {
@@ -1667,19 +1715,19 @@ function Odontograma(props){
     odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
     odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
     genTeeth('A');
-  }, []);
+  }, [genTeeth]);
   // Run after teeth has changed
   useEffect(() => {
     if(!teeth) return;
     printTeeth();  // Draw odontogram
-  }, [teethState]);
+  }, [teethState, printTeeth]);
   // Click listener in canvas
   useEffect(() => {
     if(!ctx) return;  // Ctx is not defined
     if(incident){  // Add event listener
-      ctx.canvas.onclick = (e)=>{toothPartClickHandle(e);}
+      ctx.canvas.onclick = (e)=>{toothPartClickHandle(e, incident);}
     }
-  }, [incident]);
+  }, [incident, toothPartClickHandle]);
 
   return (
     <>
@@ -1768,12 +1816,18 @@ function IncidentForm(props){
   );
 }
 function IncidentPanel(props){
+  let button_list = [];
+  inc_functions.forEach((v, i) => {
+    button_list.push(
+      <li key={"inc_li_"+i}>
+        <button key={"inc_button_"+i} onClick={()=>props.setIncident(i+1)}>{v}</button>
+      </li>
+    );
+  });
+
   return (
     <div className="incident-panel">
-      <li><button onClick={()=>props.setIncident(1)}>Numero uno</button></li>
-      <li><button onClick={()=>props.setIncident(2)}>Numero dos</button></li>
-      <li><button onClick={()=>props.setIncident(3)}>Numero tres</button></li>
-      <li><button onClick={()=>props.setIncident(4)}>Numero cuatro</button></li>
+      {button_list}
     </div>
   );
 }
