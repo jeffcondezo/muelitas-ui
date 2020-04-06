@@ -1546,7 +1546,7 @@ function Odontograma(props){
         // Tooth with plus tooth spacing
         (settings.width+settings.tooth_spacing)*(2+ (type==='A'?16:10))
       )/2;  // Half of the total space left
-      let _top = 30;
+      let _top = 40;
       let _build_data;
 
       // Upper teeth
@@ -1749,15 +1749,15 @@ function Odontograma(props){
           </label>
         </div>
       </div>
-      <div>
-        <div className="odontogram_container">
-          <canvas id="odontogram" width="800" height="530" style={{background: "#CCC"}}></canvas>
+      <div style={{height: "530px"}}>
+        <canvas id="odontogram" width="800" height="530" style={{background:"#CCF",verticalAlign:"top"}}></canvas>
+        <div style={{display: "inline-block"}}>
+          {(()=>{
+            if(incident)
+              return <IncidentForm tooth={currentTooth.tooth} incident={incident} setIncident={setIncident} />
+            else return <IncidentPanel setIncident={setIncident} />
+          })()}
         </div>
-        {(()=>{
-          if(incident)
-            return <IncidentForm tooth={currentTooth.tooth} incident={incident} setIncident={setIncident} />
-          else return <IncidentPanel setIncident={setIncident} />
-        })()}
       </div>
     </>
   );
@@ -1819,16 +1819,27 @@ function IncidentPanel(props){
   let button_list = [];
   inc_functions.forEach((v, i) => {
     button_list.push(
-      <li key={"inc_li_"+i}>
-        <button key={"inc_button_"+i} onClick={()=>props.setIncident(i+1)}>{v}</button>
-      </li>
+      <button
+        key={"inc_button_"+i}
+        type="button"
+        class="btn btn-secondary waves-effect waves-themed"
+        onClick={()=>props.setIncident(i+1)}>
+          {v}
+      </button>
     );
   });
 
   return (
-    <div className="incident-panel">
-      {button_list}
+    <>
+    <div style={{height: "25px", textAlign: "center", background: "#82c4f877"}}>
+      <span class="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
     </div>
+    <div style={{overflowY: "scroll", height: "505px"}}>
+      <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+      {button_list}
+      </div>
+    </div>
+    </>
   );
 }
 
