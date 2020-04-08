@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef , useCallback } from 'react';
 // General properties
 let teeth;
 let ctx;  // Context 2d
+let select_type = 1;
 // Objects properties
 const scale = .9;
 const settings = {
@@ -1727,8 +1728,52 @@ function Odontograma(props){
           if(currentTooth.tooth && e!=currentTooth.tooth) clearTooth();  // Clear tooth
 
           // Stroke tooth
-          e.draw(settings.hovercolor, false);
           currentTooth.tooth = e;  // Save this as current tooth
+
+          if(select_type===3){  // Select lvl to tooth?
+            e.draw(settings.hovercolor, false);
+          }else{  // Select lvl is in [1, 2]
+            // Check if mouse is over root or tooth
+            let e_selected;
+            let root_area = ctx.isPointInPath(e.root_area, x, y);
+            let tooth = ctx.isPointInPath(e.tooth, x, y);
+            let paths;
+            if(root_area){
+              e_selected = e.root_area;
+              paths = e.root;
+            }else if(tooth){
+              e_selected = e.tooth;
+              paths = [
+                e.tooth_top,
+                e.tooth_bottom,
+                e.tooth_left,
+                e.tooth_right,
+                // e.tooth_center,
+                e.tooth_center_tl,
+                e.tooth_center_tr,
+                e.tooth_center_bl,
+                e.tooth_center_br,
+              ];
+            }
+            // Check what path is mouse over
+            let _noevenone = paths.some((path) => {
+              let found = ctx.isPointInPath(path, x, y);  // Is point in tooth area?
+              if(found){
+                // If it's not the current path (point has moved to other tooth component)
+                if(currentTooth.path && path!=currentTooth.path) clearTooth();  // Clear tooth
+                currentTooth.tooth = e;  // Save this as current tooth
+                ctx.fillStyle = settings.hovercolor;
+
+                // Print tooth part
+                ctx.fill(path);
+                currentTooth.path = path;
+
+                return true;
+              }
+              return false;
+            });
+            if(!_noevenone && currentTooth.tooth) clearTooth();  // Fix draw when no path is pointed
+          } /*fin select lvl != 3*/
 
           return true;  // End loop
         }
@@ -1845,12 +1890,11 @@ function IncidentForm(props){
     return (<button onClick={()=>props.setIncident(false)}>return</button>);
   }
   // Type of component select
-  let select_type;
   const inc_code = props.incident;
   let dom_select_info;
   if( incident_type.component.includes(inc_code) ){
     select_type = 1;
-    dom_select_info = [<i>Seleccione el diente</i>];
+    dom_select_info = [<i>Seleccione el elemento involucrado</i>];
   }
   else if( incident_type.component_array.includes(inc_code) ){
     select_type = 2;
@@ -1858,7 +1902,7 @@ function IncidentForm(props){
   }
   else if( incident_type.component_tooth.includes(inc_code) ){
     select_type = 3;
-    dom_select_info = [<i>Seleccione el elemento involucrado</i>];
+    dom_select_info = [<i>Seleccione el diente</i>];
   }
   else return;
   const inc = incident_type.incidents[inc_code];
@@ -1936,6 +1980,7 @@ function IncidentForm(props){
   );
 }
 function IncidentPanel(props){
+  select_type = 3;
   let button_list = [];
   inc_functions.forEach((v, i) => {
     button_list.push(
@@ -1965,6 +2010,10 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
+// 1. Change select type dinamicaly
+1. Add line select type for sellantes
+1. Allow to select more than one component
+1. Save selected components
 2. Add incidence to main teeth array
 3. Draw updated incidences in odontogram
 4. Save teeth array to API
