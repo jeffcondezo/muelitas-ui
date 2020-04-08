@@ -6,7 +6,8 @@ let ctx;  // Context 2d
 // Objects properties
 const scale = .9;
 const settings = {
-  strokeColor: "#777",
+  strokeColor: "#7A7",
+  hovercolor: "#383",
   tooth_spacing: 7*scale,
   width: 30*scale,
   height: 65*scale,
@@ -1455,12 +1456,88 @@ const incident_type = {
   component_tooth: [4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37],  // tooth
   component_array: [1, 3, 8, 9, 24],  // component []
   component: [2, 34, 35],  // component
-  type1: [1, 2, 4, 26],  // value (int)
-  type2: [3, 11, 29, 30, 32, 35],  // value (bool)
-  type3: [8, 28, 36],  // value (obj {log, state})
-  type4: [4],  // value (obj {xo, yo, xf, yf})
-  type5: [14, 15, 21, 37],  // value (character {'R', 'L'})
-  type6: [31, 33, 34]  // value (obj {amount, state})
+  incidents: [
+    {},  // 0
+    {log: [
+      {key: "MB", text: "Mancha Blanca"},
+      {key: "CE", text: "Lesión de Caries dental a nivel de esmalte"},
+      {key: "CD", text: "Lesión de Caries dental a nivel de dentina"},
+      {key: "CDP", text: "Lesión de Caries dental a nivel de dentina/compromiso de la pulpa"}
+    ]},  // 1
+    {log: [
+      {key: "HP", text: "Hipoplasia"},
+      {key: "HM", text: "Hipo mineralización"},
+      {key: "O", text: "Opacidades del Esmalte"},
+      {key: "D", text: "Decoloración del Esmalte"},
+      {key: "Fluorosis", text: "Fluorosis"}
+    ]},  // 2
+    {state: true},  // 3
+    {/**/},  // 4
+    {},  // 5
+    {},  // 6
+    {},  // 7
+    {log: [
+        {key: "AM", text: "Amalgama Dental"},
+        {key: "R", text: "Resina"},
+        {key: "IV", text: "Ionómetro de Vidrio"},
+        {key: "IM", text: "Incrustación Metálica"},
+        {key: "IE", text: "Incrustación Estética"},
+        {key: "C", text: "Carilla Estética"}
+      ],
+      state: true
+    },  // 8
+    {},  // 9
+    {},  // 10
+    {orientation: true},  // 11
+    {},  // 12
+    {},  // 13
+    {orientation: true},  // 14
+    {orientation: true},  // 15
+    {log: [
+      {key: "M", text: "Mesializado"},
+      {key: "D", text: "Distalizado"},
+      {key: "V", text: "Vestibularizado"},
+      {key: "P", text: "Palatinizado"},
+      {key: "L", text: "Lingualizado"},
+    ]},  // 16
+    {},  // 17
+    {},  // 18
+    {},  // 19
+    {},  // 20
+    {orientation: true},  // 21
+    {},  // 22
+    {},  // 23
+    {},  // 24
+    {},  // 25
+    {log: [
+      {key: "1", text: "1"},
+      {key: "2", text: "2"},
+      {key: "3", text: "3"},
+    ]},  // 26
+    {},  // 27
+    {log: [
+        {key: "CM", text: "Corona Metálica"}, {key: "CF", text: "Corona Fenestrada"},
+        {key: "CMC", text: "Corona Metal Cerámica"}, {key: "CV", text: "Corona Venner"},
+        {key: "CJ", text: "Corona Jacket"}
+      ],
+      state: true
+    },  // 28
+    {state: true},  // 29
+    {state: true},  // 30
+    {state: true, amount: true},  // 31
+    {state: true},  // 32
+    {state: true, amount: true},  // 33
+    {state: true, amount: true},  // 34
+    {state: true},  // 35
+    {log: [
+        {key: "TC", text: "Tratamiento de conductos"},
+        {key: "PC", text: "Pulpectomía"},
+        {key: "PP", text: "Pulpotomía"}
+      ],
+      state: true
+    },  // 36
+    {orientation: true},  // 37
+  ]
 }
 const inc_functions = [
   "Lesión de caries dental",
@@ -1650,7 +1727,7 @@ function Odontograma(props){
           if(currentTooth.tooth && e!=currentTooth.tooth) clearTooth();  // Clear tooth
 
           // Stroke tooth
-          e.draw("lightblue", false);
+          e.draw(settings.hovercolor, false);
           currentTooth.tooth = e;  // Save this as current tooth
 
           return true;  // End loop
@@ -1764,54 +1841,97 @@ function Odontograma(props){
 }
 
 function IncidentForm(props){
-  console.log(props);
+  if(props.incident>=incident_type.incidents.length){
+    return (<button onClick={()=>props.setIncident(false)}>return</button>);
+  }
   // Type of component select
   let select_type;
   const inc_code = props.incident;
-  if( incident_type.component.includes(inc_code) ){ select_type = 1; }
-  else if( incident_type.component_array.includes(inc_code) ){ select_type = 2; }
-  else if( incident_type.component_tooth.includes(inc_code) ){ select_type = 3; }
+  let dom_select_info;
+  if( incident_type.component.includes(inc_code) ){
+    select_type = 1;
+    dom_select_info = [<i>Seleccione el diente</i>];
+  }
+  else if( incident_type.component_array.includes(inc_code) ){
+    select_type = 2;
+    dom_select_info = [<i>Seleccione los elementos involucrados</i>];
+  }
+  else if( incident_type.component_tooth.includes(inc_code) ){
+    select_type = 3;
+    dom_select_info = [<i>Seleccione el elemento involucrado</i>];
+  }
   else return;
+  const inc = incident_type.incidents[inc_code];
 
   // Form fields
   const elements = [];
-  if(incident_type.type1.includes(inc_code)){
+  if(inc.hasOwnProperty("log")){
+    const _elements = [];
+    inc.log.forEach((v, i) => {
+      _elements.push(
+        <option key={"log_option_"+v.key} value={v.key}>{v.text}</option>
+      );
+    });
+    // Add to main elements
     elements.push(
-      <h3 key={"type1_"+inc_code}>INT VALUE</h3>
+      <div className="form-group">
+        <span style={{fontSize: '1.4em'}}>Identificador</span>
+        <label className="form-label" htmlFor="value-log"></label>
+        <select className="form-control" id="value-log">
+          {_elements}
+        </select>
+      </div>
     );
   }
-  if(incident_type.type2.includes(inc_code)){
+  if(inc.hasOwnProperty("state")){
+    // Add to main elements
     elements.push(
-      <h3 key={"type2_"+inc_code}>BOOL VALUE</h3>
+      <div>
+        <span style={{fontSize: '1.4em'}}>Estado</span>
+        <div className="custom-control custom-radio">
+          <input type="radio" className="custom-control-input" id="value-state-T" value="true" name="inc_state" />
+          <label className="custom-control-label" htmlFor="value-state-T">Buen estado</label>
+        </div>
+        <div className="custom-control custom-radio">
+          <input type="radio" className="custom-control-input" id="value-state-F" value="false" name="inc_state" />
+          <label className="custom-control-label" htmlFor="value-state-F">Mal estado</label>
+        </div>
+      </div>
     );
   }
-  if(incident_type.type3.includes(inc_code)){
+  if(inc.hasOwnProperty("amount")){
     elements.push(
-      <h3 key={"type3_"+inc_code}>OBJ: log, state</h3>
+      <div>
+        <span style={{fontSize: '1.4em'}}>Dirección</span>
+        <span>El diente seleccionado es considerado el último del rango</span>
+      </div>
     );
   }
-  if(incident_type.type4.includes(inc_code)){
+  if(inc.hasOwnProperty("orientation")){
+    // Add to main elements
     elements.push(
-      <h3 key={"type4_"+inc_code}>DRAW FRACTURE</h3>
+      <div>
+        <span style={{fontSize: '1.4em'}}>Dirección</span>
+        <div className="custom-control custom-radio">
+          <input type="radio" className="custom-control-input" id="value-orientation-L" value="L" name="inc_orientation" />
+          <label className="custom-control-label" htmlFor="value-orientation-L">Izquierda</label>
+        </div>
+        <div className="custom-control custom-radio">
+          <input type="radio" className="custom-control-input" id="value-orientation-R" value="R" name="inc_orientation" />
+          <label className="custom-control-label" htmlFor="value-orientation-R">Derecha</label>
+        </div>
+      </div>
     );
   }
-  if(incident_type.type5.includes(inc_code)){
-    elements.push(
-      <h3 key={"type5_"+inc_code}>'R' or 'L'</h3>
-    );
-  }
-  if(incident_type.type6.includes(inc_code)){
-    elements.push(
-      <h3 key={"type6_"+inc_code}>OBJ: amount, state</h3>
-    );
-  }
-
 
   return (
     <div>
-      <h1>incident form</h1>
+      <h1>{inc_functions[inc_code-1]}</h1>
+      <span style={{fontSize: '1.4em'}}>{dom_select_info}</span>
       {elements}
-      <button onClick={()=>props.setIncident(false)}>return</button>
+      <br/>
+      <button onClick={()=>props.setIncident(false)}>Cancelar</button>
+      <button onClick={()=>{console.log("saveIncidence()")}}>Guardar</button>
     </div>
   );
 }
@@ -1822,7 +1942,7 @@ function IncidentPanel(props){
       <button
         key={"inc_button_"+i}
         type="button"
-        class="btn btn-secondary waves-effect waves-themed"
+        className="btn btn-secondary waves-effect waves-themed"
         onClick={()=>props.setIncident(i+1)}>
           {v}
       </button>
@@ -1832,10 +1952,10 @@ function IncidentPanel(props){
   return (
     <>
     <div style={{height: "25px", textAlign: "center", background: "#82c4f877"}}>
-      <span class="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
+      <span className="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
     </div>
     <div style={{overflowY: "scroll", height: "505px"}}>
-      <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+      <div className="btn-group-vertical" role="group" aria-label="Vertical button group">
       {button_list}
       </div>
     </div>
@@ -1844,3 +1964,8 @@ function IncidentPanel(props){
 }
 
 export default Odontograma;
+/*
+2. Add incidence to main teeth array
+3. Draw updated incidences in odontogram
+4. Save teeth array to API
+*/
