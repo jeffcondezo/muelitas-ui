@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef , useCallback } from 'react';
 let teeth;
 let ctx;  // Context 2d
 let select_type = 4;
+let currentTooth = {tooth: null, path: null, preserve: false};
 // Objects properties
 const scale = .9;
 const settings = {
@@ -88,7 +89,7 @@ class Tooth {
     this.x = x;
     this.y = y;
     this.body = body;
-    this.incidents = incidents;
+    this.incidents = incidents ? incidents : [];
     // Generate general elements
     this.drawBase();
     this.drawToothComponents();
@@ -399,7 +400,8 @@ class Tooth {
         case 553: component.push(this.tooth_lines[18]); break;  // line_ccb
         case 554: component.push(this.tooth_lines[19]); break;  // line_ccl
         case 115: component.push(this.tooth_lines[20]); break;  // line_ccc
-        default: break;
+        default: component.push(k); break;
+        // default: break;
       }
     });
     if(component.length===1) component = component[0];  // Fix num to array
@@ -471,26 +473,18 @@ class Tooth {
     });
   }
   inc_LCD(c, v){  // 5.3.1  Lesión de caries dental
-    // v is array
+    // c is array
     ctx.fillStyle = "red";
     c.forEach((path) => {
       ctx.fill(path);
     });
-    let txt;
-    switch(v){
-      case 1: txt = "MB"; break;
-      case 2: txt = "CE"; break;
-      case 3: txt = "CD"; break;
-      case 4: txt = "CDP"; break;
-      default: txt = ""; break;
-    }
-    return {log: txt, color: "red"};
+    return {log: v.log, color: "red"};
   }
   inc_DDE(c, v){  // 5.3.2  Defectos de desarrollo de esmalte
     ctx.fillStyle = "red";
     ctx.fill(c);
     let txt;
-    switch(v){
+    switch(v.log){
       case 1: txt = "HP"; break;
       case 2: txt = "HM"; break;
       case 3: txt = "O"; break;
@@ -501,10 +495,10 @@ class Tooth {
     return {log: txt, color: "blue"};
   }
   inc_Sellante(c, v){  // 5.3.3  Sellantes
-    let color = v ? "blue" : "red";
+    let color = v.state ? "blue" : "red";
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    // v is array
+    // c is array
     c.forEach((path) => {
       ctx.stroke(path)
     });
@@ -596,7 +590,7 @@ class Tooth {
   inc_RestDef(c, v){  // 5.3.8  Restauración definitiva
     let color = v.state ? "blue" : "red";
     ctx.fillStyle = color;
-    // v is array
+    // c is array
     c.forEach((path) => {
       ctx.fill(path)
     });
@@ -615,7 +609,7 @@ class Tooth {
   inc_RestTemp(c, v){  // 5.3.9  Restauración temporal
     ctx.strokeStyle = "red";
     ctx.lineWidth = 3;
-    // v is array
+    // c is array
     c.forEach((path) => {
       ctx.stroke(path)
     });
@@ -644,7 +638,7 @@ class Tooth {
     ctx.stroke();
   }
   inc_PDSupernumeraria(c, v){  // 5.3.11  Pieza dentaria supernumeraria
-    let x = this.x + (v ? settings.width : 0);
+    let x = this.x + (v.orientation==='R' ? settings.width : 0);
     let y = this.y;
     if(this.orientation==='D'){
       y += settings.height - (settings.data_height+settings.data_space);
@@ -715,10 +709,10 @@ class Tooth {
     ctx.lineWidth = 3;
     ctx.strokeStyle = "blue";
     ctx.beginPath();
-    if(v==='R'){
+    if(v.orientation==='R'){
       right += this.body===2 ? width*.3 : 0;
       ctx.arc(right, y, radius, -40*Math.PI/180, 40*Math.PI/180);
-    }else if(v==='L'){
+    }else{
       ctx.arc(left, y, radius, 140*Math.PI/180, 220*Math.PI/180);
     }
     ctx.stroke();
@@ -727,10 +721,10 @@ class Tooth {
     let cy = this.y;
     let y = this.y + settings.height + (this.body===2 ? 8 : 9);
     let width = this.body===2 ? settings.width*1.3/2 : settings.width/2;
-    let x = this.x + width - (v==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
+    let x = this.x + width - (v.orientation==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
     let angel_o = this.body===2 ? 65 : 70;
     let angel_f = this.body===2 ? 115 : 110;
-    let _sign = v==='R' ? 1 : -1;
+    let _sign = v.orientation==='R' ? 1 : -1;
     if(this.orientation==='D'){
       y -= settings.data_space + settings.data_height + settings.height + 19;
       cy -= settings.data_space + (this.body===2 ? 6 : 3);
@@ -752,7 +746,7 @@ class Tooth {
   }
   inc_PosDent(c, v){  // 5.3.16  Posición dentaria
     let txt;
-    switch(v){
+    switch(v.log){
       case 1: txt = "M"; break;
       case 2: txt = "D"; break;
       case 3: txt = "V"; break;
@@ -803,7 +797,7 @@ class Tooth {
     }
     let sign1 = 1;
     let sign2 = -1;
-    if(v==='L'){
+    if(v.orientation==='L'){
       sign1 = -1;
       sign2 = 1;
     }
@@ -838,7 +832,7 @@ class Tooth {
   inc_SupDesg(c, v){  // 5.3.24  Superficie desgastada
     ctx.strokeStyle = "red";
     ctx.lineWidth = 3;
-    // v is array
+    // c is array
     c.forEach((path) => {
       ctx.stroke(path)
     });
@@ -848,8 +842,8 @@ class Tooth {
     return {log: "RR", color: "red"};
   }
   inc_MovPat(c, v){  // 5.3.26  Movilidad Patológica
-    v = isFinite(v) ? v : '';
-    return {log: "M"+v, color: "red"};
+    v.log = isFinite(v.log) ? v.log : '';
+    return {log: "M"+v.log, color: "red"};
   }
   inc_CoronaTemp(c, v){  // 5.3.27  Corona temporal
     ctx.lineWidth = 3;
@@ -886,7 +880,7 @@ class Tooth {
       sign = -1;
     }
 
-    ctx.strokeStyle = v ? "blue" : "red";
+    ctx.strokeStyle = v.state ? "blue" : "red";
     // Draw vertical line
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -904,7 +898,7 @@ class Tooth {
     }
   }
   inc_ImplanteDental(c, v){  // 5.3.30  Implante dental
-    let color = v ? "blue" : "red";
+    let color = v.state ? "blue" : "red";
     return {log: "IMP", color: color};
   }
   inc_AOF(c, v){  // 5.3.31  Aparato ortodóntico fijo
@@ -949,7 +943,7 @@ class Tooth {
       y -= 20;
     }
 
-    ctx.strokeStyle = v ? "blue" : "red";
+    ctx.strokeStyle = v.state ? "blue" : "red";
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(_teeth.upper_teeth.x, y);
@@ -1065,12 +1059,12 @@ class Tooth {
     ctx.fillStyle = "blue";
     ctx.beginPath();
     if(this.body===2){
-      if(v.log===3) ctx.fill(this.tooth_center);
+      if(v.log==3) ctx.fill(this.tooth_center);
       else ctx.stroke(this.tooth_center);
     }else{
       let long = 12
       ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
-      if(v.log===3) ctx.fill();
+      if(v.log==3) ctx.fill();
       else ctx.stroke();
     }
 
@@ -1086,10 +1080,10 @@ class Tooth {
   inc_Transposicion(c, v){  // 5.3.37  Transposición
     let y = this.y + settings.height + (this.body===2 ? 10 : 9);
     let width = this.body===2 ? settings.width*1.3/2 : settings.width/2;
-    let x = this.x + width - (v==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
+    let x = this.x + width - (v.orientation==='R' ? this.body===2 ? -18 : -14 : this.body===2 ? 19 : 15);
     let angel_o = this.body===2 ? 65 : 70;
     let angel_f = this.body===2 ? 115 : 110;
-    let _sign = v==='R' ? 1 : -1;
+    let _sign = v.orientation==='R' ? 1 : -1;
     let rad_y = this.body===2 ? 180 : 300;
     let rad_x = this.body===2 ? 50 : 50;
     let cy = this.y;
@@ -1108,10 +1102,10 @@ class Tooth {
       _sign_y *= -1;
     }
     let cx = this.x;
-    if(v==='R'){
+    if(v.orientation==='R'){
       cx += settings.width/(this.body===2?2:3);
       x += settings.width/(this.body===2?2:3) + 2;
-    }else if(v==='L'){
+    }else{
       cx -= settings.width/(this.body===2?2:3);
       x -= settings.width/(this.body===2?2:3) + 1;
     }
@@ -1120,8 +1114,8 @@ class Tooth {
     // ctx.strokeStyle = "blue";
     ctx.beginPath();
     ctx.ellipse(cx+width, cy, rad_x, rad_y, 0, angel_o*Math.PI/180, angel_f*Math.PI/180);
-    if(v==='R') ctx.moveTo(x+2, y+_sign_y*2);
-    if(v==='L') ctx.moveTo(x-2, y+_sign_y*2);
+    if(v.orientation==='R') ctx.moveTo(x+2, y+_sign_y*2);
+    if(v.orientation==='L') ctx.moveTo(x-2, y+_sign_y*2);
     if(this.body===2) ctx.lineTo(x-10*_sign, y-_sign_y*6);
     else ctx.lineTo(x-6*_sign, y-_sign_y*3);
     ctx.moveTo(x, y+_sign_y*2);
@@ -1580,7 +1574,7 @@ const inc_functions = [
   "Tratamiento pulpar",
   "Transposición"
 ];
-const inc_paths = [];
+let inc_paths = [];
 
 function Odontograma(props){
   // let cita = props.data.cita;
@@ -1589,7 +1583,6 @@ function Odontograma(props){
     declaring to useRef().current directly only works on objects
   */
   // Main variables
-  let currentTooth = useRef({tooth: null, path: null, preserve: false}).current;
   let [teethState, setTeeth] = useState(false);  // Tooth data, redraw incidents
   // Panel state
   let [incident, setIncident] = useState(false);
@@ -1741,7 +1734,15 @@ function Odontograma(props){
 
           console.log("I keep going!!");
           if(select_type===4){  // Select lvl to tooth?
-            e.draw(settings.hovercolor, false);
+            e.draw(settings.hovercolor, false);  // Fix clearTooth
+            if(!currentTooth.preserve){
+              currentTooth.preserve = true;
+              clearTooth();  // Fix tooth hover color
+              currentTooth.preserve = false;
+            }else{
+              clearTooth();  // Fix tooth hover color
+            }
+
           }else if(select_type===3){  // Select lvl is line part
             console.log("LINE");
             // Check if mouse is over root or tooth
@@ -1807,7 +1808,11 @@ function Odontograma(props){
         }
         return false;  // Continue loop
       });
-      if(!noevenone && currentTooth.tooth) clearTooth();  // Fix draw when no tooth is pointer
+      if(!noevenone){
+        clearTooth();  // Fix draw when no tooth is pointed
+        if(!currentTooth.preserve) currentTooth.tooth = null;
+      }
+      // if(!noevenone && !currentTooth.tooth) clearTooth();  // Fix draw when no tooth is pointed
 
     }else if(currentTooth.tooth) clearTooth();
     console.log(currentTooth);
@@ -1841,14 +1846,14 @@ function Odontograma(props){
     currentTooth.tooth = null;
     currentTooth.path = null;
   }, []);
-  const toothPartClickHandle = useCallback((e, inc_code=-1) => {
+  const toothPartClickHandle = useCallback((e) => {
     console.log(currentTooth);
     if(!currentTooth.tooth) return;  // Skip when there is no current tooth
     let ct = Object.assign({}, currentTooth);  // Clone of currentTooth
     currentTooth.preserve = false;  // Allow to change tooth at click
     mouseInCanvas(e, true);
     if(!currentTooth.tooth){  // Skip when click in empty area
-      inc_paths.splice(0,inc_paths.length);  // Reset array
+      inc_paths = [];  // Reset array
       // currentTooth.preserve = false;  // preserve is already false
       clearTooth();
       return;
@@ -1856,10 +1861,7 @@ function Odontograma(props){
     if(currentTooth.tooth.key===ct.tooth.key){  // Same tooth
       console.log("SAME TOOTH");
       if(select_type!==4){  // Not select tooth, instead save tooth part
-        if(inc_paths.length===0){
-          inc_paths.push(currentTooth.tooth.area);
-          currentTooth.preserve = true;
-        }
+        if(inc_paths.length===0) currentTooth.preserve = true;
         if(inc_paths.indexOf(currentTooth.path)!==-1)  // If path is already in array
           inc_paths.pop(inc_paths.indexOf(currentTooth.path));
         else  // Add path to array
@@ -1867,13 +1869,11 @@ function Odontograma(props){
         currentTooth.preserve = true;  // Switch preserve tooth
       }else{
         currentTooth.preserve = !ct.preserve;  // Switch preserve tooth
-        if(currentTooth.preserve) inc_paths.push(currentTooth.tooth.area)
-        else inc_paths.pop(inc_paths.indexOf(currentTooth.tooth.area));
+        inc_paths.push(currentTooth.tooth.area);
       }
     }else{  // Other tooth clicked
       console.log("other tooth");
-      inc_paths.splice(0,inc_paths.length);  // Reset array
-      inc_paths.push(currentTooth.tooth.area);  // Add its tooth area
+      inc_paths = [];  // Reset array
       currentTooth.preserve = true;  // Select this tooth
       clearTooth();
     }
@@ -1881,6 +1881,7 @@ function Odontograma(props){
     console.log("currentTooth:", currentTooth, inc_paths);
   }, []);
   const drawAllIncidents = useCallback((_teeth=false) => {
+    console.log("incidents");
     _teeth = _teeth===false ? [...teeth.upper_teeth, ...teeth.lower_teeth] : _teeth;
     _teeth.forEach((tooth) => {
       tooth.drawIncidents();
@@ -1888,7 +1889,10 @@ function Odontograma(props){
   }, []);
   const drawSelectedPaths = useCallback(() => {
     ctx.strokeStyle = settings.hovercolor;
+    ctx.fillStyle = "#F885";
     ctx.lineWidth = 3;
+
+    if(currentTooth.tooth) ctx.fill(currentTooth.tooth.area);
     inc_paths.forEach((path) => {
       ctx.stroke(path)
     });
@@ -1912,8 +1916,9 @@ function Odontograma(props){
   // Click listener in canvas
   useEffect(() => {
     if(!ctx) return;  // Ctx is not defined
-    if(incident){  // Add event listener
-      ctx.canvas.onclick = (e)=>{toothPartClickHandle(e, incident);}
+    inc_paths = [];  // Reset array
+    if(!incident){  // Add event listener
+      printTeeth();  // Draw odontogram
     }
   }, [incident, toothPartClickHandle]);
 
@@ -1942,7 +1947,7 @@ function Odontograma(props){
         <div style={{display: "inline-block"}}>
           {(()=>{
             if(incident)
-              return <IncidentForm tooth={currentTooth.tooth} incident={incident} setIncident={setIncident} />
+              return <IncidentForm setTeeth={setTeeth} incident={incident} setIncident={setIncident} />
             else return <IncidentPanel setIncident={setIncident} />
           })()}
         </div>
@@ -1952,6 +1957,7 @@ function Odontograma(props){
 }
 
 function IncidentForm(props){
+  console.log(props);
   if(props.incident>=incident_type.incidents.length){
     return (<button onClick={()=>props.setIncident(false)}>return</button>);
   }
@@ -1988,7 +1994,7 @@ function IncidentForm(props){
     });
     // Add to main elements
     elements.push(
-      <div key={"log_div"+inc_code} className="form-group">
+      <div key={"log_div"+inc_code} id="form-log" className="form-group">
         <span style={{fontSize: '1.4em'}}>Identificador</span>
         <label className="form-label" htmlFor="value-log"></label>
         <select className="form-control" id="value-log">
@@ -2000,10 +2006,10 @@ function IncidentForm(props){
   if(inc.hasOwnProperty("state")){
     // Add to main elements
     elements.push(
-      <div key={"state_div"+inc_code}>
+      <div key={"state_div"+inc_code} id="form-state">
         <span style={{fontSize: '1.4em'}}>Estado</span>
         <div className="custom-control custom-radio">
-          <input type="radio" className="custom-control-input" id="value-state-T" value="true" name="inc_state" />
+          <input type="radio" className="custom-control-input" id="value-state-T" value="true" name="inc_state" defaultChecked />
           <label className="custom-control-label" htmlFor="value-state-T">Buen estado</label>
         </div>
         <div className="custom-control custom-radio">
@@ -2015,7 +2021,7 @@ function IncidentForm(props){
   }
   if(inc.hasOwnProperty("amount")){
     elements.push(
-      <div key={"amount_div"+inc_code}>
+      <div key={"amount_div"+inc_code} id="form-amount">
         <span style={{fontSize: '1.4em'}}>Dirección</span>
         <span>El diente seleccionado es considerado el último del rango</span>
       </div>
@@ -2024,7 +2030,7 @@ function IncidentForm(props){
   if(inc.hasOwnProperty("orientation")){
     // Add to main elements
     elements.push(
-      <div key={"orientation_div"+inc_code}>
+      <div key={"orientation_div"+inc_code} id="form-orientation">
         <span style={{fontSize: '1.4em'}}>Dirección</span>
         <div className="custom-control custom-radio">
           <input type="radio" className="custom-control-input" id="value-orientation-L" value="L" name="inc_orientation" />
@@ -2038,6 +2044,32 @@ function IncidentForm(props){
     );
   }
 
+  // Save incidence function
+  const saveIncidence = () => {
+    console.log("saveIncidence", currentTooth);
+    if(inc_paths.length<1){  // Check that there is at least one component selected
+      alert("Debe seleccionar al menos un componente")
+      return;
+    }
+    let _inc_obj = {};
+    _inc_obj.type = inc_code;  // Incident code
+    _inc_obj.component = inc_paths;  // Components of incident
+    // Get form data
+    let _form_data = {};
+    let _temp_dom;
+    if(document.getElementById("form-log"))
+      _form_data.log = document.getElementById("value-log").value;
+    if(document.getElementById("form-state"))
+      _form_data.state = document.getElementById('value-state-T').checked;
+    if(document.getElementById("form-orientation"))
+      _form_data.orientation = document.getElementById('value-orientation-L').checked;
+    _inc_obj.value = _form_data;  // Components of incident
+
+    currentTooth.tooth.incidents.push(_inc_obj);  // Add incident object to tooth
+    props.setTeeth(teeth);  // Save modified teeth
+    props.setIncident(false);
+  }
+
   return (
     <div>
       <h1>{inc_functions[inc_code-1]}</h1>
@@ -2045,7 +2077,7 @@ function IncidentForm(props){
       {elements}
       <br/>
       <button onClick={()=>props.setIncident(false)}>Cancelar</button>
-      <button onClick={()=>{console.log("saveIncidence()")}}>Guardar</button>
+      <button onClick={()=>saveIncidence()}>Guardar</button>
     </div>
   );
 }
@@ -2080,10 +2112,6 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-* Add line select type for sellantes
-* Allow to select more than one component
-* Save selected components
-2. Add incidence to main teeth array
-3. Draw updated incidences in odontogram
-4. Save teeth array to API
+1. Change selected incident component from Path2D to path_code
+2. Save teeth array to API
 */
