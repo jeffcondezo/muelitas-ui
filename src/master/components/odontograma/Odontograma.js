@@ -406,7 +406,6 @@ class Tooth {
         default: break;
       }
     });
-    if(component.length===1) component = component[0];  // Fix num to array
 
     return component;
   }
@@ -457,7 +456,7 @@ class Tooth {
         case 35: _txt = this.inc_PT(component, v.value); break;
         case 36: _txt = this.inc_TP(component, v.value); break;
         case 37: _txt = this.inc_Transposicion(component, v.value); break;
-        default: alert(`ERROR IN TEETH BUILD DATA: incident type not found in key ${v.key}`); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: incident type ${v.type} not found in key ${v.key}`); break;
       }
       if(_txt) data.push(_txt);  // Add to tooth incident data when method returned
     });
@@ -487,7 +486,7 @@ class Tooth {
     c.forEach((path) => {
       ctx.fill(path);
     });
-    return {log: v.log, color: "blue"};
+    return {log: v.log, color: "gray"};
   }
   inc_Sellante(c, v){  // 5.3.3  Sellantes
     let color = v.state ? "blue" : "red";
@@ -501,15 +500,34 @@ class Tooth {
   }
   inc_Fractura(c, v){  // 5.3.4  Fractura
     let y = this.y;
-    if(this.orientation==='D'){
-      v.yo *= -1;
-      v.yf *= -1;
+    let width = settings.width*(this.body===2?1.3:1);
+    if(this.orientation==='D')
       y += settings.height - (settings.data_space+settings.data_height);
+
+    let vxo;
+    let vyo;
+    let vxf;
+    let vyf;
+    switch(v.fractura){
+      case 1: vxo=width/2;vyo=settings.root_height;vxf=vxo;vyf=settings.height; break;  // Crown middle vertical
+      case 2: vxo=0;vyo=(settings.root_height+settings.height)/2;vxf=width;vyf=vyo; break;  // Crown middle horizontal
+      case 3: vxo=width;vyo=settings.root_height;vxf=0;vyf=settings.height; break;  // Diag left
+      case 4: vxo=0;vyo=settings.root_height;vxf=width;vyf=settings.height; break;  // Diag right
+      case 5: vxo=width/2;vyo=0;vxf=0;vyf=settings.height; break;  // All left
+      case 6: vxo=width/2;vyo=0;vxf=width;vyf=settings.height; break;  // All right
+      case 7: vxo=width/2;vyo=0;vxf=vxo;vyf=settings.height; break;  // All middle
+      default: alert("ERROR FRACTURE CODE NOT FOUND, code: "+v.fractura); return;
     }
-    let xo = this.x + v.xo;
-    let yo = y + v.yo;
-    let xf = this.x + v.xf;
-    let yf = y + v.yf;
+
+    if(this.orientation==='D'){
+      vyo *= -1;
+      vyf *= -1;
+    }
+
+    let xo = this.x + vxo;
+    let yo = y + vyo;
+    let xf = this.x + vxf;
+    let yf = y + vyf;
 
     ctx.strokeStyle = "red";
     ctx.lineWidth = 3;
@@ -880,6 +898,7 @@ class Tooth {
         start_index = inx;
         return true;
       }
+      return false;
     });
     if(!_inx){
       alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
@@ -945,6 +964,7 @@ class Tooth {
         start_index = inx;
         return true;
       }
+      return false;
     });
     if(!_inx){
       alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
@@ -980,6 +1000,7 @@ class Tooth {
         start_index = inx;
         return true;
       }
+      return false;
     });
     if(!_inx){
       alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
@@ -1052,12 +1073,12 @@ class Tooth {
     ctx.fillStyle = "blue";
     ctx.beginPath();
     if(this.body===2){
-      if(v.log==3) ctx.fill(this.tooth_center);
+      if(v.log===3) ctx.fill(this.tooth_center);
       else ctx.stroke(this.tooth_center);
     }else{
       let long = 12
       ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
-      if(v.log==3) ctx.fill();
+      if(v.log===3) ctx.fill();
       else ctx.stroke();
     }
 
@@ -1434,11 +1455,11 @@ class Incisor extends Tooth {
 }
 // Incident types
 const incident_type = {
-  component_tooth: [2, 4, 5, 6, 7, 11, 12, 13, 15, 16, 17, 18, 19, 20, 22, 23, 25, 26, 27, 28, 29, 30, 36, 37],  // tooth
-  component_array: [1, 8],  // component []
+  component_tooth: [4, 5, 6, 7, 11, 12, 13, 15, 16, 17, 18, 19, 20, 22, 23, 25, 26, 27, 28, 29, 30, 36],  // tooth
+  component_array: [1, 2, 8],  // component []
   component_line_array: [3, 9, 24],  // line []
   component_all: [10, 32, 35],  // all teeth block
-  component_beside: [14, 21],  // component,component (beside)
+  component_beside: [14, 21, 37],  // component,component (beside)
   component_range: [31, 33, 34],  // component && component
   incidents: [
     {},  // 0
@@ -1456,7 +1477,15 @@ const incident_type = {
       {key: "Fluorosis", text: "Fluorosis"}
     ]},  // 2
     {state: true},  // 3
-    {/**/},  // 4
+    {fractura: [
+      {key: 1, text: "Fractura horizontal en la corona"},  // Crown middle vertical
+      {key: 2, text: "Fractura vertical en la corona"},  // Crown middle horizontal
+      {key: 3, text: "Fractura diagonal en la corona 1"},  // Diag left
+      {key: 4, text: "Fractura diagonal en la corona 2"},  // Diag right
+      {key: 5, text: "Fractura total 1"},  // All left
+      {key: 6, text: "Fractura total 2"},  // All right
+      {key: 7, text: "Fractura total 3"},  // All middle
+    ], preview: true},  // 4
     {},  // 5
     {},  // 6
     {},  // 7
@@ -1710,7 +1739,7 @@ function Odontograma(props){
         let isIn = ctx.isPointInPath(e.area, x, y);  // Is point in tooth area?
         if(isIn){  // Point is in tooth area
           // If it's not the current tooth (point has moved to other tooth)
-          if(currentTooth.tooth && e!=currentTooth.tooth && !check){
+          if(currentTooth.tooth && e!==currentTooth.tooth && !check){
             // If it's not the same tooth and preserve is true -> cancel
             if(currentTooth.preserve) return true;
 
@@ -1741,7 +1770,7 @@ function Odontograma(props){
               if(found){
                 let _key = String(1100+inx)
                 // If it's not the current line (point has moved to other line component)
-                if(currentTooth.path && _key!=currentTooth.path.key) clearTooth();  // Clear tooth
+                if(currentTooth.path && _key!==currentTooth.path.key) clearTooth();  // Clear tooth
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = settings.hovercolor;
 
@@ -1772,7 +1801,7 @@ function Odontograma(props){
               if(found){
                 let _key = String(1000+inx+1)
                 // If it's not the current path (point has moved to other tooth component)
-                if(currentTooth.path && _key!=currentTooth.path.key) clearTooth();  // Clear tooth
+                if(currentTooth.path && _key!==currentTooth.path.key) clearTooth();  // Clear tooth
                 ctx.fillStyle = settings.hovercolor;
 
                 ctx.fill(path);
@@ -1894,12 +1923,12 @@ function Odontograma(props){
     ctx.fillStyle = "#F885";
     if(currentTooth.tooth) ctx.fill(currentTooth.tooth.area);
     // All teeth incidence
-    if(incident_type.component_range.includes(incident) && inc_paths.length==1){
+    if(incident_type.component_range.includes(incident) && inc_paths.length===1){
       ctx.fill(inc_paths[0].path);
       return;
     }
 
-    if(select_type==3){
+    if(select_type===3){
       ctx.lineWidth = 3;
       ctx.strokeStyle = settings.hovercolor;
       inc_paths.forEach((path) => {
@@ -1945,6 +1974,33 @@ function Odontograma(props){
     ctx.canvas.onclick = (e)=>{toothPartClickHandle(e)}  // To re declare toothPartClickHandle
   }, [incident]);
 
+  /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
+    that way it keeps updated with the newest state variables
+  */
+  function saveOdontogram(){  // Save odontogram data to API
+    console.log("GUARDAR ODONTOGRAMA");
+    let odontogram_data = {incidents: []};
+    // Get teeth incidents' data
+    teeth.lower_teeth.map((v) => {
+      if(!v.incidents || v.incidents.length===0) return;
+      odontogram_data.incidents.push({diente: v.key, incidents: v.incidents});
+    });
+    teeth.upper_teeth.map((v) => {
+      if(!v.incidents || v.incidents.length===0) return;
+      odontogram_data.incidents.push({diente: v.key, incidents: v.incidents});
+    });
+    // If there is no incident data
+    if(odontogram_data.length===0){
+      alert("El odontograma no tiene datos")
+      return;
+    }
+    // Add odontogram data
+    odontogram_data.type = odontogram_type==='A'?1:2;  // Conversion to match DB field choices
+    odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
+    console.log(odontogram_data);
+    console.log(JSON.stringify(odontogram_data));
+  }
+
   return (
     <>
       {/* HEADER */}
@@ -1973,6 +2029,18 @@ function Odontograma(props){
               return <IncidentForm setTeeth={setTeeth} incident={incident} setIncident={setIncident} />
             else return <IncidentPanel setIncident={setIncident} />
           })()}
+        </div>
+      </div>
+      <div>
+        <div className="form-group">
+          <label className="form-label" htmlFor="textarea_observaciones">Observaciones</label>
+          <textarea className="form-control" id="textarea_observaciones" rows="5"></textarea>
+        </div>
+        <div className="btn-group btn-group-toggle" data-toggle="buttons">
+          <button type="button" className="btn btn-success waves-effect waves-themed"
+            onClick={()=>saveOdontogram()} title="Asegurate de escribir las observaciones que encuentres">Guardar</button>
+          <button type="button" className="btn btn-secondary waves-effect waves-themed"
+            onClick={()=>genTeeth(odontogram_type.current)}>Reiniciar</button>
         </div>
       </div>
     </>
@@ -2009,9 +2077,9 @@ function IncidentForm(props){
   }
   else if( incident_type.component_all.includes(inc_code) ){
     select_type = 0;
-    dom_select_info = [<span style={{fontSize: '1.4em'}}>Ubicación</span>];
+    dom_select_info = [<span key="inc_title" style={{fontSize: '1.4em'}}>Ubicación</span>];
     elements.push(
-      <div key={"location_div"+inc_code} id="form-state">
+      <div key={"location_div"+inc_code} id="form-direction">
         <div className="custom-control custom-radio">
           <input type="radio" className="custom-control-input" id="all-up" name="all-direction" value="U" defaultChecked />
           <label className="custom-control-label" htmlFor="all-up">Arriba</label>
@@ -2077,14 +2145,32 @@ function IncidentForm(props){
       </div>
     );
   }
+  if(inc.hasOwnProperty("fractura")){  // Fractura
+    const _elements = [];
+    inc.fractura.forEach((v, i) => {
+      _elements.push(
+        <option key={"fractura_option_"+v.key} value={v.key}>{v.text}</option>
+      );
+    });
+    // Add to main elements
+    elements.push(
+      <div key={"fractura_div"+inc_code} id="form-fractura" className="form-group">
+        <span style={{fontSize: '1.4em'}}>Caso</span>
+        <label className="form-label" htmlFor="value-fractura"></label>
+        <select className="form-control" id="value-fractura">
+          {_elements}
+        </select>
+      </div>
+    );
+  }
 
   // Save incidence function
   const saveIncidence = () => {
-    if(select_type==0){  // When select type is 0 there is no condition
+    if(select_type===0){  // When select type is 0 there is no condition
     }else if(!currentTooth.tooth){  // When select type is other than 1 there should be a tooth selected
       alert("Debe seleccionar un diente");
       return;
-    }else if(select_type!=4 && inc_paths.length<1){  // When select type is other than 4 there should be at least one component selected
+    }else if(select_type!==4 && inc_paths.length<1){  // When select type is other than 4 there should be at least one component selected
       alert("Debe seleccionar al menos un componente");
       return;
     }
@@ -2096,13 +2182,14 @@ function IncidentForm(props){
 
     // Get form data
     let _form_data = {};
-    let _temp_dom;
     if(document.getElementById("form-log"))
       _form_data.log = document.getElementById("value-log").value;
     if(document.getElementById("form-state"))
       _form_data.state = document.getElementById('value-state-T').checked;
     if(document.getElementById("form-orientation"))
       _form_data.orientation = document.getElementById('value-orientation-R').checked ? 'R' : 'L';
+    if(document.getElementById("form-fractura"))
+      _form_data.fractura = parseInt(document.getElementById('value-fractura').value);
     _inc_obj.value = Object.assign({}, _form_data);  // Components of incident
 
     // Tooth && component
@@ -2112,15 +2199,14 @@ function IncidentForm(props){
       let _teeth = document.getElementById("all-up").checked ? teeth.upper_teeth : teeth.lower_teeth;
       _tooth = _teeth[_teeth.length-1];  // Select last tooth
     }else if(select_type===4){
-      if(_inc_obj.value.orientation){  // Only two teeth
+      if(incident_type.component_beside.includes(inc_code)){  // Only two teeth
         let _sign = _inc_obj.value.orientation==='R'?1:-1;  // Aside tooth is left or right
-        let _teeth;
         // Get _inx && side tooth
         let _inx = teeth.upper_teeth.indexOf(_tooth);
         let _side_tooth;
         if(_inx!==-1){
           // Check if it's posible to add aside tooth incident
-          if(_sign===1 && _inx===teeth.upper_teeth.length-1 || _sign===-1 && _inx===0){
+          if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
             alert("No es posible agregar la incidencia en esa dirección")
             return;
           }
@@ -2129,7 +2215,7 @@ function IncidentForm(props){
           _inx = teeth.lower_teeth.indexOf(_tooth);
           if(_inx!==-1){
             // Check if it's posible to add aside tooth incident
-            if(_sign===1 && _inx===teeth.upper_teeth.length-1 || _sign===-1 && _inx===0){
+            if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
               alert("No es posible agregar la incidencia en esa dirección")
               return;
             }
@@ -2148,7 +2234,7 @@ function IncidentForm(props){
 
         // Add incident to aside tooth with other orientation
         _side_tooth.incidents.push(_inc_obj_fake);
-      }else{  // *Range of teeth
+      }else if(incident_type.component_range.includes(inc_code)){  // *Range of teeth
         if(inc_paths.length!==1 || !inc_paths[0].key){
           alert("Debe seleccionar el otro extremo del rango")
           return;
@@ -2170,6 +2256,7 @@ function IncidentForm(props){
             _inx = inx;
             return true;
           }
+          return false;
         });
         // Get current tooth index
         let inx = _teeth.indexOf(_tooth);
@@ -2235,9 +2322,10 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-1. Fix function for Fractura (preset cases)
+* Add fields especificaciones && observaciones
+* Fix function for Fractura (preset cases)
+1. Change tooth incidence model in DB
+1. Save teeth array to API
 2. Preview to draw tooth line component incidence
-3. Change tooth incidence model in DB
-4. Save teeth array to API
-5. Delete incidence
+3. Delete incidence
 */
