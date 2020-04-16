@@ -5,6 +5,7 @@ let teeth;
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
+let odontogram_id = -1;
 // Objects propertie = _teeth.s
 const scale = 0.9;
 const settings = {
@@ -509,8 +510,8 @@ class Tooth {
     let vxf;
     let vyf;
     switch(v.fractura){
-      case 1: vxo=width/2;vyo=settings.root_height;vxf=vxo;vyf=settings.height; break;  // Crown middle vertical
-      case 2: vxo=0;vyo=(settings.root_height+settings.height)/2;vxf=width;vyf=vyo; break;  // Crown middle horizontal
+      case 1: vxo=0;vyo=(settings.root_height+settings.height)/2;vxf=width;vyf=vyo; break;  // Crown middle horizontal
+      case 2: vxo=width/2;vyo=settings.root_height;vxf=vxo;vyf=settings.height; break;  // Crown middle vertical
       case 3: vxo=width;vyo=settings.root_height;vxf=0;vyf=settings.height; break;  // Diag left
       case 4: vxo=0;vyo=settings.root_height;vxf=width;vyf=settings.height; break;  // Diag right
       case 5: vxo=width/2;vyo=0;vxf=0;vyf=settings.height; break;  // All left
@@ -1594,7 +1595,7 @@ const inc_functions = [
 let inc_paths = [];
 
 function Odontograma(props){
-  // let cita = props.data.cita;
+  // let cita = props.data.cita;  <<<<<<<<<<<<<<<<<<<
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1911,7 +1912,7 @@ function Odontograma(props){
     }
 
     clearTooth(true);  // Clear and redraw all | fix click in other square's tooth
-    console.log("currentTooth:", currentTooth, inc_paths);
+    // console.log("currentTooth:", currentTooth, inc_paths);
   }, [incident]);
   const drawAllIncidents = useCallback((_teeth=false) => {
     _teeth = _teeth===false ? [...teeth.upper_teeth, ...teeth.lower_teeth] : _teeth;
@@ -1978,7 +1979,7 @@ function Odontograma(props){
     that way it keeps updated with the newest state variables
   */
   function saveOdontogram(){  // Save odontogram data to API
-    console.log("GUARDAR ODONTOGRAMA");
+    console.log("GUARDAR ODONTOGRAMA", odontogram_id);
     let odontogram_data = {incidents: []};
     // Get teeth incidents' data
     teeth.lower_teeth.map((v) => {
@@ -1990,15 +1991,117 @@ function Odontograma(props){
       odontogram_data.incidents.push({diente: v.key, incidents: v.incidents});
     });
     // If there is no incident data
-    if(odontogram_data.length===0){
+    if(odontogram_data.incidents.length===0){
       alert("El odontograma no tiene datos")
       return;
     }
     // Add odontogram data
-    odontogram_data.type = odontogram_type==='A'?1:2;  // Conversion to match DB field choices
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
-    console.log(odontogram_data);
-    console.log(JSON.stringify(odontogram_data));
+    odontogram_data.tipo = odontogram_type==='A'?1:2;  // Conversion to match DB field choices
+
+    // Create or modify?
+    if(odontogram_id===-1){  // Save to API
+      // odontogram_data.atencion = cita.atencion;  <<<<<<<<<<<<<<<<<<<
+      odontogram_data.atencion = 1;
+
+      let url = process.env.REACT_APP_PROJECT_API+'atencion/odontograma/';
+      // Generate promise
+      let result = new Promise((resolve, reject) => {
+        // Fetch data to api
+        let request = fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: localStorage.getItem('access_token'),  // Token
+            'Content-Type': 'application/json'  // JSON type
+          },
+          body: JSON.stringify(odontogram_data)  // Data
+        });
+        // Once we get response we either return json data or error
+        request.then(response => {
+          if(response.ok){
+            resolve(response.json())
+          }else{
+            reject(response.statusText)
+          }
+        });
+      });
+      // Promise actions
+      result.then(
+        response_obj => {  // In case it's ok
+          console.log("OKEY", response_obj);
+          odontogram_id = response_obj.id;  // Save odontogram id
+        },
+        error => {  // In case of error
+          console.log("WRONG!", error);
+        }
+      );
+    }else{  // Modify
+      let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/${odontogram_id}/`;
+      // Generate promise
+      let result = new Promise((resolve, reject) => {
+        // Fetch data to api
+        let request = fetch(url, {
+          method: 'PUT',
+          headers: {
+            Authorization: localStorage.getItem('access_token'),  // Token
+            'Content-Type': 'application/json'  // JSON type
+          },
+          body: JSON.stringify(odontogram_data)  // Data
+        });
+        // Once we get response we either return json data or error
+        request.then(response => {
+          if(response.ok){
+            resolve(response.json())
+          }else{
+            reject(response.statusText)
+          }
+        });
+      });
+      // Promise actions
+      result.then(
+        response_obj => {  // In case it's ok
+          console.log("OKEY", response_obj);
+        },
+        error => {  // In case of error
+          console.log("WRONG!", error);
+        }
+      );
+    }
+  }
+  function getIncidences(){
+    // Get incidents
+    let filter = `filtro={"odontograma":"${odontogram_id}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/incidencia/`;
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        console.log("OKEY", response_obj);
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  function resetAll(){
+    genTeeth(odontogram_type.current);
+    document.getElementById('textarea_observaciones').value = "";
   }
 
   return (
@@ -2040,7 +2143,7 @@ function Odontograma(props){
           <button type="button" className="btn btn-success waves-effect waves-themed"
             onClick={()=>saveOdontogram()} title="Asegurate de escribir las observaciones que encuentres">Guardar</button>
           <button type="button" className="btn btn-secondary waves-effect waves-themed"
-            onClick={()=>genTeeth(odontogram_type.current)}>Reiniciar</button>
+            onClick={()=>resetAll()}>Reiniciar</button>
         </div>
       </div>
     </>
@@ -2322,10 +2425,6 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-* Add fields especificaciones && observaciones
-* Fix function for Fractura (preset cases)
-1. Change tooth incidence model in DB
-1. Save teeth array to API
 2. Preview to draw tooth line component incidence
 3. Delete incidence
 */
