@@ -5,12 +5,16 @@ let teeth;
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
-let odontogram_id = -1;
+let odontogram_id = 17;  // <<<<<<<<<<<<<<<<<<<
 // Objects propertie = _teeth.s
 const scale = 0.9;
+const preview_scale = 2.5;
+const preview_margin = 3;
+const preview_select_margin = 2;
+// General settings
 const settings = {
-  strokeColor: "#7A7",
-  hovercolor: "#383",
+  strokeColor: "black",
+  hovercolor: "yellow",
   tooth_spacing: 7*scale,
   width: 30*scale,
   height: 65*scale,
@@ -366,6 +370,7 @@ class Tooth {
   // Incidents from Manual_Odontograma_Electronico
   selectComponent(key){
     if(typeof(key)==="undefined") return null;  // If component is not specified
+    if(key === null) return null;  // If component is not specified
     // Select tooth part
     if(typeof(key)==="number") key = [key];  // Fake array
     // Array of components
@@ -414,6 +419,7 @@ class Tooth {
     if(!this.incidents) return;  // There is no incidents
     let data = [];  // Array to store tooth incident data
     // Print incident
+    console.log(this);
     this.incidents.forEach((v) => {
       // Select tooth part
       let component = this.selectComponent(v.component);
@@ -1486,7 +1492,7 @@ const incident_type = {
       {key: 5, text: "Fractura total 1"},  // All left
       {key: 6, text: "Fractura total 2"},  // All right
       {key: 7, text: "Fractura total 3"},  // All middle
-    ], preview: true},  // 4
+    ]},  // 4
     {},  // 5
     {},  // 6
     {},  // 7
@@ -1593,6 +1599,8 @@ const inc_functions = [
   "Transposición"  // 37
 ];
 let inc_paths = [];
+// Preview context
+let pvw_ctx;
 
 function Odontograma(props){
   // let cita = props.data.cita;  <<<<<<<<<<<<<<<<<<<
@@ -1717,7 +1725,7 @@ function Odontograma(props){
     [...teeth.upper_teeth, ...teeth.lower_teeth].forEach((tooth) => {
       tooth.draw();
     });
-    drawAllIncidents();
+    drawAllIncidences();
   }, []);
   const mouseInCanvas = useCallback((e, check=false) => {
     if(select_type===0) return;  // All teeth incidence
@@ -1762,6 +1770,9 @@ function Odontograma(props){
             }
 
           }else if(select_type===3){  // Select lvl is line part
+            // Keep tooth as current tooth when check
+            if(check) currentTooth.preserve = true;
+
             // Check if mouse is over root or tooth
             let lines = e.tooth_lines;
 
@@ -1769,6 +1780,7 @@ function Odontograma(props){
             let _noevenone = lines.some((path, inx) => {
               let found = ctx.isPointInStroke(path, x, y);  // Is point in line stroke?
               if(found){
+                console.log("FOUND IN ", x, y, path);
                 let _key = String(1100+inx)
                 // If it's not the current line (point has moved to other line component)
                 if(currentTooth.path && _key!==currentTooth.path.key) clearTooth();  // Clear tooth
@@ -1826,6 +1838,9 @@ function Odontograma(props){
       // if(!noevenone && !currentTooth.tooth) clearTooth();  // Fix draw when no tooth is pointed
 
     }else if(currentTooth.tooth) clearTooth();
+    if(pvw_ctx){  // Preview is being shown
+      drawPreview();  // Update preview
+    }
   }, [incident]);
   const clearTooth = useCallback((all=false) => {
     // Erase all block
@@ -1854,28 +1869,30 @@ function Odontograma(props){
       tooth.draw();
     });
     // Re draw incidents
-    drawAllIncidents(_teeth);
+    drawAllIncidences(_teeth);
     drawSelectedPaths();
+    currentTooth.path = null;  // Fix path not updating
 
     if(currentTooth.preserve) return;  // Preserve selected tooth
     // Remove current tooth reference
     currentTooth.tooth = null;
-    currentTooth.path = null;
   }, [incident]);
-  const toothPartClickHandle = useCallback((e) => {
+  const toothPartClickHandle = useCallback((e, safe=false) => {
     if(select_type===0) return;  // All teeth incidence
 
-    if(!currentTooth.tooth) return;  // Skip when there is no current tooth
     let ct = Object.assign({}, currentTooth);  // Clone of currentTooth
     currentTooth.preserve = false;  // Allow to change tooth at click
     mouseInCanvas(e, true);
     if(!currentTooth.tooth){  // Skip when click in empty area
+      if(safe){
+        currentTooth = ct;  // Preverse currentTooth in preview
+        return;
+      }
       inc_paths = [];  // Reset array
-      // currentTooth.preserve = false;  // preserve is already false
       clearTooth();
       return;
     }
-    if(currentTooth.tooth.key===ct.tooth.key){  // Same tooth
+    if(ct.tooth && currentTooth.tooth.key===ct.tooth.key){  // Same tooth
       if(select_type!==4){  // Not select tooth, instead save tooth part
         currentTooth.preserve = true;
         let taked_off = inc_paths.reduce((ar, path)=>{if(path.key!==currentTooth.path.key) ar.push(path); return ar;}, []);
@@ -1910,18 +1927,20 @@ function Odontograma(props){
         currentTooth = ct;  // Preserve current tooth
       }
     }
+    // Preview
+    if(select_type===3 && currentTooth.tooth) initPreview();
 
     clearTooth(true);  // Clear and redraw all | fix click in other square's tooth
-    // console.log("currentTooth:", currentTooth, inc_paths);
+    if(pvw_ctx && currentTooth.tooth) drawPreview();  // Update preview
   }, [incident]);
-  const drawAllIncidents = useCallback((_teeth=false) => {
+  const drawAllIncidences = useCallback((_teeth=false) => {
     _teeth = _teeth===false ? [...teeth.upper_teeth, ...teeth.lower_teeth] : _teeth;
     _teeth.forEach((tooth) => {
       tooth.drawIncidents();
     });
   }, []);
   const drawSelectedPaths = useCallback(() => {
-    ctx.fillStyle = "#F885";
+    ctx.fillStyle = "#0002";
     if(currentTooth.tooth) ctx.fill(currentTooth.tooth.area);
     // All teeth incidence
     if(incident_type.component_range.includes(incident) && inc_paths.length===1){
@@ -1945,6 +1964,9 @@ function Odontograma(props){
 
   // Only run after first render
   useEffect(() => {
+    // Fix body X scroll
+    document.body.style.overflowX = "scroll"
+
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
@@ -1952,6 +1974,7 @@ function Odontograma(props){
     odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
     odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
     genTeeth('A');
+    getIncidences();  // Get incidences in case there are
   }, [genTeeth]);
   // Run after teeth has changed
   useEffect(() => {
@@ -1964,6 +1987,11 @@ function Odontograma(props){
     inc_paths = [];  // Reset array
     if(incident===false){
       printTeeth();  // Draw odontogram
+      if(pvw_ctx){
+        pvw_ctx.canvas.onmousemove = null;  // To re declare drawSelectedPaths
+        pvw_ctx.canvas.onclick = null;  // To re declare toothPartClickHandle
+        pvw_ctx = null;
+      }
       currentTooth = {tooth: null, path: null, preserve: false};
     }
     // All teeth incident
@@ -1973,6 +2001,10 @@ function Odontograma(props){
     }
     ctx.canvas.onmousemove = (e)=>{mouseInCanvas(e)}  // To re declare drawSelectedPaths
     ctx.canvas.onclick = (e)=>{toothPartClickHandle(e)}  // To re declare toothPartClickHandle
+    // Preview
+    if(select_type===3 && currentTooth.tooth){
+      initPreview();
+    }
   }, [incident]);
 
   /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
@@ -2069,6 +2101,7 @@ function Odontograma(props){
     }
   }
   function getIncidences(){
+    if(odontogram_id===-1) return;  // If it's a new odontogram, exit
     // Get incidents
     let filter = `filtro={"odontograma":"${odontogram_id}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/incidencia/`;
@@ -2092,16 +2125,129 @@ function Odontograma(props){
     });
     result.then(
       response_obj => {  // In case it's ok
-        console.log("OKEY", response_obj);
+        // DRAW TEETH INCIDENCE FROM DB
+        response_obj.forEach((inc) => {
+          let tooth = getToothByKey(inc.diente);
+          let inc_obj = {};
+          inc_obj.type = parseInt(inc.type);
+          inc_obj.value = {};
+          inc_obj.value.log = inc.log;
+          inc_obj.value.state = inc.state;
+          inc_obj.value.orientation = inc.orientation;
+          inc_obj.value.fractura = inc.fractura;
+          inc_obj.value.start_tooth_key = inc.start_tooth_key;
+          inc_obj.component = JSON.parse(inc.component)
+          tooth.incidents.push(inc_obj);  // Add to global teeth data
+        });
+        // Redraw odontogram teeth incidences
+        drawAllIncidences();
       },
       error => {  // In case of error
         console.log("WRONG!", error);
       }
     );
   }
-  function resetAll(){
+  function getToothByKey(key){
+    // Get tooth by key
+    let tooth;
+    let first_digit = parseInt(String(key)[0]);
+    let last_digit = parseInt(String(key)[1]);
+    let up = [1, 2, 5, 6].includes(first_digit);
+    let _teeth = up ? teeth.upper_teeth : teeth.lower_teeth;
+    let middle_range = _teeth.length/2;
+    if(up){  // Upper side
+      if([1, 5].includes(first_digit)){  // Left side
+        tooth = _teeth[middle_range-last_digit];
+      }else{  // Right side
+        tooth = _teeth[middle_range+last_digit-1];
+      }
+    }else{  // Lower side
+      if([4, 8].includes(first_digit)){  // Left side
+        tooth = _teeth[middle_range-last_digit];
+      }else{  // Right side
+        tooth = _teeth[middle_range+last_digit-1];
+      }
+    }
+    return tooth;
+  }
+  function resetAll(type=false){
+    if(type){
+      genTeeth(type);
+      setIncident(false);
+    }
     genTeeth(odontogram_type.current);
     document.getElementById('textarea_observaciones').value = "";
+  }
+
+  // Preview
+  function initPreview(){
+    let debug = !false;
+    // Fake area of odontogram canvas
+    if(!pvw_ctx){
+      let el_preview = document.getElementById("preview");
+      pvw_ctx = el_preview.getContext('2d');
+    }
+    pvw_ctx.canvas.onmousemove = (e)=>{
+      if(!currentTooth.tooth) return;
+
+      let _offsetX = currentTooth.tooth.x + e.offsetX/preview_scale - preview_margin;
+      let _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+      let _e = {
+        offsetX: _offsetX,
+        offsetY: _offsetY
+      };
+
+      for(let i=1; i<=preview_select_margin; i++){
+        if(debug) console.log(i);
+        // X
+        _e.offsetX = _offsetX-i;
+        mouseInCanvas(_e);
+        if(currentTooth.path) break;
+        if(debug) console.log("NOT FOUND IN "+_e.offsetX);
+        _e.offsetX = _offsetX+i;
+        mouseInCanvas(_e);
+        if(currentTooth.path) break;
+        if(debug) console.log("NOT FOUND IN "+_e.offsetX);
+        // Y
+        _e.offsetY = _offsetY-i;
+        mouseInCanvas(_e);
+        if(currentTooth.path) break;
+        if(debug) console.log("NOT FOUND IN "+_e.offsetY);
+        _e.offsetY = _offsetY+i;
+        mouseInCanvas(_e);
+        if(currentTooth.path) break;
+        if(debug) console.log("NOT FOUND IN "+_e.offsetY);
+      }
+
+      if(debug){
+        ctx.strokeStyle = "gray";
+        ctx.lineWidth = "1";
+        ctx.moveTo(0, 0);
+        ctx.lineTo(_e.offsetX, _e.offsetY);
+        ctx.stroke();
+      }
+    }
+    pvw_ctx.canvas.onclick = (e)=>{
+      if(!currentTooth.tooth) return;
+      let _e = {
+        offsetX: currentTooth.tooth.x + e.offsetX/preview_scale,
+        offsetY: currentTooth.tooth.y + e.offsetY/preview_scale
+      };
+      toothPartClickHandle(_e, true);
+    }
+    drawPreview();
+  }
+  function drawPreview(){
+    if(!currentTooth.tooth){  // Clear preview if there is no current tooth
+      pvw_ctx.fillStyle = "white";
+      pvw_ctx.rect(0, 0, pvw_ctx.canvas.width, pvw_ctx.canvas.height);
+      pvw_ctx.fill();
+      return;
+    }
+    // Draw tooth in preview
+    pvw_ctx.setTransform(1, 0, 0, 1, 0, 0);  // Reset previous scale
+    pvw_ctx.scale(preview_scale, preview_scale);
+    pvw_ctx.drawImage(ctx.canvas, -currentTooth.tooth.x+preview_margin, -currentTooth.tooth.y+preview_margin);
   }
 
   return (
@@ -2116,16 +2262,16 @@ function Odontograma(props){
           </svg> Odontograma
         </h1>
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>genTeeth('A')}>
+          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>resetAll('A')}>
             <input type="radio" name="odontogram_type" defaultChecked /> Adulto
           </label>
-          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>genTeeth('K')}>
+          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>resetAll('K')}>
             <input type="radio" name="odontogram_type" /> Infante
           </label>
         </div>
       </div>
-      <div style={{height: "530px"}}>
-        <canvas id="odontogram" width="800" height="530" style={{background:"#CCF",verticalAlign:"top"}}></canvas>
+      <div style={{whiteSpace: "nowrap"}}>
+        <canvas id="odontogram" width="800" height="530" style={{background:"white",verticalAlign:"top"}}></canvas>
         <div style={{display: "inline-block"}}>
           {(()=>{
             if(incident)
@@ -2165,6 +2311,14 @@ function IncidentForm(props){
   }
   else if( incident_type.component_line_array.includes(inc_code) ){
     select_type = 3;
+    // Preview canvas
+    elements.push(
+      <canvas key="preview-canvas" id="preview"
+        width={(settings.width*1.3+preview_margin*2)*preview_scale}
+        height={(settings.height+preview_margin*2)*preview_scale}
+        style={{background:"#CCF",verticalAlign:"top"}}>
+      </canvas>
+    );
     dom_select_info = [<i key="inc_title">Seleccione los bordes de la incidencia</i>];
   }
   else if( incident_type.component_tooth.includes(inc_code) ){
@@ -2425,6 +2579,6 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-2. Preview to draw tooth line component incidence
-3. Delete incidence
+1. Fix preview view for lower_teeth
+2. Delete incidence
 */
