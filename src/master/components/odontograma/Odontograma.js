@@ -419,7 +419,6 @@ class Tooth {
     if(!this.incidents) return;  // There is no incidents
     let data = [];  // Array to store tooth incident data
     // Print incident
-    console.log(this);
     this.incidents.forEach((v) => {
       // Select tooth part
       let component = this.selectComponent(v.component);
@@ -1780,7 +1779,6 @@ function Odontograma(props){
             let _noevenone = lines.some((path, inx) => {
               let found = ctx.isPointInStroke(path, x, y);  // Is point in line stroke?
               if(found){
-                console.log("FOUND IN ", x, y, path);
                 let _key = String(1100+inx)
                 // If it's not the current line (point has moved to other line component)
                 if(currentTooth.path && _key!==currentTooth.path.key) clearTooth();  // Clear tooth
@@ -2011,7 +2009,6 @@ function Odontograma(props){
     that way it keeps updated with the newest state variables
   */
   function saveOdontogram(){  // Save odontogram data to API
-    console.log("GUARDAR ODONTOGRAMA", odontogram_id);
     let odontogram_data = {incidents: []};
     // Get teeth incidents' data
     teeth.lower_teeth.map((v) => {
@@ -2181,7 +2178,7 @@ function Odontograma(props){
 
   // Preview
   function initPreview(){
-    let debug = !false;
+    let debug = false;
     // Fake area of odontogram canvas
     if(!pvw_ctx){
       let el_preview = document.getElementById("preview");
@@ -2191,7 +2188,13 @@ function Odontograma(props){
       if(!currentTooth.tooth) return;
 
       let _offsetX = currentTooth.tooth.x + e.offsetX/preview_scale - preview_margin;
-      let _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+      let _offsetY;
+      if(currentTooth.tooth.orientation==="D"){
+        _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+        _offsetY -= settings.data_height+settings.data_space;
+      }else{
+        _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+      }
       let _e = {
         offsetX: _offsetX,
         offsetY: _offsetY
@@ -2229,9 +2232,18 @@ function Odontograma(props){
     }
     pvw_ctx.canvas.onclick = (e)=>{
       if(!currentTooth.tooth) return;
+
+      let _offsetX = currentTooth.tooth.x + e.offsetX/preview_scale - preview_margin;
+      let _offsetY;
+      if(currentTooth.tooth.orientation==="D"){
+        _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+        _offsetY -= settings.data_height+settings.data_space;
+      }else{
+        _offsetY = currentTooth.tooth.y + e.offsetY/preview_scale - preview_margin;
+      }
       let _e = {
-        offsetX: currentTooth.tooth.x + e.offsetX/preview_scale,
-        offsetY: currentTooth.tooth.y + e.offsetY/preview_scale
+        offsetX: _offsetX,
+        offsetY: _offsetY
       };
       toothPartClickHandle(_e, true);
     }
@@ -2247,7 +2259,16 @@ function Odontograma(props){
     // Draw tooth in preview
     pvw_ctx.setTransform(1, 0, 0, 1, 0, 0);  // Reset previous scale
     pvw_ctx.scale(preview_scale, preview_scale);
-    pvw_ctx.drawImage(ctx.canvas, -currentTooth.tooth.x+preview_margin, -currentTooth.tooth.y+preview_margin);
+    console.log(currentTooth.tooth);
+    if(currentTooth.tooth.orientation==="D"){
+      pvw_ctx.drawImage(
+        ctx.canvas,
+        -currentTooth.tooth.x+preview_margin,
+        -currentTooth.tooth.y+settings.data_height+settings.data_space+preview_margin
+      );
+    }else{
+      pvw_ctx.drawImage(ctx.canvas, -currentTooth.tooth.x+preview_margin, -currentTooth.tooth.y+preview_margin);
+    }
   }
 
   return (
@@ -2579,6 +2600,5 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-1. Fix preview view for lower_teeth
 2. Delete incidence
 */
