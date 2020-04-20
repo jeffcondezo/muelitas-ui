@@ -5,7 +5,7 @@ let teeth;
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
-let odontogram_id = 17;  // <<<<<<<<<<<<<<<<<<<
+let odontogram_id = -1;
 // Objects propertie = _teeth.s
 const scale = 0.9;
 const preview_scale = 2.5;
@@ -15,6 +15,7 @@ const preview_select_margin = 2;
 const settings = {
   strokeColor: "black",
   hovercolor: "yellow",
+  toothhovercolor: "#0002",
   tooth_spacing: 7*scale,
   width: 30*scale,
   height: 65*scale,
@@ -1009,6 +1010,7 @@ class Tooth {
       return false;
     });
     if(!_inx){
+      console.log(direction, _teeth, v.start_tooth_key, _inx);
       alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
       return;
     }
@@ -1602,7 +1604,8 @@ let inc_paths = [];
 let pvw_ctx;
 
 function Odontograma(props){
-  // let cita = props.data.cita;  <<<<<<<<<<<<<<<<<<<
+  let cita = props.data.cita;
+  // let cita = 3;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1938,7 +1941,7 @@ function Odontograma(props){
     });
   }, []);
   const drawSelectedPaths = useCallback(() => {
-    ctx.fillStyle = "#0002";
+    ctx.fillStyle = settings.toothhovercolor;
     if(currentTooth.tooth) ctx.fill(currentTooth.tooth.area);
     // All teeth incidence
     if(incident_type.component_range.includes(incident) && inc_paths.length===1){
@@ -1972,7 +1975,7 @@ function Odontograma(props){
     odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
     odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
     genTeeth('A');
-    getIncidences();  // Get incidences in case there are
+    initOdontogram();
   }, [genTeeth]);
   // Run after teeth has changed
   useEffect(() => {
@@ -2008,6 +2011,47 @@ function Odontograma(props){
   /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
     that way it keeps updated with the newest state variables
   */
+  function initOdontogram(){
+    // Check if odontogram is already registered
+    // Get incidents
+    let filter = `filtro={"atencion":"${cita.atencion}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/`;
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        if(response_obj.length===0) return;
+        let response = response_obj[0];
+        // Change odontogram type
+        resetAll(response.tipo==1?"A":"K");
+        // Update observaciones
+        document.getElementById('textarea_observaciones').value = response.observaciones;
+        // Save odontogram_id
+        odontogram_id = response.id;
+        // Get incidences in case odontogram exists
+        getIncidences();
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
   function saveOdontogram(){  // Save odontogram data to API
     let odontogram_data = {incidents: []};
     // Get teeth incidents' data
@@ -2026,12 +2070,12 @@ function Odontograma(props){
     }
     // Add odontogram data
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
-    odontogram_data.tipo = odontogram_type==='A'?1:2;  // Conversion to match DB field choices
+    odontogram_data.tipo = odontogram_type.current==='A'?"1":"2";  // Conversion to match DB field choices
+    console.log(odontogram_data.tipo);
 
     // Create or modify?
     if(odontogram_id===-1){  // Save to API
-      // odontogram_data.atencion = cita.atencion;  <<<<<<<<<<<<<<<<<<<
-      odontogram_data.atencion = 1;
+      odontogram_data.atencion = cita.atencion;
 
       let url = process.env.REACT_APP_PROJECT_API+'atencion/odontograma/';
       // Generate promise
@@ -2057,7 +2101,6 @@ function Odontograma(props){
       // Promise actions
       result.then(
         response_obj => {  // In case it's ok
-          console.log("OKEY", response_obj);
           odontogram_id = response_obj.id;  // Save odontogram id
         },
         error => {  // In case of error
@@ -2131,7 +2174,7 @@ function Odontograma(props){
           inc_obj.value.log = inc.log;
           inc_obj.value.state = inc.state;
           inc_obj.value.orientation = inc.orientation;
-          inc_obj.value.fractura = inc.fractura;
+          inc_obj.value.fractura = JSON.parse(inc.fractura);
           inc_obj.value.start_tooth_key = inc.start_tooth_key;
           inc_obj.component = JSON.parse(inc.component)
           tooth.incidents.push(inc_obj);  // Add to global teeth data
@@ -2173,7 +2216,7 @@ function Odontograma(props){
       setIncident(false);
     }
     genTeeth(odontogram_type.current);
-    document.getElementById('textarea_observaciones').value = "";
+    getIncidences();
   }
 
   // Preview
@@ -2247,6 +2290,10 @@ function Odontograma(props){
       };
       toothPartClickHandle(_e, true);
     }
+    pvw_ctx.canvas.onmouseleave = ()=>{
+      currentTooth.path = null;  // Fix bad mouse leave event
+      drawPreview();
+    }
     drawPreview();
   }
   function drawPreview(){
@@ -2259,7 +2306,7 @@ function Odontograma(props){
     // Draw tooth in preview
     pvw_ctx.setTransform(1, 0, 0, 1, 0, 0);  // Reset previous scale
     pvw_ctx.scale(preview_scale, preview_scale);
-    console.log(currentTooth.tooth);
+    console.log(currentTooth);
     if(currentTooth.tooth.orientation==="D"){
       pvw_ctx.drawImage(
         ctx.canvas,
@@ -2292,7 +2339,7 @@ function Odontograma(props){
         </div>
       </div>
       <div style={{whiteSpace: "nowrap"}}>
-        <canvas id="odontogram" width="800" height="530" style={{background:"white",verticalAlign:"top"}}></canvas>
+        <canvas id="odontogram" width="750" height="530" style={{background:"white",verticalAlign:"top"}}></canvas>
         <div style={{display: "inline-block"}}>
           {(()=>{
             if(incident)
@@ -2334,11 +2381,14 @@ function IncidentForm(props){
     select_type = 3;
     // Preview canvas
     elements.push(
+      <>
+      <br/>
       <canvas key="preview-canvas" id="preview"
         width={(settings.width*1.3+preview_margin*2)*preview_scale}
         height={(settings.height+preview_margin*2)*preview_scale}
-        style={{background:"#CCF",verticalAlign:"top"}}>
+        style={{background:`${settings.toothhovercolor}`,verticalAlign:"top"}}>
       </canvas>
+      </>
     );
     dom_select_info = [<i key="inc_title">Seleccione los bordes de la incidencia</i>];
   }
@@ -2559,7 +2609,7 @@ function IncidentForm(props){
   }
 
   return (
-    <div>
+    <div style={{width: "280px"}}>
       <h1>{inc_functions[inc_code-1]}</h1>
       <span>{dom_select_info}</span>
       {elements}
@@ -2571,27 +2621,111 @@ function IncidentForm(props){
 }
 function IncidentPanel(props){
   select_type = 4;
-  let button_list = [];
+  let button_all_list = [];
+  let button_range_list = [];
+  let button_tooth_list = [];
+
   inc_functions.forEach((v, i) => {
+    let button_list;
+    // All
+    if( incident_type.component_all.includes(i+1) ) button_list = button_all_list;
+    // Range
+    else if( incident_type.component_range.includes(i+1) ) button_list = button_range_list;
+    // Tooth
+    else button_list = button_tooth_list;
+
     button_list.push(
       <button
         key={"inc_button_"+i}
         type="button"
-        className="btn btn-secondary waves-effect waves-themed"
+        className="btn btn-light waves-effect waves-themed"
         onClick={()=>props.setIncident(i+1)}>
           {v}
       </button>
     );
   });
+  useEffect(() => {
+    window.$('#slimscroll').slimScroll({
+      width: "280",
+      height: "505",
+      size: "4px",
+      position: "right",
+      color: "rgba(0,0,0,0.6)",
+      alwaysvisible: "false",
+      distance: "4px",
+      railvisible: "false",
+      railcolor: "#fafafa",
+    });
+  });
 
   return (
     <>
-    <div style={{height: "25px", textAlign: "center", background: "#82c4f877"}}>
+    <div style={{height: "25px", textAlign: "center"}}>
       <span className="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
     </div>
-    <div style={{overflowY: "scroll", height: "505px"}}>
-      <div className="btn-group-vertical" role="group" aria-label="Vertical button group">
-      {button_list}
+
+    {/* slimscroll */}
+    <div id="slimscroll" className="custom-scroll" style={{width:"280px", height: "505px"}}>
+      <div className="p-3"> {/* slimscroll CONTENT*/}
+        {/* acordion */}
+        <div className="accordion" id="incidence-panel" style={{whiteSpace: "normal"}}>
+          {/* Tooth */}
+          <div className="card">
+            <div className="card-header">
+              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-tooth" aria-expanded="true">
+                <span className="collapsed-reveal">
+                  <i className="fal fa-minus fs-xl"></i>
+                </span>
+                <span className="collapsed-hidden">
+                  <i className="fal fa-plus fs-xl"></i>
+                </span>
+                Un solo diente
+              </button>
+            </div>
+            <div id="incidence-tooth" className="collapse show">
+              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                {/* BUTTONS GROUP */}
+                {button_tooth_list}
+              </div>
+            </div>
+          </div>
+          {/* Range */}
+          <div className="card">
+            <div className="card-header">
+              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-range" aria-expanded="true">
+                <span className="collapsed-reveal">
+                  <i className="fal fa-minus fs-xl"></i>
+                </span>
+                <span className="collapsed-hidden">
+                  <i className="fal fa-plus fs-xl"></i>
+                </span>
+                Rango de dientes
+              </button>
+            </div>
+            <div id="incidence-range" className="collapse show">
+              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                {/* BUTTONS GROUP */}
+                {button_range_list}
+              </div>
+            </div>
+          </div>
+          {/* All */}
+          <div className="card">
+            <div className="card-header">
+              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-all" aria-expanded="true">
+                <span className="collapsed-reveal"><i className="fal fa-minus fs-xl"></i></span>
+                <span className="collapsed-hidden"><i className="fal fa-plus fs-xl"></i></span>
+                Todos los dientes
+              </button>
+            </div>
+            <div id="incidence-all" className="collapse show">
+              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                {/* BUTTONS GROUP */}
+                {button_all_list}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     </>
@@ -2600,5 +2734,12 @@ function IncidentPanel(props){
 
 export default Odontograma;
 /*
-2. Delete incidence
+* Integrate Odontogram
+* Incidences category
+* Fix style and position of preview & list
+1. Incidences list
+  Delete incidence
+2. Fix performance issues:
+  Login requeriment
+  Redirects
 */

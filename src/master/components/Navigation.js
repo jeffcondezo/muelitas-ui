@@ -65,7 +65,6 @@ class Navigation extends React.Component {
     this.props.errorFunc(log);
   }
   redirectTo(url, data){
-    console.log(this);
     let clone = Object.assign({}, this.state);
     clone.redirect = data;
     this.setState(clone, this.props.history.push(url));
@@ -118,15 +117,14 @@ function SelectComponent(props){  // CONTENT
           <Cita state={props.state} redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/odontograma">
-          <Odontograma data={{cita: 7, user: 4}} />
-          {/*(()=>{  // Exe func
+          {(()=>{  // Exe func
             // Not comming from redirect
             if(!props.state.redirect && props.history.location.pathname==="/nav/odontograma"){
               props.history.goBack();
             }else{  // Redirect from Cita
               return <Odontograma data={props.state.redirect} />
             }
-          })()*/}
+          })()}
         </Route>
         <Route path="/nav/procedimiento">
         {(()=>{  // Exe func
@@ -1083,16 +1081,16 @@ function PageFooter(){
   return (
     <footer className="page-footer" role="contentinfo">
       <div className="d-flex align-items-center flex-1 text-muted">
-          <span className="hidden-md-down fw-700">2019 © SmartAdmin by&nbsp;<a href='https://www.gotbootstrap.com' className='text-primary fw-500' title='gotbootstrap.com' target='_blank'>gotbootstrap.com</a></span>
+          <span className="hidden-md-down fw-700">2020 © Muelitas by&nbsp;<a href='http://datakrafthco.com/' className='text-primary fw-500' title='' target='_blank'>DataKraft EIRL</a></span>
       </div>
-      <div>
+      {/*<div>
           <ul className="list-table m-0">
               <li><a href="intel_introduction.html" className="text-secondary fw-700">About</a></li>
               <li className="pl-3"><a href="info_app_licensing.html" className="text-secondary fw-700">License</a></li>
               <li className="pl-3"><a href="info_app_docs.html" className="text-secondary fw-700">Documentation</a></li>
               <li className="pl-3 fs-xl"><a href="https://wrapbootstrap.com/user/MyOrange" className="text-secondary" target="_blank"><i className="fal fa-question-circle" aria-hidden="true"></i></a></li>
           </ul>
-      </div>
+      </div>*/}
     </footer>
   )
 }

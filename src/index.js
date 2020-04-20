@@ -5,7 +5,7 @@ import Master from './master/Master';
 import Odontograma from './master/components/odontograma/Odontograma';
 import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<Odontograma />, document.getElementById('root'));
+ReactDOM.render(<Master />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
