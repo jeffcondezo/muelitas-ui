@@ -5,7 +5,7 @@ let teeth;
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
-let odontogram_id = -1;
+let odontogram = {id: -1, type: ""}
 // Objects properties
 const scale = 0.9;
 const preview_scale = 2.5;
@@ -1966,9 +1966,6 @@ function Odontograma(props){
 
   // Only run after first render
   useEffect(() => {
-    // Fix body X scroll
-    document.body.style.overflowX = "scroll"
-
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
@@ -2043,8 +2040,9 @@ function Odontograma(props){
         resetAll(response.tipo==1?"A":"K");
         // Update observaciones
         document.getElementById('textarea_observaciones').value = response.observaciones;
-        // Save odontogram_id
-        odontogram_id = response.id;
+        // Save odontogram
+        odontogram.id = response.id;
+        odontogram.type = response.tipo==1?"A":"K";
         // Get incidences in case odontogram exists
         getIncidences();
       },
@@ -2074,7 +2072,7 @@ function Odontograma(props){
     odontogram_data.tipo = odontogram_type.current==='A'?"1":"2";  // Conversion to match DB field choices
 
     // Create or modify?
-    if(odontogram_id===-1){  // Save to API
+    if(odontogram.id===-1){  // Save to API
       odontogram_data.atencion = cita.atencion;
 
       let url = process.env.REACT_APP_PROJECT_API+'atencion/odontograma/';
@@ -2101,14 +2099,14 @@ function Odontograma(props){
       // Promise actions
       result.then(
         response_obj => {  // In case it's ok
-          odontogram_id = response_obj.id;  // Save odontogram id
+          odontogram.id = response_obj.id;  // Save odontogram id
         },
         error => {  // In case of error
           console.log("WRONG!", error);
         }
       );
     }else{  // Modify
-      let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/${odontogram_id}/`;
+      let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/${odontogram.id}/`;
       // Generate promise
       let result = new Promise((resolve, reject) => {
         // Fetch data to api
@@ -2141,9 +2139,9 @@ function Odontograma(props){
     }
   }
   function getIncidences(){
-    if(odontogram_id===-1) return;  // If it's a new odontogram, exit
+    if(odontogram.id===-1) return;  // If it's a new odontogram, exit
     // Get incidents
-    let filter = `filtro={"odontograma":"${odontogram_id}"}`;
+    let filter = `filtro={"odontograma":"${odontogram.id}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/incidencia/`;
     url = url + '?' + filter;
     // Generate promise
@@ -2225,7 +2223,7 @@ function Odontograma(props){
       setIncident(false);
     }
     genTeeth(odontogram_type.current);
-    getIncidences();
+    if(type===odontogram.type) getIncidences();
   }
 
   // Preview
@@ -2782,10 +2780,9 @@ function IncidentList(props){
     let _fake_list = props.inc_list;
     // Delete incidence from its tooth
     let _tooth = props.getToothByKey(_fake_list[inx].diente);
-    _tooth.incidents.splice(inx, 1);
+    _tooth.incidents.splice(_fake_list[inx].inx, 1);
     // Delete incidence from list
-    _fake_list.splice(inx, 1);
-    /**/
+    let a = _fake_list.splice(inx, 1);
     // Fix index in other incidences of the same tooth
     _fake_list.map((inc) => {
       if(inc.diente==_tooth.key){  // Same tooth
@@ -2797,7 +2794,7 @@ function IncidentList(props){
       }
       return inc;
     });
-    /**/
+
     props.clearTooth();  // Delete incidence drawing
     props.set_inc_list(_fake_list);
     forceUpdate();  // Force update
