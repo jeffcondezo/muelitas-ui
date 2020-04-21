@@ -6,7 +6,7 @@ let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
 let odontogram_id = -1;
-// Objects propertie = _teeth.s
+// Objects properties
 const scale = 0.9;
 const preview_scale = 2.5;
 const preview_margin = 3;
@@ -493,7 +493,7 @@ class Tooth {
     c.forEach((path) => {
       ctx.fill(path);
     });
-    return {log: v.log, color: "gray"};
+    return {log: v.log, color: "black"};
   }
   inc_Sellante(c, v){  // 5.3.3  Sellantes
     let color = v.state ? "blue" : "red";
@@ -1605,7 +1605,6 @@ let pvw_ctx;
 
 function Odontograma(props){
   let cita = props.data.cita;
-  // let cita = 3;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1614,6 +1613,8 @@ function Odontograma(props){
   let [teethState, setTeeth] = useState(false);  // Tooth data, redraw incidents
   // Panel state
   let [incident, setIncident] = useState(false);
+  // Incident list
+  let [incident_list, setIncidentList] = useState([]);
   // DOM variables
   let odontogram_type = useRef();
 
@@ -2071,7 +2072,6 @@ function Odontograma(props){
     // Add odontogram data
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
     odontogram_data.tipo = odontogram_type.current==='A'?"1":"2";  // Conversion to match DB field choices
-    console.log(odontogram_data.tipo);
 
     // Create or modify?
     if(odontogram_id===-1){  // Save to API
@@ -2166,6 +2166,7 @@ function Odontograma(props){
     result.then(
       response_obj => {  // In case it's ok
         // DRAW TEETH INCIDENCE FROM DB
+        let new_inc_list = [];
         response_obj.forEach((inc) => {
           let tooth = getToothByKey(inc.diente);
           let inc_obj = {};
@@ -2178,9 +2179,17 @@ function Odontograma(props){
           inc_obj.value.start_tooth_key = inc.start_tooth_key;
           inc_obj.component = JSON.parse(inc.component)
           tooth.incidents.push(inc_obj);  // Add to global teeth data
+
+          new_inc_list.push({
+            diente: tooth.key,
+            type: parseInt(inc.type),
+            inx: tooth.incidents.length-1
+          });
         });
         // Redraw odontogram teeth incidences
         drawAllIncidences();
+        // Add to incident list
+        setIncidentList(new_inc_list);
       },
       error => {  // In case of error
         console.log("WRONG!", error);
@@ -2306,7 +2315,6 @@ function Odontograma(props){
     // Draw tooth in preview
     pvw_ctx.setTransform(1, 0, 0, 1, 0, 0);  // Reset previous scale
     pvw_ctx.scale(preview_scale, preview_scale);
-    console.log(currentTooth);
     if(currentTooth.tooth.orientation==="D"){
       pvw_ctx.drawImage(
         ctx.canvas,
@@ -2343,16 +2351,24 @@ function Odontograma(props){
         <div style={{display: "inline-block"}}>
           {(()=>{
             if(incident)
-              return <IncidentForm setTeeth={setTeeth} incident={incident} setIncident={setIncident} />
+              return <IncidentForm setTeeth={setTeeth} incident={incident}
+                setIncident={setIncident} inc_list={incident_list}
+                set_inc_list={setIncidentList} />
             else return <IncidentPanel setIncident={setIncident} />
           })()}
         </div>
       </div>
       <div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="textarea_observaciones">Observaciones</label>
-          <textarea className="form-control" id="textarea_observaciones" rows="5"></textarea>
-        </div>
+        <div  className="row" style={{width: "100%"}}>
+          <div className="col-sm" style={{height: "160px"}}>
+            <label className="form-label" htmlFor="textarea_observaciones">Observaciones</label>
+            <textarea className="form-control" id="textarea_observaciones" rows="5"></textarea>
+          </div>
+          <div style={{width: "325px"}}>
+            <IncidentList inc_list={incident_list} set_inc_list={setIncidentList}
+              getToothByKey={getToothByKey} clearTooth={clearTooth} />
+          </div>
+        </div><br/>
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
           <button type="button" className="btn btn-success waves-effect waves-themed"
             onClick={()=>saveOdontogram()} title="Asegurate de escribir las observaciones que encuentres">Guardar</button>
@@ -2605,6 +2621,14 @@ function IncidentForm(props){
 
     _tooth.incidents.push(_inc_obj);  // Add incident object to tooth
     props.setTeeth(teeth);  // Save modified teeth
+    // Add to incident list
+    props.inc_list.push({
+      diente: _tooth.key,
+      type: inc_code,
+      inx: _tooth.incidents.length-1
+    });
+    props.set_inc_list(props.inc_list);
+    // Return incident to false (finish the form)
     props.setIncident(false);
   }
 
@@ -2649,96 +2673,162 @@ function IncidentPanel(props){
       width: "280",
       height: "505",
       size: "4px",
-      position: "right",
       color: "rgba(0,0,0,0.6)",
-      alwaysvisible: "false",
       distance: "4px",
-      railvisible: "false",
       railcolor: "#fafafa",
     });
-  });
+  }, []);
 
   return (
-    <>
-    <div style={{height: "25px", textAlign: "center"}}>
-      <span className="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
-    </div>
+    <div>
+      <div style={{height: "25px", textAlign: "center"}}>
+        <span className="fw-500" style={{fontSize: "1.3em"}}>LISTA DE INCIDENCIAS</span>
+      </div>
 
-    {/* slimscroll */}
-    <div id="slimscroll" className="custom-scroll" style={{width:"280px", height: "505px"}}>
-      <div className="p-3"> {/* slimscroll CONTENT*/}
-        {/* acordion */}
-        <div className="accordion" id="incidence-panel" style={{whiteSpace: "normal"}}>
-          {/* Tooth */}
-          <div className="card">
-            <div className="card-header">
-              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-tooth" aria-expanded="true">
-                <span className="collapsed-reveal">
-                  <i className="fal fa-minus fs-xl"></i>
-                </span>
-                <span className="collapsed-hidden">
-                  <i className="fal fa-plus fs-xl"></i>
-                </span>
-                Un solo diente
-              </button>
-            </div>
-            <div id="incidence-tooth" className="collapse show">
-              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
-                {/* BUTTONS GROUP */}
-                {button_tooth_list}
+      {/* slimscroll */}
+      <div id="slimscroll" className="custom-scroll" style={{width:"280px", height: "505px"}}>
+        <div className="p-3"> {/* slimscroll CONTENT*/}
+          {/* acordion */}
+          <div className="accordion" id="incidence-panel" style={{whiteSpace: "normal"}}>
+            {/* Tooth */}
+            <div className="card">
+              <div className="card-header">
+                <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-tooth" aria-expanded="false">
+                  <span className="collapsed-reveal">
+                    <i className="fal fa-minus fs-xl"></i>
+                  </span>
+                  <span className="collapsed-hidden">
+                    <i className="fal fa-plus fs-xl"></i>
+                  </span>
+                  Un solo diente
+                </button>
+              </div>
+              <div id="incidence-tooth" className="collapse">
+                <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                  {/* BUTTONS GROUP */}
+                  {button_tooth_list}
+                </div>
               </div>
             </div>
-          </div>
-          {/* Range */}
-          <div className="card">
-            <div className="card-header">
-              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-range" aria-expanded="true">
-                <span className="collapsed-reveal">
-                  <i className="fal fa-minus fs-xl"></i>
-                </span>
-                <span className="collapsed-hidden">
-                  <i className="fal fa-plus fs-xl"></i>
-                </span>
-                Rango de dientes
-              </button>
-            </div>
-            <div id="incidence-range" className="collapse show">
-              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
-                {/* BUTTONS GROUP */}
-                {button_range_list}
+            {/* Range */}
+            <div className="card">
+              <div className="card-header">
+                <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-range" aria-expanded="true">
+                  <span className="collapsed-reveal">
+                    <i className="fal fa-minus fs-xl"></i>
+                  </span>
+                  <span className="collapsed-hidden">
+                    <i className="fal fa-plus fs-xl"></i>
+                  </span>
+                  Rango de dientes
+                </button>
+              </div>
+              <div id="incidence-range" className="collapse show">
+                <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                  {/* BUTTONS GROUP */}
+                  {button_range_list}
+                </div>
               </div>
             </div>
-          </div>
-          {/* All */}
-          <div className="card">
-            <div className="card-header">
-              <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-all" aria-expanded="true">
-                <span className="collapsed-reveal"><i className="fal fa-minus fs-xl"></i></span>
-                <span className="collapsed-hidden"><i className="fal fa-plus fs-xl"></i></span>
-                Todos los dientes
-              </button>
-            </div>
-            <div id="incidence-all" className="collapse show">
-              <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
-                {/* BUTTONS GROUP */}
-                {button_all_list}
+            {/* All */}
+            <div className="card">
+              <div className="card-header">
+                <button className="btn-block btn btn-secondary waves-effect waves-themed" data-toggle="collapse" data-target="#incidence-all" aria-expanded="true">
+                  <span className="collapsed-reveal"><i className="fal fa-minus fs-xl"></i></span>
+                  <span className="collapsed-hidden"><i className="fal fa-plus fs-xl"></i></span>
+                  Todos los dientes
+                </button>
+              </div>
+              <div id="incidence-all" className="collapse show">
+                <div className="btn-group-vertical" role="group" style={{width: "100%"}}>
+                  {/* BUTTONS GROUP */}
+                  {button_all_list}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    </>
   );
+}
+function IncidentList(props){
+  let [, updateState] = useState();
+  /* Set new state to empty object value
+    'cuz when React compares the last state with the new empty object value
+    it'll be different 'cuz objects are always different
+    btw we're using forceUpdate function 'cuz our elements are dinamically generated
+    and its changes are not tracked by react so their changes won't fire a render
+    that's why we've used forceUpdate function
+  */
+  const forceUpdate = () => updateState({});
+
+  let elements = [];
+  props.inc_list.forEach((inc, inx) => {
+    elements.push(
+      <div key={"inc_list_"+inx} style={{cursor: "pointer"}}>
+          <button onClick={()=>deleteIncidence(inx)}
+            className="btn btn-danger btn-xs btn-icon rounded-circle"
+            style={{marginRight: "7px"}}>
+            <i className="fal fa-times"></i>
+          </button>
+          <span>Diente: </span><b>{inc.diente}</b><span> &nbsp;{inc_functions[inc.type-1]}</span>
+      </div>
+    );
+  });
+
+  // Delete incidence
+  function deleteIncidence(inx){
+    let _fake_list = props.inc_list;
+    // Delete incidence from its tooth
+    let _tooth = props.getToothByKey(_fake_list[inx].diente);
+    _tooth.incidents.splice(inx, 1);
+    // Delete incidence from list
+    _fake_list.splice(inx, 1);
+    /**/
+    // Fix index in other incidences of the same tooth
+    _fake_list.map((inc) => {
+      if(inc.diente==_tooth.key){  // Same tooth
+        // Index is upper than the one we're erasing
+        if(inc.inx>inx){
+          inc.inx--;
+          return inc;
+        }
+      }
+      return inc;
+    });
+    /**/
+    props.clearTooth();  // Delete incidence drawing
+    props.set_inc_list(_fake_list);
+    forceUpdate();  // Force update
+  }
+
+  useEffect(() => {
+    window.$('#slimscroll-inc_list').slimScroll({
+      height: "137",
+      size: "4px",
+      color: "rgba(0,0,0,0.6)",
+      railVisible: true,
+      alwaysVisible: true,
+      railcolor: "#fafafa",
+    });
+  }, []);
+
+  // style={{width:"280px", height: "505px"}}
+  return (
+    <div>
+      <label className="form-label">Incidencias en el odontograma</label><br/>
+      <div id="slimscroll-inc_list" className="custom-scroll">
+        <div style={{paddingLeft: "5px"}}> {/* slimscroll CONTENT*/}
+          {elements.length==0?"No hay ninguna incidencia":elements}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default Odontograma;
 /*
-* Integrate Odontogram
-* Incidences category
-* Fix style and position of preview & list
-1. Incidences list
-  Delete incidence
 2. Fix performance issues:
   Login requeriment
   Redirects

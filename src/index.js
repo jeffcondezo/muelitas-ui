@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 // import './index.css';
 import Master from './master/Master';
-import Odontograma from './master/components/odontograma/Odontograma';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(<Master />, document.getElementById('root'));
