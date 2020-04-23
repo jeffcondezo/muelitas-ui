@@ -2825,8 +2825,3 @@ function IncidentList(props){
 }
 
 export default Odontograma;
-/*
-2. Fix performance issues:
-  Login requeriment
-  Redirects
-*/

@@ -6,9 +6,8 @@ import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 
-
 /* We use extended class of React.Component instead of function components
-    because we'll need to use componentDidMount function
+    because we'll need to use componentWillReceiveProps function
 */
 class Cita extends React.Component {
   constructor(props){
@@ -19,7 +18,9 @@ class Cita extends React.Component {
       procedimiento: false,
       selected_cita: false,  // Cita shown in Cita info modal
       calendar_filter: [],
-      global: props.state,  // This is only setted first time this component is rendered
+      global: {
+        current_sucursal_pk: props.current_sucursal_pk
+      },  // This is only setted first time this component is rendered
     }
     this.color_personal = [
       "#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"
@@ -27,12 +28,14 @@ class Cita extends React.Component {
     this.redirectTo = props.redirectTo;
   }
   UNSAFE_componentWillReceiveProps(nextProps){
+    // console.log(this.state.global.current_sucursal_pk, nextProps.current_sucursal_pk);
     let clone = Object.assign({}, this.state)  // Clone this.state object
-    clone.global = nextProps.state  // Change attribute's value
+    clone.global = {};  // Unlink clone with this.state
+    clone.global.current_sucursal_pk = nextProps.current_sucursal_pk  // Change attribute's value
 
     // Save change (re-render)
     // Shall we re render calendar?
-    if(this.state.global.current_sucursal_pk!==nextProps.state.current_sucursal_pk){  // Sucursal has changed
+    if(this.state.global.current_sucursal_pk!==nextProps.current_sucursal_pk){  // Sucursal has changed
       if(!this.state.calendar)  // First execution calendar == false so not render calendar
         this.setState(clone, this.getProcedimiento)  // Get procedimientos according new sucursal
       else
@@ -43,6 +46,7 @@ class Cita extends React.Component {
   }
   // This.props functions
   getPersonal(){
+    console.log("getPersonal");
     // HTTP REQUEST
     // Add filter to url
     let xhr = new XMLHttpRequest();
@@ -71,6 +75,7 @@ class Cita extends React.Component {
     xhr.send();  // Send request
   }
   getCitas(){
+    console.log("getCitas");
     // HTTP REQUEST
     // Add filter to url
     let xhr = new XMLHttpRequest();
@@ -135,6 +140,7 @@ class Cita extends React.Component {
     _calendar.render();
   }
   getProcedimiento(){
+    console.log("getProcedimiento");
     let xhr = new XMLHttpRequest();
     let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
     let _url = process.env.REACT_APP_PROJECT_API+'maestro/procedimiento/precio/';
@@ -514,7 +520,6 @@ class Cita extends React.Component {
   }
 
   render(){
-    // console.log(this.state);  // Test this.state rendered
     return(
     <>
       {/* ALERTS */}

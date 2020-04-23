@@ -1,7 +1,7 @@
 import React from 'react';
 import './Login.css';
 
-function Login(props) {
+function Login(props){
 
   // Validate form
   function validateForm(e){
@@ -15,46 +15,51 @@ function Login(props) {
       getToken(form)
     }
   }
-  // Submit function
   function getToken(form){
     let data = new FormData(form)  // Get data from form element
-    // HTTP REQUEST
-    let xhr = new XMLHttpRequest()
-    xhr.open('POST', process.env.REACT_APP_PROJECT_API_TOKEN)
-    xhr.onload = handleTokenResponse  // Receive token or failed
-    xhr.onerror = handleErrorResponse  // Receive server error
-
-    xhr.send(data)  // Send request
     // Show waiter
     charging(true)
+
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(process.env.REACT_APP_PROJECT_API_TOKEN, {
+        method: 'POST',
+        body: data,  // Data
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok && response.status==200){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, error => {
+        handleErrorResponse('server');
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        // Add token to cookie
+        localStorage.setItem('access_token', response_obj.token)
+        /*
+        We will use access_token cookie afterwards in our requests
+        with fetch we'd add in headers
+          Authorization: localStorage.getItem('access_token'),  // Token
+        */
+        // Redirect
+        props.logIn();
+        /* Page will automatically redirect to home when calling props.logIn */
+      },
+      error => {  // In case of error
+        handleErrorResponse('login');
+      }
+    ).then(() => {
+      charging(false);  // Stop waiter
+    });
   }
-  function handleTokenResponse(xhr){
-    xhr = xhr.target
-    // Stop waiter
-    charging(false)
-    // Convert response to json object
-    const response = JSON.parse(xhr.response)
-    // Check if token is returned
-    if(response.token){
-      // Add token to cookies and headers (access_token)
-      localStorage.setItem('access_token', response.token)
-      /*
-        We will use access_token cookie afterwards when creating XMLHttpRequest
-        we'd do:
-          xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'))
-      */
-      // Redirect
-      props.onClick()
-      /*
-        Page will automatically redirect to home when calling props.onClick (setLogged)
-      */
-    }else{  // Handle bad login
-      handleErrorResponse(xhr)
-    }
-  }
-  function handleErrorResponse(xhr){
-    charging(false)
-    if(xhr.type==='error'){
+  function handleErrorResponse(type){
+    if(type==='server'){
       document.querySelector('div#alert-server').style.display = "block"
       document.querySelector('div#alert-server').classList.remove("fade")
       setTimeout(function(){
@@ -158,11 +163,11 @@ function Login(props) {
                                         </div>
                                     </form>
                                 </div>
-                                <button className="btn btn-danger rounded-pill waves-effect waves-themed fade" type="button" id="spinner" style={{display:'none'}}>
+                                <button className="btn btn-danger rounded-pill waves-effect waves-themed" type="button" id="spinner" style={{display:'none'}}>
                                     <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
                                     Loading...
                                 </button>
-                                <div id="alert-login" className="fade bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
+                                <div id="alert-login" className="alert fade bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
                                     <strong>Ups!</strong> Parece que el usuario o contraseña introducidos no son correctos.
                                 </div>
                                 <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
@@ -180,4 +185,5 @@ function Login(props) {
     </div>
   );
 }
+
 export default Login;

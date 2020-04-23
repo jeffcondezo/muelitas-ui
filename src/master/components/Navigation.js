@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   Switch,  // Allow to change only content
   Route,  // Route handling
@@ -13,96 +13,121 @@ import Cita from './cita/Cita';
 import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
 
-class Navigation extends React.Component {
-  constructor(props){
-    super();
-    props.errorFunc(false)
-    this.state = {
-      user: props.user,
-      sucursales: [],  // User's sucursal
-      current_sucursal_pk: -1,  // Current enviroment sucursal
-      profile_pic: "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg",
-      redirect: false,  // Redirect object, default: false
+function Navigation(props){
+  // ComponentWillMount fake hook
+  const willMount = useRef(true);
+  if(willMount.current){
+    // Handle page refresh
+    if(window.performance && window.performance.navigation.type===1){
+      console.log("This page is reloaded");
+      console.log(props.history.location);
+      props.history.goBack();
     }
-    this.setPersonalInfo()
+    console.log("MOUNTING")
   }
-  setPersonalInfo(){
-    let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"usuario":"${this.state.user.pk}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    // xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.onload = (xhr)=>{
-      xhr = xhr.target
-      if(xhr.status!==200){  // Error
-        // Send error log to Master
-        this.setError(xhr.statusText);
-        return;
-      }
-      // Parse from json response
-      const response_object = JSON.parse(xhr.response)[0];
-      // Save in this.state
-      let clone = Object.assign({}, this.state);
-      clone.sucursales = response_object.sucursales;
-      clone.current_sucursal_pk = response_object.sucursales[0].pk;
-      this.setState(clone);
-    };
-    xhr.onerror = this.handleErrorResponse;  // Receive server error
-    xhr.send();  // Send request
+  /**/
+  const [, updateState] = useState({});
+  /* Set new state to empty object value
+  'cuz when React compares the last state with the new empty object value
+  it'll be different 'cuz objects are always different
+  btw we're using forceUpdate function 'cuz our elements are dinamically generated
+  and its changes are not tracked by react so their changes won't fire a render
+  that's why we've used forceUpdate function
+  */
+  const forceUpdate = () => updateState({});
+
+  const profile_pic = "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg";
+  /* We want to keep these values even when any state change, so we declare 'em as Ref
+    We initialize its value and reference it's 'current' attribute (which is the actual value)
+    declaring to useRef().current directly only works on objects
+  */
+  const user = useRef(props.user).current;
+  const sucursales = useRef([]);  // User's sucursal
+  const [current_sucursal_pk, setCurrentSucursal] = useState(-1);  // Current enviroment sucursal
+  const [redirect, setRedirect] = useState(false);  // Redirect object, default: false
+
+  function setPersonalInfo(){
+    let result = new Promise((resolve, reject) => {
+      let _filter = `filtro={"usuario":"${user.pk}"}`;
+      let url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
+      url = url + '?' + _filter;
+      // Get user's sucursal
+      let request = fetch(url);
+      // {headers:{Authorization: localStorage.getItem('access_token')}}
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, error => {
+        console.log("ERROR", error);
+      });
+    });
+    result.then(response_obj => {
+      let _obj = response_obj[0];
+      // Save data
+      sucursales.current = _obj.sucursales;
+      setCurrentSucursal(_obj.sucursales[0].pk);
+    },
+    error => {
+      console.log(error);
+      // Send error log to Master
+      // setError(xhr.statusText);
+    });
   }
-  changeSucursal = (pk) => {
-    console.log("Change sucursal pk:", pk);
+  const changeSucursal = (pk) => {
+    console.log("changeSucursal", pk);
     // If it's the same pk than the current one, abort
-    if(this.state.current_sucursal_pk===pk) return;
-    let clone = Object.assign({}, this.state);
-    clone.current_sucursal_pk = pk;
-    this.setState(clone);
+    if(current_sucursal_pk===pk) return;
+    setCurrentSucursal(pk);
   }
-  setError(log){
+  function setError(log){
     // Save error log and redirect to error page
-    this.props.history.push('/error/log')
-    this.props.errorFunc(log);
+    // this.props.history.push('/error/log')
+    // this.props.errorFunc(log);
   }
-  redirectTo(url, data){
-    let clone = Object.assign({}, this.state);
-    clone.redirect = data;
-    this.setState(clone, this.props.history.push(url));
-    // this.props.history provided withRouter
+  function redirectTo(url, data){
+    props.history.push(url);
+    setRedirect(data);
   }
 
-  render(){
-    return (
-      <div>
-        <div className="page-wrapper">
-          <div className="page-inner">
-            <Aside state={this.state} />
-            <PageContent
-              state={this.state}
-              changeSucursal={this.changeSucursal}
-              redirectTo={(a,b)=>this.redirectTo(a,b)}
-              history={this.props.history} />
-          </div>
-        </div>
-        <FloatShortcut />
-        <Messenger />
-        <Settings />
-      </div>
-    );
-  }
-  componentDidMount(){
-    // Main JS
+  useEffect(() => {
+    setPersonalInfo()
+
+    // Add resources
     const main_script = document.createElement("script");
     main_script.async = false;
     main_script.src = "/js/vendors.bundle.js";
     document.body.appendChild(main_script);
-
     const main_script2 = document.createElement("script");
     main_script2.async = false;
     main_script2.src = "/js/app.bundle.js";
     document.body.appendChild(main_script2);
+  }, []);
 
-  }
+  return (
+    <div>
+      <div className="page-wrapper">
+        <div className="page-inner">
+          <Aside profile_pic={profile_pic} user={user}
+            current_sucursal_pk={current_sucursal_pk} />
+          <PageContent
+            user={user}
+            redirect={redirect}
+            history={props.history}
+            profile_pic={profile_pic}
+            sucursales={sucursales.current}
+            current_sucursal_pk={current_sucursal_pk}
+            changeSucursal={changeSucursal}
+            redirectTo={redirectTo} />
+        </div>
+      </div>
+      <FloatShortcut />
+      <Messenger />
+      <Settings />
+    </div>
+  );
 }
 
 /*** COMPONENTS ***/
@@ -114,25 +139,27 @@ function SelectComponent(props){  // CONTENT
           <h1> HOME </h1>
         </Route>
         <Route path="/nav/cita">
-          <Cita state={props.state} redirectTo={props.redirectTo} />
+          <Cita
+            current_sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/odontograma">
           {(()=>{  // Exe func
             // Not comming from redirect
-            if(!props.state.redirect && props.history.location.pathname==="/nav/odontograma"){
+            if(!props.redirect && props.history.location.pathname==="/nav/odontograma"){
               props.history.goBack();
             }else{  // Redirect from Cita
-              return <Odontograma data={props.state.redirect} />
+              return <Odontograma data={props.redirect} />
             }
           })()}
         </Route>
         <Route path="/nav/procedimiento">
-        {(()=>{  // Exe func
+          {(()=>{  // Exe func
           // Not comming from redirect
-          if(!props.state.redirect && props.history.location.pathname==="/nav/procedimiento"){
+          if(!props.redirect && props.history.location.pathname==="/nav/procedimiento"){
             props.history.goBack();
           }else{  // Redirect from Cita
-            return <Procedimiento data={props.state.redirect} />
+            return <Procedimiento data={props.redirect} />
           }
         })()}
         </Route>
@@ -219,22 +246,22 @@ function Aside(props){
         </div>
         <div className="info-card">
           <img
-            src={props.state.current_sucursal_pk!==-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+            src={props.current_sucursal_pk!==-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
             className="profile-image rounded-circle"
-            alt={props.state.current_sucursal_pk!==-1 ? props.state.user.username : "Dr. Codex Lantern"}
+            alt={props.current_sucursal_pk!==-1 ? props.user.username : "Dr. Codex Lantern"}
           />
           <div className="info-card-text">
             <a href="#" className="d-flex align-items-center text-white">
               <span className="text-truncate text-truncate-sm d-inline-block">
-                {props.state.user.personal?
-                  props.state.user.personal.nombre_principal+" "+props.state.user.personal.ape_paterno :
-                  props.state.user.username
+                {props.user.personal?
+                  props.user.personal.nombre_principal+" "+props.user.personal.ape_paterno :
+                  props.user.username
                 }
               </span>
             </a>
             <span className="d-inline-block text-truncate text-truncate-sm"
-              title={props.state.user.personal ? props.state.user.personal.especialidad : "Administrador"}>
-              {props.state.user.personal ? props.state.user.personal.especialidad : "Administrador"}
+              title={props.user.personal ? props.user.personal.especialidad : "Administrador"}>
+              {props.user.personal ? props.user.personal.especialidad : "Administrador"}
             </span>
           </div>
           <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
@@ -279,8 +306,17 @@ function Aside(props){
 function PageContent(props){
   return (
     <div className="page-content-wrapper">
-        <PageHeader state={props.state} changeSucursal={props.changeSucursal} />
-        <SelectComponent state={props.state} redirectTo={props.redirectTo} history={props.history} />
+        <PageHeader
+          user={props.user}
+          profile_pic={props.profile_pic}
+          sucursales={props.sucursales}
+          current_sucursal_pk={props.current_sucursal_pk}
+          changeSucursal={props.changeSucursal} />
+        <SelectComponent
+          history={props.history}
+          redirect={props.redirect}
+          current_sucursal_pk={props.current_sucursal_pk}
+          redirectTo={props.redirectTo} />
         <PageFooter />
 
         <div className="modal fade modal-backdrop-transparent" id="modal-shortcut" tabIndex="-1" role="dialog" aria-labelledby="modal-shortcut" aria-hidden="true">
@@ -399,12 +435,12 @@ function PageHeader(props){
     <header className="page-header" role="banner">
 
         <div className="page-logo">
-            <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
-                <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
-                <span className="page-logo-text mr-1">SmartAdmin WebApp</span>
-                <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
-                <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
-            </a>
+          <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
+            <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
+            <span className="page-logo-text mr-1">SmartAdmin WebApp</span>
+            <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
+            <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
+          </a>
         </div>
 
         <div className="hidden-md-down dropdown-icon-menu position-relative">
@@ -426,449 +462,441 @@ function PageHeader(props){
         </div>
 
         <div className="hidden-lg-up">
-            <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
-                <i className="ni ni-menu"></i>
-            </a>
+          <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
+            <i className="ni ni-menu"></i>
+          </a>
         </div>
         <div className="search">
-            <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
-                <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
-                <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
-                    <i className="fal fa-times"></i>
-                </a>
-            </form>
+          <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
+            <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
+            <a href="#" onClick={e => e.preventDefault()} className="btn-danger btn-search-close js-waves-off d-none" data-action="toggle" data-class="mobile-search-on">
+              <i className="fal fa-times"></i>
+            </a>
+          </form>
         </div>
         <div className="ml-auto d-flex">
-
             <div className="hidden-sm-up">
-                <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
-                    <i className="fal fa-search"></i>
-                </a>
+              <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
+                <i className="fal fa-search"></i>
+              </a>
             </div>
-
             <div className="hidden-md-down">
-                <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-settings">
-                    <i className="fal fa-cog"></i>
-                </a>
+              <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-settings">
+                <i className="fal fa-cog"></i>
+              </a>
             </div>
-
             <div>
-                <a href="#" className="header-icon" data-toggle="dropdown" title="My Apps">
-                    <i className="fal fa-cube"></i>
-                </a>
-                <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
-                    <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
-                        <h4 className="m-0 text-center color-white">
-                            Quick Shortcut
-                            <small className="mb-0 opacity-80">User Applications & Addons</small>
-                        </h4>
-                    </div>
-                    <div className="custom-scroll h-100">
-                        <ul className="app-list">
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-2 icon-stack-3x color-primary-600"></i>
-                                        <i className="base-3 icon-stack-2x color-primary-700"></i>
-                                        <i className="ni ni-settings icon-stack-1x text-white fs-lg"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Services
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-2 icon-stack-3x color-primary-400"></i>
-                                        <i className="base-10 text-white icon-stack-1x"></i>
-                                        <i className="ni md-profile color-primary-800 icon-stack-2x"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Account
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-9 icon-stack-3x color-success-400"></i>
-                                        <i className="base-2 icon-stack-2x color-success-500"></i>
-                                        <i className="ni ni-shield icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Security
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-18 icon-stack-3x color-info-700"></i>
-                                        <span className="position-absolute pos-top pos-left pos-right color-white fs-md mt-2 fw-400">28</span>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Calendar
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-7 icon-stack-3x color-info-500"></i>
-                                        <i className="base-7 icon-stack-2x color-info-700"></i>
-                                        <i className="ni ni-graph icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Stats
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-4 icon-stack-3x color-danger-500"></i>
-                                        <i className="base-4 icon-stack-1x color-danger-400"></i>
-                                        <i className="ni ni-envelope icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Messages
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-4 icon-stack-3x color-fusion-400"></i>
-                                        <i className="base-5 icon-stack-2x color-fusion-200"></i>
-                                        <i className="base-5 icon-stack-1x color-fusion-100"></i>
-                                        <i className="fal fa-keyboard icon-stack-1x color-info-50"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Notes
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-16 icon-stack-3x color-fusion-500"></i>
-                                        <i className="base-10 icon-stack-1x color-primary-50 opacity-30"></i>
-                                        <i className="base-10 icon-stack-1x fs-xl color-primary-50 opacity-20"></i>
-                                        <i className="fal fa-dot-circle icon-stack-1x text-white opacity-85"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Photos
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-19 icon-stack-3x color-primary-400"></i>
-                                        <i className="base-7 icon-stack-2x color-primary-300"></i>
-                                        <i className="base-7 icon-stack-1x fs-xxl color-primary-200"></i>
-                                        <i className="base-7 icon-stack-1x color-primary-500"></i>
-                                        <i className="fal fa-globe icon-stack-1x text-white opacity-85"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Maps
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-5 icon-stack-3x color-success-700 opacity-80"></i>
-                                        <i className="base-12 icon-stack-2x color-success-700 opacity-30"></i>
-                                        <i className="fal fa-comment-alt icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Chat
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-5 icon-stack-3x color-warning-600"></i>
-                                        <i className="base-7 icon-stack-2x color-warning-800 opacity-50"></i>
-                                        <i className="fal fa-phone icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Phone
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="app-list-item hover-white">
-                                    <span className="icon-stack">
-                                        <i className="base-6 icon-stack-3x color-danger-600"></i>
-                                        <i className="fal fa-chart-line icon-stack-1x text-white"></i>
-                                    </span>
-                                    <span className="app-list-name">
-                                        Projects
-                                    </span>
-                                </a>
-                            </li>
-                            <li className="w-100">
-                                <a href="#" className="btn btn-default mt-4 mb-2 pr-5 pl-5"> Add more apps </a>
-                            </li>
-                        </ul>
-                    </div>
+              <a href="#" className="header-icon" data-toggle="dropdown" title="My Apps">
+                <i className="fal fa-cube"></i>
+              </a>
+              <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
+                <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
+                  <h4 className="m-0 text-center color-white">
+                    Quick Shortcut
+                    <small className="mb-0 opacity-80">User Applications & Addons</small>
+                  </h4>
                 </div>
+                <div className="custom-scroll h-100">
+                  <ul className="app-list">
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-2 icon-stack-3x color-primary-600"></i>
+                          <i className="base-3 icon-stack-2x color-primary-700"></i>
+                          <i className="ni ni-settings icon-stack-1x text-white fs-lg"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Services
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-2 icon-stack-3x color-primary-400"></i>
+                          <i className="base-10 text-white icon-stack-1x"></i>
+                          <i className="ni md-profile color-primary-800 icon-stack-2x"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Account
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-9 icon-stack-3x color-success-400"></i>
+                          <i className="base-2 icon-stack-2x color-success-500"></i>
+                          <i className="ni ni-shield icon-stack-1x text-white"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Security
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-18 icon-stack-3x color-info-700"></i>
+                          <span className="position-absolute pos-top pos-left pos-right color-white fs-md mt-2 fw-400">28</span>
+                        </span>
+                        <span className="app-list-name">
+                          Calendar
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-7 icon-stack-3x color-info-500"></i>
+                          <i className="base-7 icon-stack-2x color-info-700"></i>
+                          <i className="ni ni-graph icon-stack-1x text-white"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Stats
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-4 icon-stack-3x color-danger-500"></i>
+                          <i className="base-4 icon-stack-1x color-danger-400"></i>
+                          <i className="ni ni-envelope icon-stack-1x text-white"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Messages
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-4 icon-stack-3x color-fusion-400"></i>
+                          <i className="base-5 icon-stack-2x color-fusion-200"></i>
+                          <i className="base-5 icon-stack-1x color-fusion-100"></i>
+                          <i className="fal fa-keyboard icon-stack-1x color-info-50"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Notes
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-16 icon-stack-3x color-fusion-500"></i>
+                          <i className="base-10 icon-stack-1x color-primary-50 opacity-30"></i>
+                          <i className="base-10 icon-stack-1x fs-xl color-primary-50 opacity-20"></i>
+                          <i className="fal fa-dot-circle icon-stack-1x text-white opacity-85"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Photos
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-19 icon-stack-3x color-primary-400"></i>
+                          <i className="base-7 icon-stack-2x color-primary-300"></i>
+                          <i className="base-7 icon-stack-1x fs-xxl color-primary-200"></i>
+                          <i className="base-7 icon-stack-1x color-primary-500"></i>
+                          <i className="fal fa-globe icon-stack-1x text-white opacity-85"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Maps
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-5 icon-stack-3x color-success-700 opacity-80"></i>
+                          <i className="base-12 icon-stack-2x color-success-700 opacity-30"></i>
+                          <i className="fal fa-comment-alt icon-stack-1x text-white"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Chat
+                        </span>
+                      </a>
+                    </li>
+                    <li>
+                    <a href="#" className="app-list-item hover-white">
+                      <span className="icon-stack">
+                        <i className="base-5 icon-stack-3x color-warning-600"></i>
+                        <i className="base-7 icon-stack-2x color-warning-800 opacity-50"></i>
+                        <i className="fal fa-phone icon-stack-1x text-white"></i>
+                      </span>
+                      <span className="app-list-name">
+                        Phone
+                      </span>
+                    </a>
+                    </li>
+                    <li>
+                      <a href="#" className="app-list-item hover-white">
+                        <span className="icon-stack">
+                          <i className="base-6 icon-stack-3x color-danger-600"></i>
+                          <i className="fal fa-chart-line icon-stack-1x text-white"></i>
+                        </span>
+                        <span className="app-list-name">
+                          Projects
+                        </span>
+                      </a>
+                    </li>
+                    <li className="w-100">
+                      <a href="#" className="btn btn-default mt-4 mb-2 pr-5 pl-5"> Add more apps </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
-
             <a href="#" className="header-icon" data-toggle="modal" data-target=".js-modal-messenger">
-                <i className="fal fa-globe"></i>
-                <span className="badge badge-icon">!</span>
+              <i className="fal fa-globe"></i>
+              <span className="badge badge-icon">!</span>
             </a>
-
             <div>
                 <a href="#" className="header-icon" data-toggle="dropdown" title="You got 11 notifications">
-                    <i className="fal fa-bell"></i>
-                    <span className="badge badge-icon">11</span>
+                  <i className="fal fa-bell"></i>
+                  <span className="badge badge-icon">11</span>
                 </a>
                 <div className="dropdown-menu dropdown-menu-animated dropdown-xl">
                     <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top mb-2">
-                        <h4 className="m-0 text-center color-white">
-                            11 New
-                            <small className="mb-0 opacity-80">User Notifications</small>
-                        </h4>
+                      <h4 className="m-0 text-center color-white">
+                        11 New
+                        <small className="mb-0 opacity-80">User Notifications</small>
+                      </h4>
                     </div>
                     <ul className="nav nav-tabs nav-tabs-clean" role="tablist">
-                        <li className="nav-item">
-                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-messages" data-i18n="drpdwn.messages">Messages</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-feeds" data-i18n="drpdwn.feeds">Feeds</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-events" data-i18n="drpdwn.events">Events</a>
-                        </li>
+                      <li className="nav-item">
+                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-messages" data-i18n="drpdwn.messages">Messages</a>
+                      </li>
+                      <li className="nav-item">
+                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-feeds" data-i18n="drpdwn.feeds">Feeds</a>
+                      </li>
+                      <li className="nav-item">
+                        <a className="nav-link px-4 fs-md js-waves-on fw-500" data-toggle="tab" href="#tab-events" data-i18n="drpdwn.events">Events</a>
+                      </li>
                     </ul>
                     <div className="tab-content tab-notification">
                         <div className="tab-pane active p-3 text-center">
-                            <h5 className="mt-4 pt-4 fw-500">
-                                <span className="d-block fa-3x pb-4 text-muted">
-                                    <i className="ni ni-arrow-up text-gradient opacity-70"></i>
-                                </span> Select a tab above to activate
-                                <small className="mt-3 fs-b fw-400 text-muted">
-                                    This blank page message helps protect your privacy, or you can show the first message here automatically through
-                                    <a href="#">settings page</a>
-                                </small>
-                            </h5>
+                          <h5 className="mt-4 pt-4 fw-500">
+                            <span className="d-block fa-3x pb-4 text-muted">
+                              <i className="ni ni-arrow-up text-gradient opacity-70"></i>
+                            </span> Select a tab above to activate
+                            <small className="mt-3 fs-b fw-400 text-muted">
+                              This blank page message helps protect your privacy, or you can show the first message here automatically through
+                              <a href="#">settings page</a>
+                            </small>
+                          </h5>
                         </div>
                         <div className="tab-pane" id="tab-messages" role="tabpanel">
-                            <div className="custom-scroll h-100">
-                                <ul className="notification">
-                                    <li className="unread">
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Melissa Ayre <span className="badge badge-primary fw-n position-absolute pos-top pos-right mt-1">INBOX</span></span>
-                                                <span className="msg-a fs-sm">Re: New security codes</span>
-                                                <span className="msg-b fs-xs">Hello again and thanks for being part...</span>
-                                                <span className="fs-nano text-muted mt-1">56 seconds ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li className="unread">
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Adison Lee</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">2 minutes ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status status-success mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Oliver Kopyuv</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">3 days ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status status-warning mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Dr. John Cook PhD</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">2 weeks ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status status-success mr-2">
-
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Sarah McBrook</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">3 weeks ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status status-success mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Anothony Bezyeth</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">one month ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" className="d-flex align-items-center">
-                                            <span className="status status-danger mr-2">
-                                                <span className="profile-image rounded-circle d-inline-block"></span>
-                                            </span>
-                                            <span className="d-flex flex-column flex-1 ml-1">
-                                                <span className="name">Lisa Hatchensen</span>
-                                                <span className="msg-a fs-sm">Msed quia non numquam eius</span>
-                                                <span className="fs-nano text-muted mt-1">one year ago</span>
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
+                          <div className="custom-scroll h-100">
+                            <ul className="notification">
+                              <li className="unread">
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Melissa Ayre <span className="badge badge-primary fw-n position-absolute pos-top pos-right mt-1">INBOX</span></span>
+                                    <span className="msg-a fs-sm">Re: New security codes</span>
+                                    <span className="msg-b fs-xs">Hello again and thanks for being part...</span>
+                                    <span className="fs-nano text-muted mt-1">56 seconds ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li className="unread">
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Adison Lee</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">2 minutes ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status status-success mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Oliver Kopyuv</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">3 days ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status status-warning mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Dr. John Cook PhD</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">2 weeks ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="#" className="d-flex align-items-center">
+                                    <span className="status status-success mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Sarah McBrook</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">3 weeks ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status status-success mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Anothony Bezyeth</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">one month ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="#" className="d-flex align-items-center">
+                                  <span className="status status-danger mr-2">
+                                    <span className="profile-image rounded-circle d-inline-block"></span>
+                                  </span>
+                                  <span className="d-flex flex-column flex-1 ml-1">
+                                    <span className="name">Lisa Hatchensen</span>
+                                    <span className="msg-a fs-sm">Msed quia non numquam eius</span>
+                                    <span className="fs-nano text-muted mt-1">one year ago</span>
+                                  </span>
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
                         </div>
                         <div className="tab-pane" id="tab-feeds" role="tabpanel">
-                            <div className="custom-scroll h-100">
-                                <ul className="notification">
-                                    <li className="unread">
-                                        <div className="d-flex align-items-center show-child-on-hover">
-                                            <span className="d-flex flex-column flex-1">
-                                                <span className="name d-flex align-items-center">Administrator <span className="badge badge-success fw-n ml-1">UPDATE</span></span>
-                                                <span className="msg-a fs-sm">
-                                                    System updated to version <strong>4.0.2</strong> <a href="intel_build_notes.html">(patch notes)</a>
-                                                </span>
-                                                <span className="fs-nano text-muted mt-1">5 mins ago</span>
-                                            </span>
-                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="d-flex align-items-center show-child-on-hover">
-                                            <div className="d-flex flex-column flex-1">
-                                                <span className="name">
-                                                    Adison Lee <span className="fw-300 d-inline">replied to your video <a href="#" className="fw-400"> Cancer Drug</a> </span>
-                                                </span>
-                                                <span className="msg-a fs-sm mt-2">Bring to the table win-win survival strategies to ensure proactive domination. At the end of the day...</span>
-                                                <span className="fs-nano text-muted mt-1">10 minutes ago</span>
-                                            </div>
-                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="d-flex align-items-center show-child-on-hover">
-
-                                            <div className="d-flex flex-column flex-1">
-                                                <span className="name">
-                                                    Troy Norman'<span className="fw-300">s new connections</span>
-                                                </span>
-                                                <div className="fs-sm d-flex align-items-center mt-2">
-                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                    <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                    <div data-hasmore="+3" className="rounded-circle profile-image-md mr-1">
-                                                        <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
-                                                    </div>
-                                                </div>
-                                                <span className="fs-nano text-muted mt-1">55 minutes ago</span>
-                                            </div>
-                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="d-flex align-items-center show-child-on-hover">
-                                            <div className="d-flex flex-column flex-1">
-                                                <span className="name">Dr John Cook <span className="fw-300">sent a <span className="text-danger">new signal</span></span></span>
-                                                <span className="msg-a fs-sm mt-2">Nanotechnology immersion along the information highway will close the loop on focusing solely on the bottom line.</span>
-                                                <span className="fs-nano text-muted mt-1">10 minutes ago</span>
-                                            </div>
-                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="d-flex align-items-center show-child-on-hover">
-                                            <div className="d-flex flex-column flex-1">
-                                                <span className="name">Lab Images <span className="fw-300">were updated!</span></span>
-                                                <div className="fs-sm d-flex align-items-center mt-1">
-                                                    <a href="#" className="mr-1 mt-1" title="Cell A-0012">
-                                                        <span className="d-block img-share" ></span>
-                                                    </a>
-                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 saliva">
-                                                        <span className="d-block img-share" ></span>
-                                                    </a>
-                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 blood cells">
-                                                        <span className="d-block img-share" ></span>
-                                                    </a>
-                                                    <a href="#" className="mr-1 mt-1" title="Patient A-473 Membrane O.C">
-                                                        <span className="d-block img-share" ></span>
-                                                    </a>
-                                                </div>
-                                                <span className="fs-nano text-muted mt-1">55 minutes ago</span>
-                                            </div>
-                                            <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="d-flex align-items-center show-child-on-hover">
-
-                                            <div className="d-flex flex-column flex-1">
-                                                <div className="name mb-2">
-                                                    Lisa Lamar<span className="fw-300"> updated project</span>
-                                                </div>
-                                                <div className="row fs-b fw-300">
-                                                    <div className="col text-left">
-                                                        Progress
-                                                    </div>
-                                                    <div className="col text-right fw-500">
-                                                        45%
-                                                    </div>
-                                                </div>
-                                                <div className="progress progress-sm d-flex mt-1">
-                                                    <span className="progress-bar-45 progress-bar bg-primary-500 progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
-                                                </div>
-                                                <span className="fs-nano text-muted mt-1">2 hrs ago</span>
-                                                <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
-                                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
+                          <div className="custom-scroll h-100">
+                            <ul className="notification">
+                              <li className="unread">
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <span className="d-flex flex-column flex-1">
+                                    <span className="name d-flex align-items-center">Administrator <span className="badge badge-success fw-n ml-1">UPDATE</span></span>
+                                    <span className="msg-a fs-sm">
+                                      System updated to version <strong>4.0.2</strong> <a href="intel_build_notes.html">(patch notes)</a>
+                                    </span>
+                                    <span className="fs-nano text-muted mt-1">5 mins ago</span>
+                                  </span>
+                                  <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                  </div>
+                                </div>
+                              </li>
+                              <li>
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <div className="d-flex flex-column flex-1">
+                                    <span className="name">
+                                      Adison Lee <span className="fw-300 d-inline">replied to your video <a href="#" className="fw-400"> Cancer Drug</a> </span>
+                                    </span>
+                                    <span className="msg-a fs-sm mt-2">Bring to the table win-win survival strategies to ensure proactive domination. At the end of the day...</span>
+                                    <span className="fs-nano text-muted mt-1">10 minutes ago</span>
+                                  </div>
+                                  <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                  </div>
+                                </div>
+                              </li>
+                              <li>
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <div className="d-flex flex-column flex-1">
+                                    <span className="name">
+                                      Troy Norman'<span className="fw-300">s new connections</span>
+                                    </span>
+                                    <div className="fs-sm d-flex align-items-center mt-2">
+                                      <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                      <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                      <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                      <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                      <div data-hasmore="+3" className="rounded-circle profile-image-md mr-1">
+                                        <span className="profile-image-md mr-1 rounded-circle d-inline-block"></span>
+                                      </div>
+                                    </div>
+                                    <span className="fs-nano text-muted mt-1">55 minutes ago</span>
+                                  </div>
+                                  <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                  </div>
+                                </div>
+                              </li>
+                              <li>
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <div className="d-flex flex-column flex-1">
+                                    <span className="name">Dr John Cook <span className="fw-300">sent a <span className="text-danger">new signal</span></span></span>
+                                    <span className="msg-a fs-sm mt-2">Nanotechnology immersion along the information highway will close the loop on focusing solely on the bottom line.</span>
+                                    <span className="fs-nano text-muted mt-1">10 minutes ago</span>
+                                  </div>
+                                  <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                  </div>
+                                </div>
+                              </li>
+                              <li>
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <div className="d-flex flex-column flex-1">
+                                    <span className="name">Lab Images <span className="fw-300">were updated!</span></span>
+                                    <div className="fs-sm d-flex align-items-center mt-1">
+                                      <a href="#" className="mr-1 mt-1" title="Cell A-0012">
+                                        <span className="d-block img-share" ></span>
+                                      </a>
+                                      <a href="#" className="mr-1 mt-1" title="Patient A-473 saliva">
+                                        <span className="d-block img-share" ></span>
+                                      </a>
+                                      <a href="#" className="mr-1 mt-1" title="Patient A-473 blood cells">
+                                        <span className="d-block img-share" ></span>
+                                      </a>
+                                      <a href="#" className="mr-1 mt-1" title="Patient A-473 Membrane O.C">
+                                        <span className="d-block img-share" ></span>
+                                      </a>
+                                    </div>
+                                    <span className="fs-nano text-muted mt-1">55 minutes ago</span>
+                                  </div>
+                                  <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                    <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                  </div>
+                                </div>
+                              </li>
+                              <li>
+                                <div className="d-flex align-items-center show-child-on-hover">
+                                  <div className="d-flex flex-column flex-1">
+                                    <div className="name mb-2">
+                                      Lisa Lamar<span className="fw-300"> updated project</span>
+                                    </div>
+                                    <div className="row fs-b fw-300">
+                                      <div className="col text-left">
+                                        Progress
+                                      </div>
+                                      <div className="col text-right fw-500">
+                                        45%
+                                      </div>
+                                    </div>
+                                    <div className="progress progress-sm d-flex mt-1">
+                                      <span className="progress-bar-45 progress-bar bg-primary-500 progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></span>
+                                    </div>
+                                    <span className="fs-nano text-muted mt-1">2 hrs ago</span>
+                                    <div className="show-on-hover-parent position-absolute pos-right pos-bottom p-3">
+                                      <a href="#" className="text-muted" title="delete"><i className="fal fa-trash-alt"></i></a>
+                                    </div>
+                                  </div>
+                                </div>
+                              </li>
+                            </ul>
+                          </div>
                         </div>
                         <div className="tab-pane" id="tab-events" role="tabpanel">
                             <div className="d-flex flex-column h-100">
@@ -876,9 +904,9 @@ function PageHeader(props){
                                     <table className="table table-bordered table-calendar m-0 w-100 h-100 border-0">
                                     <tbody>
                                         <tr>
-                                            <th colSpan="7" className="pt-3 pb-2 pl-3 pr-3 text-center">
-                                                <div className="js-get-date h5 mb-2">[your date here]</div>
-                                            </th>
+                                          <th colSpan="7" className="pt-3 pb-2 pl-3 pr-3 text-center">
+                                            <div className="js-get-date h5 mb-2">[your date here]</div>
+                                          </th>
                                         </tr>
                                         <tr className="text-center">
                                             <th>Sun</th>
@@ -982,7 +1010,12 @@ function PageHeader(props){
                 </div>
             </div>
 
-            <UserSettings state={props.state} changeSucursal={props.changeSucursal} />
+            <UserSettings
+              user={props.user}
+              profile_pic={props.profile_pic}
+              sucursales={props.sucursales}
+              current_sucursal_pk={props.current_sucursal_pk}
+              changeSucursal={props.changeSucursal} />
         </div>
     </header>
   )
@@ -991,16 +1024,16 @@ function UserSettings(props){
   return (
     <div>
         <a href="#" data-toggle="dropdown"
-          title={props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
+          title={props.current_sucursal_pk!=-1 ? props.user.email : ""}
           className="header-icon d-flex align-items-center justify-content-center ml-2"
         >
           <img
-            src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+            src={props.current_sucursal_pk!=-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
             className="profile-image rounded-circle"
-            alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+            alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
           />
           <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
-            { props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Me"}
+            { props.current_sucursal_pk!=-1 && props.user.username}
           </span>
           <i className="ni ni-chevron-down hidden-xs-down"></i>
         </a>
@@ -1009,17 +1042,17 @@ function UserSettings(props){
               <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
                 <span className="mr-2">
                   <img
-                    src={props.state.current_sucursal_pk!=-1 ? props.state.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+                    src={props.current_sucursal_pk!=-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
                     className="rounded-circle profile-image"
-                    alt={props.state.current_sucursal_pk!=-1 ? props.state.user.username : "Dr. Codex Lantern"}
+                    alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
                   />
                 </span>
                 <div className="info-card-text">
                   <div className="fs-lg text-truncate text-truncate-lg">
-                    {props.state.current_sucursal_pk!=-1 ? props.state.user.username.toUpperCase() : "Dr. Codex Lantern"}
+                    {props.current_sucursal_pk!=-1 && props.user.username.toUpperCase()}
                   </div>
                   <span className="text-truncate text-truncate-md opacity-80">
-                    {props.state.current_sucursal_pk!=-1 ? props.state.user.email : "drlantern@gotbootstrap.com"}
+                    {props.current_sucursal_pk!=-1 && props.user.email}
                   </span>
                 </div>
               </div>
@@ -1041,11 +1074,14 @@ function UserSettings(props){
                 <i className="float-right text-muted fw-n">Ctrl + P</i>
             </a>
             {/* CHOOSE SUCURSAL */}
-            <ChooseSucursal state={props.state} changeSucursal={props.changeSucursal} />
+            <ChooseSucursal
+              sucursales={props.sucursales}
+              current_sucursal_pk={props.current_sucursal_pk}
+              changeSucursal={props.changeSucursal} />
             {/* FIN CHOOSE SUCURSAL*/}
             <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
-                <span data-i18n="drpdwn.page-logout">Logout</span>
-                <span className="float-right fw-n"></span>
+              <span data-i18n="drpdwn.page-logout">Logout</span>
+              <span className="float-right fw-n"></span>
             </a>
         </div>
     </div>
@@ -1054,11 +1090,11 @@ function UserSettings(props){
 function ChooseSucursal(props){
   // https://flaviocopes.com/react-how-to-loop/
   const sucursales = [];  // Declare variable to use
-  for(let a of props.state.sucursales){  // Iterate over all sucursales this user has
+  for(let a of props.sucursales){  // Iterate over all sucursales this user has
     sucursales.push(
       <a key={a.pk}
         onClick={()=>props.changeSucursal(a.pk)}
-        className={a.pk==props.state.current_sucursal_pk?"dropdown-item active":"dropdown-item"}>
+        className={a.pk==props.current_sucursal_pk?"dropdown-item active":"dropdown-item"}>
           {a.direccion}
       </a>
     );
