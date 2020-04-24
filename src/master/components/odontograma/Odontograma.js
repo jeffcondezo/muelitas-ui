@@ -2825,3 +2825,4 @@ function IncidentList(props){
 }
 
 export default Odontograma;
+// eslint-disable-next-line react-hooks/exhaustive-deps

@@ -14,18 +14,6 @@ import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
 
 function Navigation(props){
-  // ComponentWillMount fake hook
-  const willMount = useRef(true);
-  if(willMount.current){
-    // Handle page refresh
-    if(window.performance && window.performance.navigation.type===1){
-      console.log("This page is reloaded");
-      console.log(props.history.location);
-      props.history.goBack();
-    }
-    console.log("MOUNTING")
-  }
-  /**/
   const [, updateState] = useState({});
   /* Set new state to empty object value
   'cuz when React compares the last state with the new empty object value
@@ -45,6 +33,9 @@ function Navigation(props){
   const sucursales = useRef([]);  // User's sucursal
   const [current_sucursal_pk, setCurrentSucursal] = useState(-1);  // Current enviroment sucursal
   const [redirect, setRedirect] = useState(false);  // Redirect object, default: false
+
+  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING ${props.history.location.pathname} ---------`, 'background: black; color: red');
+  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', sucursales.current, current_sucursal_pk, redirect);
 
   function setPersonalInfo(){
     let result = new Promise((resolve, reject) => {
@@ -1736,3 +1727,4 @@ When we need to execute a function from DOM Events (onclick, onchange, etc)
 
 /* EXPORT NAVIGATION */
 export default withRouter(Navigation);
+// eslint-disable-next-line react-hooks/exhaustive-deps

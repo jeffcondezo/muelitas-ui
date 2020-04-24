@@ -2,6 +2,7 @@ import React from 'react';
 import './Login.css';
 
 function Login(props){
+  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING LOGIN ---------`, 'background: black; color: red');
 
   // Validate form
   function validateForm(e){
@@ -36,6 +37,8 @@ function Login(props){
         }
       }, error => {
         handleErrorResponse('server');
+      }).then(() => {
+        charging(false);  // Stop waiter
       });
     });
     result.then(
@@ -54,9 +57,7 @@ function Login(props){
       error => {  // In case of error
         handleErrorResponse('login');
       }
-    ).then(() => {
-      charging(false);  // Stop waiter
-    });
+    );
   }
   function handleErrorResponse(type){
     if(type==='server'){
@@ -187,3 +188,4 @@ function Login(props){
 }
 
 export default Login;
+// eslint-disable-next-line react-hooks/exhaustive-deps

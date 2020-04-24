@@ -15,6 +15,8 @@ function Master(){
   const [logged, setLogged] = useState(false);  // User is loged in?
   const [user, setUser] = useState({});  // Logged user data
   const [error_log, setErrorLog] = useState(false);  // Error log from child components
+  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING MASTER ---------`, 'background: black; color: red');
+  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', logged, user);
 
   const checkLogIn = useCallback(() => {
     // Send token to check if it's alright
@@ -53,7 +55,9 @@ function Master(){
   useEffect(() => {
     // Check if user is already loged
     if(!logged && localStorage.hasOwnProperty('access_token'))
-      checkLogIn()  // Token cookie already exists?
+      if(localStorage.hasOwnProperty("access_token")){  // Token cookie already exists?
+        checkLogIn();
+      }
   }, []);
 
   return (
@@ -61,7 +65,9 @@ function Master(){
       {error_log!==false && <Redirect to="/error/log" />}
       <Switch>  {/* SWITCH: area to be changed by Link */}
         <Route exact path="/">
-          <Home logged={logged} />  {/* No need of middleware */}
+          {logged ?
+            <Redirect to="/nav" /> :
+            <Home logged={logged} />}
         </Route>
         <Route path="/login">
           {logged ? <Redirect to="/nav" /> : <Login logIn={()=>checkLogIn()} />}
@@ -69,7 +75,7 @@ function Master(){
         <Route path="/nav">  {/* NAVIGATION */}
           {logged ?
             <Navigation user={user} errorFunc={setErrorLog} /> :
-            <Redirect to="/login" />}
+            <Redirect to="/" />}
         </Route>
         <Route path="/error/log">
           {error_log!==false ?
