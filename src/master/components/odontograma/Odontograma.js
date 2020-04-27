@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useRef , useCallback } from 'react';
+import {
+  UNSAFE_cache_postState,
+  UNSAFE_cache_getState,
+  savePageHistory,
+} from '../HandleCache';
+
+// Constant
+const __debug__ = process.env.REACT_APP_DEBUG
 
 // General properties
 let teeth;
@@ -1604,7 +1612,7 @@ let inc_paths = [];
 let pvw_ctx;
 
 function Odontograma(props){
-  let cita = props.data.cita;
+  let cita = props.data&&props.data.cita ? props.data.cita : null;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1616,7 +1624,7 @@ function Odontograma(props){
   // Incident list
   let [incident_list, setIncidentList] = useState([]);
   // DOM variables
-  let odontogram_type = useRef();
+  let odontogram_type = useRef('A');
 
   /* We use useCallback to avoid re declaration of methods (has no return)
     makes a better performance
@@ -1642,6 +1650,11 @@ function Odontograma(props){
       currentTooth.path = null;
       currentTooth.preserve = false;
       odontogram_type.current = type;  // DOM odontogram type indicator
+      // Save to cache
+      UNSAFE_cache_postState('_odontogram', {
+        ...UNSAFE_cache_getState('_odontogram'),
+        odontogram_type: odontogram_type.current,
+      });
 
       // General
       let _left = (
@@ -1966,13 +1979,51 @@ function Odontograma(props){
 
   // Only run after first render
   useEffect(() => {
+    /* Check if there is component state data stored in cache
+    * This is a great security risk if data is not encrypted
+    */
+    let __state__ = UNSAFE_cache_getState("_odontogram");
+    if(__state__){  // If there is state data in cache
+      if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
+      // Check if all state's parameters exists in cache before setting 'em
+      if(!__state__.cita || !__state__.odontogram || !__state__.odontogram_type){  // Lack of state's parameter in cache
+        if(__debug__==="true") console.log(`%c ERROR: data in cache not enought`, 'background: #433; color: red');
+
+        /* If props.cita is not defiend then this page is being accessed without redirection
+        * in that case we have no data to fill this page so redirect to home
+        * otherwise (if props.cita is defined) continue with regular behavior
+        */
+        if(!cita){
+          localStorage.removeItem("_odontogram");  // Delete remaining cache data
+          props.redirectTo('/nav/home/');  // Return to home
+          return;  // Stop execution awaiting for redirection
+        }
+      }else{  // Set data from cache
+        if(__debug__==="true") console.log(`%c SET DATA FROM CACHE`, 'background: #433; color: green');
+        cita = __state__.cita;
+        odontogram = __state__.odontogram;  // Current odontogram from DB
+        odontogram_type.current = __state__.odontogram_type;  // Current odontogram drawn
+      }
+    }else{
+      // If there is not cache data neither props.cita
+      if(!cita){
+        localStorage.removeItem("_odontogram");  // Delete remaining cache data
+        props.redirectTo('/nav/home/');  // Return to home
+        return;  // Stop execution awaiting for redirection
+      }
+    }
+    // Start saving cita
+    if(cita) UNSAFE_cache_postState('_odontogram', {...__state__, cita: cita});
+    if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
+    savePageHistory();  // Save page history
+
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
     // Add event listener
     odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
     odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
-    genTeeth('A');
+    genTeeth(odontogram_type.current);
     initOdontogram();
   }, [genTeeth]);
   // Run after teeth has changed
@@ -2043,6 +2094,11 @@ function Odontograma(props){
         // Save odontogram
         odontogram.id = response.id;
         odontogram.type = response.tipo==1?"A":"K";
+        // Save to cache
+        UNSAFE_cache_postState('_odontogram', {
+          ...UNSAFE_cache_getState('_odontogram'),
+          odontogram: odontogram,
+        });
         // Get incidences in case odontogram exists
         getIncidences();
       },
@@ -2164,26 +2220,7 @@ function Odontograma(props){
     result.then(
       response_obj => {  // In case it's ok
         // DRAW TEETH INCIDENCE FROM DB
-        let new_inc_list = [];
-        response_obj.forEach((inc) => {
-          let tooth = getToothByKey(inc.diente);
-          let inc_obj = {};
-          inc_obj.type = parseInt(inc.type);
-          inc_obj.value = {};
-          inc_obj.value.log = inc.log;
-          inc_obj.value.state = inc.state;
-          inc_obj.value.orientation = inc.orientation;
-          inc_obj.value.fractura = JSON.parse(inc.fractura);
-          inc_obj.value.start_tooth_key = inc.start_tooth_key;
-          inc_obj.component = JSON.parse(inc.component)
-          tooth.incidents.push(inc_obj);  // Add to global teeth data
-
-          new_inc_list.push({
-            diente: tooth.key,
-            type: parseInt(inc.type),
-            inx: tooth.incidents.length-1
-          });
-        });
+        let new_inc_list = insertIncidencesInTeeth(response_obj);
         // Redraw odontogram teeth incidences
         drawAllIncidences();
         // Add to incident list
@@ -2193,6 +2230,29 @@ function Odontograma(props){
         console.log("WRONG!", error);
       }
     );
+  }
+  function insertIncidencesInTeeth(objs){
+    let new_inc_list = [];
+    objs.forEach((inc) => {
+      let tooth = getToothByKey(inc.diente);
+      let inc_obj = {};
+      inc_obj.type = parseInt(inc.type);
+      inc_obj.value = {};
+      inc_obj.value.log = inc.log;
+      inc_obj.value.state = inc.state;
+      inc_obj.value.orientation = inc.orientation;
+      inc_obj.value.fractura = JSON.parse(inc.fractura);
+      inc_obj.value.start_tooth_key = inc.start_tooth_key;
+      inc_obj.component = JSON.parse(inc.component)
+      tooth.incidents.push(inc_obj);  // Add to global teeth data
+
+      new_inc_list.push({
+        diente: tooth.key,
+        type: parseInt(inc.type),
+        inx: tooth.incidents.length-1
+      });
+    });
+    return new_inc_list;
   }
   function getToothByKey(key){
     // Get tooth by key
@@ -2667,7 +2727,7 @@ function IncidentPanel(props){
     );
   });
   useEffect(() => {
-    window.$('#slimscroll').slimScroll({
+    if(window.$) window.$('#slimscroll').slimScroll({
       width: "280",
       height: "505",
       size: "4px",
@@ -2801,7 +2861,7 @@ function IncidentList(props){
   }
 
   useEffect(() => {
-    window.$('#slimscroll-inc_list').slimScroll({
+    if(window.$) window.$('#slimscroll-inc_list').slimScroll({
       height: "137",
       size: "4px",
       color: "rgba(0,0,0,0.6)",

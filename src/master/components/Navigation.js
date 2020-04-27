@@ -7,11 +7,21 @@ import {
   withRouter,  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
+import {
+  UNSAFE_cache_postState,
+  UNSAFE_cache_getState,
+  savePageHistory,
+  getPageHistory,
+} from './HandleCache';
 
 // Components to import
 import Cita from './cita/Cita';
 import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
+import Atencion from './atencion/Atencion';
+
+// Constant
+const __debug__ = process.env.REACT_APP_DEBUG
 
 function Navigation(props){
   const [, updateState] = useState({});
@@ -29,13 +39,13 @@ function Navigation(props){
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
   */
-  const user = useRef(props.user).current;
+  let user = useRef(props.user?props.user:null).current;
   const sucursales = useRef([]);  // User's sucursal
   const [current_sucursal_pk, setCurrentSucursal] = useState(-1);  // Current enviroment sucursal
   const [redirect, setRedirect] = useState(false);  // Redirect object, default: false
 
-  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING ${props.history.location.pathname} ---------`, 'background: black; color: red');
-  if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', sucursales.current, current_sucursal_pk, redirect);
+  if(__debug__==="true") console.log(`%c --------- MOUNTING ${props.history.location.pathname} ---------`, 'background: black; color: red');
+  if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect);
 
   function setPersonalInfo(){
     let result = new Promise((resolve, reject) => {
@@ -63,8 +73,6 @@ function Navigation(props){
     },
     error => {
       console.log(error);
-      // Send error log to Master
-      // setError(xhr.statusText);
     });
   }
   const changeSucursal = (pk) => {
@@ -73,19 +81,13 @@ function Navigation(props){
     if(current_sucursal_pk===pk) return;
     setCurrentSucursal(pk);
   }
-  function setError(log){
-    // Save error log and redirect to error page
-    // this.props.history.push('/error/log')
-    // this.props.errorFunc(log);
-  }
-  function redirectTo(url, data){
+  function redirectTo(url, data=null){
     props.history.push(url);
-    setRedirect(data);
+    if(data) setRedirect(data);
   }
 
+  // Only run after first render
   useEffect(() => {
-    setPersonalInfo()
-
     // Add resources
     const main_script = document.createElement("script");
     main_script.async = false;
@@ -95,13 +97,75 @@ function Navigation(props){
     main_script2.async = false;
     main_script2.src = "/js/app.bundle.js";
     document.body.appendChild(main_script2);
+
+    /* Check if there is data stored in cache
+    * This is a great security risk if data is not encrypted
+    */
+    let __dataInCache__ = getPageHistory();
+    if(__dataInCache__){  // If there is data in cache
+      if(__debug__==="true") console.log("__dataInCache__", __dataInCache__);
+      /* Page data handling
+      * During usage of the system window.history.length will raise up its value
+      * And when we close the tab that counter will reset, but our __dataInCache__ will not
+      * So the next time the user enter into the page
+      * window.history.length will be less than __dataInCache__.prev_length
+      * that will cause the system to get the data from DB and set __dataInCache__ again
+      * the next renders and reloads in the system will use that stored data
+      */
+      // Check if page was reloaded
+      if(props.history.length===__dataInCache__.prev_length){  // Page was reloaded
+        if(__debug__==="true") console.log(`%c RELOADED`, 'background: #433; color: gray');
+
+        // Check if there is component state data in cache
+        let __state__ = UNSAFE_cache_getState("_nav");
+        if(__state__){  // If there is state data in cache
+          if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
+          // Check if all state's parameters exists in cache before setting 'em
+          if(!__state__.user || !__state__.sucursales || !__state__.current_sucursal_pk){
+            /* Lack of state's parameter in cache
+            * This may be caused by a reload action executed before all state properties changes and get saved up in cache
+            */
+            setPersonalInfo();  // Get personal info from service due lack of state's propertie in cache
+            savePageHistory();  // Save page history
+            return;  // Cancel operation due lack of data in cache
+          }
+          // Set data from cache
+          user = __state__.user;
+          sucursales.current = __state__.sucursales;
+          setCurrentSucursal(__state__.current_sucursal_pk);
+
+          // Has page changed in redirect?
+          if(props.history.location.pathname===__dataInCache__.prev_pathname) return;
+          // Redirect to previous page
+          props.history.push(__dataInCache__.prev_pathname);
+          return;
+        }else{  // If there is no data in cache, save current useRef data
+          if(__debug__==="true") console.log(`%c SAVE ONLY USER:`, 'background: #433; color: orange');
+          UNSAFE_cache_postState('_nav', {user: user});
+        }
+      }
+    }
+    if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
+    setPersonalInfo();  // Regular set data
+    savePageHistory();  // Save page history
   }, []);
+  // Execute when current_sucursal_pk changes
+  useEffect(() => {
+    if(current_sucursal_pk===-1) return;
+    UNSAFE_cache_postState('_nav', {
+      ...UNSAFE_cache_getState('_nav'),
+      current_sucursal_pk: current_sucursal_pk,
+      sucursales: sucursales.current
+    });
+  }, [current_sucursal_pk]);
 
   return (
     <div>
       <div className="page-wrapper">
         <div className="page-inner">
-          <Aside profile_pic={profile_pic} user={user}
+          <Aside
+            profile_pic={profile_pic}
+            user={user} history={props.history}
             current_sucursal_pk={current_sucursal_pk} />
           <PageContent
             user={user}
@@ -134,26 +198,23 @@ function SelectComponent(props){  // CONTENT
             current_sucursal_pk={props.current_sucursal_pk}
             redirectTo={props.redirectTo} />
         </Route>
-        <Route path="/nav/odontograma">
-          {(()=>{  // Exe func
-            // Not comming from redirect
-            if(!props.redirect && props.history.location.pathname==="/nav/odontograma"){
-              props.history.goBack();
-            }else{  // Redirect from Cita
-              return <Odontograma data={props.redirect} />
-            }
-          })()}
+        <Route path="/nav/atencion">
+          <Atencion
+            data={props.redirect}
+            redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/procedimiento">
-          {(()=>{  // Exe func
-          // Not comming from redirect
-          if(!props.redirect && props.history.location.pathname==="/nav/procedimiento"){
-            props.history.goBack();
-          }else{  // Redirect from Cita
-            return <Procedimiento data={props.redirect} />
-          }
-        })()}
+          <Procedimiento
+            data={props.redirect}
+            redirectTo={props.redirectTo} />
         </Route>
+        {/* Components accessed only by redirect */}
+        <Route path="/nav/odontograma">
+          <Odontograma
+            data={props.redirect}
+            redirectTo={props.redirectTo} />
+        </Route>
+        {/* Default link */}
         <Route>
           <Redirect to="/nav/home" />
         </Route>
@@ -162,55 +223,35 @@ function SelectComponent(props){  // CONTENT
   )
 }
 /*** PAGE ***/
-function AsideLinks(){
+function AsideLinks(props){
   return (
     <ul id="js-nav-menu" className="nav-menu">
-    <div>
-      <li className="nav-title">Principales paginas</li>
-      <li>
+      <li className="nav-title" style={{color: "#CCC"}}>Principales paginas</li>
+      <li className={props.history.location.pathname==="/nav/home"?"active":""}>
+        <Link data-filter-tags="home" to='/nav/home'>
+          <span className="nav-link-text">HOME</span>
+        </Link>
+      </li>
+      <li className={props.history.location.pathname==="/nav/cita"?"active":""}>
         <Link data-filter-tags="cita" to='/nav/cita'>
           <span className="nav-link-text">CITA</span>
         </Link>
       </li>
-      <li>
+      <li className={props.history.location.pathname==="/nav/odontograma"?"active":""}>
         <Link data-filter-tags="odontograma" to='/nav/odontograma'>
           <span className="nav-link-text">ODONTOGRAMA</span>
         </Link>
       </li>
-      <li>
-        <a href="#" title="Pages" data-filter-tags="pages">
-            <i className="fal fa-plus-circle"></i>
-            <span className="nav-link-text" data-i18n="nav.pages">Prueba</span>
-        </a>
-        <ul>
-          {/*<li>
-            <ul>
-              <li>
-                <a href="page_error.html" title="General Error" data-filter-tags="pages error pages general error">
-                  <span className="nav-link-text" data-i18n="nav.pages_error_pages_general_error">General Error</span>
-                </a>
-              </li>
-              <li>
-                <a href="page_error_announced.html" title="Announced Error" data-filter-tags="pages error pages announced error">
-                  <span className="nav-link-text" data-i18n="nav.pages_error_pages_announced_error">Announced Error</span>
-                </a>
-              </li>
-            </ul>
-          </li>*/}
-
-          <li>
-            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/home'>
-              <span className="nav-link-text" data-i18n="nav.pages_search_results">Home</span>
-            </Link>
-          </li>
-          <li>
-            <Link title="Search Results" data-filter-tags="pages search results" to='/nav/anotherone'>
-              <span className="nav-link-text" data-i18n="nav.pages_search_results">ANOTHER ONE</span>
-            </Link>
-          </li>
-        </ul>
+      <li className={props.history.location.pathname==="/nav/atencion"?"active":""}>
+        <Link data-filter-tags="atencion" to='/nav/atencion'>
+          <span className="nav-link-text">ATENCION</span>
+        </Link>
       </li>
-    </div>
+      {/*<li>
+        <Link data-filter-tags="odontograma" to='/nav/odontograma'>
+          <span className="nav-link-text">ODONTOGRAMA</span>
+        </Link>
+      </li>*/}
     </ul>
   )
 }
@@ -261,7 +302,7 @@ function Aside(props){
           </a>
         </div>
 
-        <AsideLinks />
+        <AsideLinks history={props.history} />
 
         <div className="filter-message js-filter-message bg-success-600"></div>
       </nav>

@@ -5,9 +5,11 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
+import { savePageHistory } from '../HandleCache';
 
 /* We use extended class of React.Component instead of function components
-    because we'll need to use componentWillReceiveProps function
+* because we'll need to use componentWillReceiveProps function
+* We do not save this component state to cache 'cuz this module needs to be up-to-date everytime
 */
 class Cita extends React.Component {
   constructor(props){
@@ -26,6 +28,8 @@ class Cita extends React.Component {
       "#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"
     ];
     this.redirectTo = props.redirectTo;
+
+    savePageHistory();  // Save page history
   }
   UNSAFE_componentWillReceiveProps(nextProps){
     // console.log(this.state.global.current_sucursal_pk, nextProps.current_sucursal_pk);
@@ -39,85 +43,134 @@ class Cita extends React.Component {
       if(!this.state.calendar)  // First execution calendar == false so not render calendar
         this.setState(clone, this.getProcedimiento)  // Get procedimientos according new sucursal
       else
-        this.setState(clone, this.getCitas)  // Re render calendar
+        this.setState(clone, this.getPersonal)  // Re render calendar
     }else{  // Something else has changed
       this.setState(clone)  // Only update this.state
     }
   }
   // This.props functions
   getPersonal(){
-    console.log("getPersonal");
-    // HTTP REQUEST
-    // Add filter to url
-    let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    /* We use arrow function instead of memory function declaration to avoid
-      problems with two 'this' objects inside the called function
-    */
-    xhr.onload = (xhr) => {
-      xhr = xhr.target;
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===400){this.handleServerError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
+    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        let clone = Object.assign({}, this.state);
+        clone.personal = response_obj;
+        this.setState(clone, this.getCitas);  // Render citas after personal is setted
+      }
+    );
+  }
+  getProcedimiento(){
+    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+'maestro/procedimiento/precio/';
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        if(response_obj.length<1) return;
 
-      // Convert response to json object
-      const response_object = JSON.parse(xhr.response);
-
-      let clone = Object.assign({}, this.state);
-      clone.personal = response_object;
-      this.setState(clone, this.getCitas);  // Render citas after personal is setted
-    }
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send();  // Send request
+        // Save in this.state
+        let clone = Object.assign({}, this.state);
+        clone.procedimiento = response_obj
+        this.setState(clone);
+      }
+    );
   }
   getCitas(){
-    console.log("getCitas");
-    // HTTP REQUEST
-    // Add filter to url
-    let xhr = new XMLHttpRequest();
-    let _filter = ``;  // Filtro
-
+    let filter = ``;
     // Personal filter for cita calendar
     if(this.state.calendar_filter.length!==0){
-      _filter = `filtro={
+      filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
         "estado":"1",
         "personal":"${String(this.state.calendar_filter)}"
       }`;
     }else{  // Regular filter
-      _filter = `filtro={
+      filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
         "estado":"1"
       }`;
     }
-
-    let _url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    /* We use arrow function instead of memory function declaration to avoid
-      problems with two 'this' objects inside the called function
-    */
-    xhr.onload = (xhr)=>this.handleCitaResponse(xhr);
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send();  // Send request
+    let url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        this.handleCitaResponse(response_obj);
+      }
+    );
   }
-  handleCitaResponse(xhr){
-    xhr = xhr.target;
-    if(xhr.status===403){this.handlePermissionError();return;}
-    if(xhr.status===400){this.handleServerError();return;}
-    if(xhr.status===500){this.handleServerError();return;}
-
+  handleCitaResponse(response_object){
     // Call sucursal's procedimientos
     this.getProcedimiento();
-
-    // Convert response to json object
-    const response_object = JSON.parse(xhr.response);
-    console.log(response_object);
 
     // Get this calendar
     let _calendar = this.state.calendar;
@@ -139,46 +192,13 @@ class Cita extends React.Component {
     });
     _calendar.render();
   }
-  getProcedimiento(){
-    console.log("getProcedimiento");
-    let xhr = new XMLHttpRequest();
-    let _filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'maestro/procedimiento/precio/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.onload = (xhr) => {
-      xhr = xhr.target;
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===400){this.handleServerError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
-
-      // Convert response to json object
-      const response_object = JSON.parse(xhr.response);
-      if(response_object.length<1) return;
-
-      // Save in this.state
-      let clone = Object.assign({}, this.state);
-      clone.procedimiento = response_object
-      this.setState(clone);
-    }
-    xhr.onerror = this.handleServerError;
-    xhr.send();  // Send request
-  }
   // Errors
-  handleBadRequest(xhr){
-    let response = JSON.parse(xhr.responseText)
-    console.log(response);
-    if(typeof(response)==="object"){  // Response is object/array
-      if(response.length===1){  // Error code
-        switch(response[0]){
-          case 'CRUCE_DE_CITAS':
-            alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise o actualice la lista de actividades por personal y escoja otro horario")
-            break;
-          default: return;
-        }
-      }
-      // Indicate the error field in cita form
+  handleBadRequest(response){
+    switch(response){
+      case 'CRUCE_DE_CITAS':
+        alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise o actualice la lista de actividades por personal y escoja otro horario")
+        break;
+      default: return;
     }
   }
   handleServerError(){
@@ -209,8 +229,11 @@ class Cita extends React.Component {
     }, 2700);
     return;
   }
-  // Cita functions, arrow function type so we can access to its properties
-  getPaciente = (e) => {
+  /* Arrow function
+  * When a function is fired for an DOM event, we should declare 'em with arrow function
+  * so we can access 'this' class propertie
+  */
+  getPaciente = e => {
     let dni = e.target.value;  // Get dni
     if(dni.length<8){
       // Reset paciente data
@@ -222,42 +245,54 @@ class Cita extends React.Component {
       return;  // if dni is not 8 length
     }
 
-    let xhr = new XMLHttpRequest();
-    /* To pass data to GET type requests we send it through url
-    */
-    // Add filter to url
-    let _filter = `filtro={"dni":"${dni}"}`;
-    let _url = process.env.REACT_APP_PROJECT_API+'atencion/paciente/';
-    let url = _url + '?' + _filter;
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    xhr.onload = (xhr)=>{
-      xhr = xhr.target
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
-      const response_object = JSON.parse(xhr.response);
-      if(response_object.length!==1){
-        document.getElementById("pac_nom_pri").disabled = false;
-        document.getElementById("pac_nom_sec").disabled = false;
-        document.getElementById("pac_ape_pat").disabled = false;
-        document.getElementById("pac_ape_mat").disabled = false;
-        return;
+    let filter = `filtro={"dni":"${dni}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+'atencion/paciente/';
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        if(response_obj.length!==1){
+          document.getElementById("pac_nom_pri").disabled = false;
+          document.getElementById("pac_nom_sec").disabled = false;
+          document.getElementById("pac_ape_pat").disabled = false;
+          document.getElementById("pac_ape_mat").disabled = false;
+          return;
+        }
+        // Set paciente data and disable inputs
+        document.getElementById("pac_pk").disabled = true;
+        document.getElementById("pac_pk").value = response_obj[0].pk;
+        document.getElementById("pac_nom_pri").disabled = true;
+        document.getElementById("pac_nom_pri").value = response_obj[0].nombre_principal;
+        document.getElementById("pac_nom_sec").disabled = true;
+        document.getElementById("pac_nom_sec").value = response_obj[0].nombre_secundario;
+        document.getElementById("pac_ape_pat").disabled = true;
+        document.getElementById("pac_ape_pat").value = response_obj[0].ape_paterno;
+        document.getElementById("pac_ape_mat").disabled = true;
+        document.getElementById("pac_ape_mat").value = response_obj[0].ape_materno;
       }
-      // Set paciente data and disable inputs
-      document.getElementById("pac_pk").disabled = true;
-      document.getElementById("pac_pk").value = response_object[0].pk;
-      document.getElementById("pac_nom_pri").disabled = true;
-      document.getElementById("pac_nom_pri").value = response_object[0].nombre_principal;
-      document.getElementById("pac_nom_sec").disabled = true;
-      document.getElementById("pac_nom_sec").value = response_object[0].nombre_secundario;
-      document.getElementById("pac_ape_pat").disabled = true;
-      document.getElementById("pac_ape_pat").value = response_object[0].ape_paterno;
-      document.getElementById("pac_ape_mat").disabled = true;
-      document.getElementById("pac_ape_mat").value = response_object[0].ape_materno;
-    }
-    xhr.onerror = this.handleServerError;
-    xhr.send();  // Send request
+    );
   }
   errorForm = log => {
     document.querySelector('div#alert-login span').innerText = log;
@@ -272,7 +307,7 @@ class Cita extends React.Component {
         document.getElementById('alert-login').style.display = "none"
     }, 2700)
   }
-  cancelCitaForm = () => {  // Reset values
+  cancelCitaForm(){  // Reset values
     // Other values
     document.getElementById("pac_pk").value = "";
     document.getElementById("pac_dni").value = "";
@@ -414,29 +449,46 @@ class Cita extends React.Component {
     else if(typeof(_paciente)==='object')
       data['paciente_obj'] = _paciente;
 
-    // Send data to create cita
-    let xhr = new XMLHttpRequest();
-    xhr.open('POST', process.env.REACT_APP_PROJECT_API+'atencion/cita/');
-    // Json type content 'cuz we may send paciente data object
-    xhr.setRequestHeader('Content-type', 'application/json')
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.onload = (xhr)=>{
-      xhr = xhr.target
-      if(xhr.status===400){this.handleBadRequest(xhr);return;}
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
+    let url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
+        body: JSON.stringify(data)  // Data
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            resolve(response.json());
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        // Handle CRUCE_DE_CITAS error
+        if(response_obj.hasOwnProperty("length") && response_obj[0]==="CRUCE_DE_CITAS"){
+          this.handleBadRequest("CRUCE_DE_CITAS");
+          return;
+        }
 
-      // Error disposition personal&date&hour
-      if(xhr.statusText!=="Created"){
-        alert("IDK")
+        alert("Cita creada exitosamente");
+        document.getElementById("cita-close").click()  // Cerrar formulario cita
+        this.getCitas()  // Re render fullcalendar
       }
-      alert("Cita creada exitosamente");
-
-      document.getElementById("cita-close").click()  // Cerrar formulario cita
-      this.getCitas()  // Re render fullcalendar
-    };
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send(JSON.stringify(data));  // Send request
+    );
   }
   // Cita detail modal functions
   getEventInfo = (info) => {
@@ -464,46 +516,80 @@ class Cita extends React.Component {
   annulCita = (cita_pk, status) => {
     let data = {};
     data['estado'] = status;
-    // Send data to create cita
-    let xhr = new XMLHttpRequest();
-    xhr.open('PUT', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
-    // Json type content 'cuz we may send paciente data object
-    xhr.setRequestHeader('Content-type', 'application/json')
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.onload = (xhr)=>{
-      xhr = xhr.target
-      if(xhr.status===400){this.handleBadRequest(xhr);return;}
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
 
-      window.$('#modal_ver_cita').modal('hide');
-      alert("Cita anulada",status);
-      this.getCitas()  // Re render fullcalendar
-    };
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send(JSON.stringify(data));  // Send request
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        method: 'PUT',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
+        body: JSON.stringify(data)  // Data
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        window.$('#modal_ver_cita').modal('hide');
+        alert("Cita anulada",status);
+        this.getCitas()  // Re render fullcalendar
+      }
+    );
   }
   finishCita = (cita_pk) => {
     let data = {};
     data['estado'] = '5';
-    // Send data to create cita
-    let xhr = new XMLHttpRequest();
-    xhr.open('PUT', process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`);
-    // Json type content 'cuz we may send paciente data object
-    xhr.setRequestHeader('Content-type', 'application/json')
-    xhr.setRequestHeader('Authorization', localStorage.getItem('access_token'));
-    xhr.onload = (xhr)=>{
-      xhr = xhr.target
-      if(xhr.status===400){this.handleBadRequest(xhr);return;}
-      if(xhr.status===403){this.handlePermissionError();return;}
-      if(xhr.status===500){this.handleServerError();return;}
 
-      window.$('#modal_ver_cita').modal('hide');
-      alert("Cita finalizada");
-      this.getCitas()  // Re render fullcalendar
-    };
-    xhr.onerror = this.handleServerError;  // Receive server error
-    xhr.send(JSON.stringify(data));  // Send request
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        method: 'PUT',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
+        body: JSON.stringify(data)  // Data
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handlePermissionError();
+          }else{
+            this.handleBadRequest(response.statusText);
+          }
+        }
+      }, error => {
+        this.handleServerError();
+      });
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        window.$('#modal_ver_cita').modal('hide');
+        alert("Cita finalizada");
+        this.getCitas()  // Re render fullcalendar
+      }
+    );
   }
   // Global functions
   setFilter = (personal_pk) => {
@@ -735,7 +821,7 @@ function FilterPersonal(props){
       personal.push(
         <label
           key={p.pk}
-          className="btn btn-primary waves-effect waves-themed"
+          className="btn btn-light waves-effect waves-themed"
           onClick={()=>props.setFilter(p.pk)}>
             <input key={"input"+p.pk} type="checkbox" />
             <span
@@ -833,8 +919,8 @@ function InfoCita(props){
     let _hora = props.cita.hora.slice(0,5);
     _hora += props.cita.hora_fin ? " - "+props.cita.hora_fin.slice(0,5) : "";
     let _pac_nombre = props.cita.paciente_data.nombre_principal;
-    _pac_nombre += props.cita.paciente_data.nombre_secundario ? " "+props.cita.paciente_data.nombre_secundario : " ";
-    _pac_nombre += (props.cita.paciente_data.ape_paterno+" "+props.cita.paciente_data.ape_materno).toUpperCase();
+    _pac_nombre += props.cita.paciente_data.nombre_secundario ? " "+props.cita.paciente_data.nombre_secundario : "";
+    _pac_nombre += (" "+props.cita.paciente_data.ape_paterno+" "+props.cita.paciente_data.ape_materno).toUpperCase();
     let _personal = props.cita.personal.nombre_principal;
     _personal += " "+props.cita.personal.ape_paterno;
     _personal += " "+props.cita.personal.ape_materno;
