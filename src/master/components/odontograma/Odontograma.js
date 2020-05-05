@@ -4,9 +4,11 @@ import {
   UNSAFE_cache_getState,
   savePageHistory,
 } from '../HandleCache';
+import { handleErrorResponse } from '../../functions';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
+const __cacheName__ = "_odontogram";
 
 // General properties
 let teeth;
@@ -1651,8 +1653,8 @@ function Odontograma(props){
       currentTooth.preserve = false;
       odontogram_type.current = type;  // DOM odontogram type indicator
       // Save to cache
-      UNSAFE_cache_postState('_odontogram', {
-        ...UNSAFE_cache_getState('_odontogram'),
+      UNSAFE_cache_postState(__cacheName__, {
+        ...UNSAFE_cache_getState(__cacheName__),
         odontogram_type: odontogram_type.current,
       });
 
@@ -1982,7 +1984,7 @@ function Odontograma(props){
     /* Check if there is component state data stored in cache
     * This is a great security risk if data is not encrypted
     */
-    let __state__ = UNSAFE_cache_getState("_odontogram");
+    let __state__ = UNSAFE_cache_getState(__cacheName__);
     if(__state__){  // If there is state data in cache
       if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
       // Check if all state's parameters exists in cache before setting 'em
@@ -1994,7 +1996,7 @@ function Odontograma(props){
         * otherwise (if props.cita is defined) continue with regular behavior
         */
         if(!cita){
-          localStorage.removeItem("_odontogram");  // Delete remaining cache data
+          localStorage.removeItem(__cacheName__);  // Delete remaining cache data
           props.redirectTo('/nav/home/');  // Return to home
           return;  // Stop execution awaiting for redirection
         }
@@ -2007,13 +2009,13 @@ function Odontograma(props){
     }else{
       // If there is not cache data neither props.cita
       if(!cita){
-        localStorage.removeItem("_odontogram");  // Delete remaining cache data
+        localStorage.removeItem(__cacheName__);  // Delete remaining cache data
         props.redirectTo('/nav/home/');  // Return to home
         return;  // Stop execution awaiting for redirection
       }
     }
     // Start saving cita
-    if(cita) UNSAFE_cache_postState('_odontogram', {...__state__, cita: cita});
+    if(cita) UNSAFE_cache_postState(__cacheName__, {...__state__, cita: cita});
     if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
     savePageHistory();  // Save page history
 
@@ -2081,7 +2083,7 @@ function Odontograma(props){
         }else{
           reject(response.statusText)
         }
-      });
+      }, () => handleErrorResponse('server'));
     });
     result.then(
       response_obj => {  // In case it's ok
@@ -2095,8 +2097,8 @@ function Odontograma(props){
         odontogram.id = response.id;
         odontogram.type = response.tipo==1?"A":"K";
         // Save to cache
-        UNSAFE_cache_postState('_odontogram', {
-          ...UNSAFE_cache_getState('_odontogram'),
+        UNSAFE_cache_postState(__cacheName__, {
+          ...UNSAFE_cache_getState(__cacheName__),
           odontogram: odontogram,
         });
         // Get incidences in case odontogram exists
@@ -2150,7 +2152,7 @@ function Odontograma(props){
           }else{
             reject(response.statusText)
           }
-        });
+        }, () => handleErrorResponse('server'));
       });
       // Promise actions
       result.then(
@@ -2181,7 +2183,7 @@ function Odontograma(props){
           }else{
             reject(response.statusText)
           }
-        });
+        }, () => handleErrorResponse('server'));
       });
       // Promise actions
       result.then(
@@ -2215,7 +2217,7 @@ function Odontograma(props){
         }else{
           reject(response.statusText)
         }
-      });
+      }, () => handleErrorResponse('server'));
     });
     result.then(
       response_obj => {  // In case it's ok

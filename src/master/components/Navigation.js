@@ -22,6 +22,8 @@ import Atencion from './atencion/Atencion';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
+const __cacheName__ = "_nav";
+
 
 function Navigation(props){
   const [, updateState] = useState({});
@@ -117,7 +119,7 @@ function Navigation(props){
         if(__debug__==="true") console.log(`%c RELOADED`, 'background: #433; color: gray');
 
         // Check if there is component state data in cache
-        let __state__ = UNSAFE_cache_getState("_nav");
+        let __state__ = UNSAFE_cache_getState(__cacheName__);
         if(__state__){  // If there is state data in cache
           if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
           // Check if all state's parameters exists in cache before setting 'em
@@ -141,7 +143,7 @@ function Navigation(props){
           return;
         }else{  // If there is no data in cache, save current useRef data
           if(__debug__==="true") console.log(`%c SAVE ONLY USER:`, 'background: #433; color: orange');
-          UNSAFE_cache_postState('_nav', {user: user});
+          UNSAFE_cache_postState(__cacheName__, {user: user});
         }
       }
     }
@@ -152,8 +154,8 @@ function Navigation(props){
   // Execute when current_sucursal_pk changes
   useEffect(() => {
     if(current_sucursal_pk===-1) return;
-    UNSAFE_cache_postState('_nav', {
-      ...UNSAFE_cache_getState('_nav'),
+    UNSAFE_cache_postState(__cacheName__, {
+      ...UNSAFE_cache_getState(__cacheName__),
       current_sucursal_pk: current_sucursal_pk,
       sucursales: sucursales.current
     });

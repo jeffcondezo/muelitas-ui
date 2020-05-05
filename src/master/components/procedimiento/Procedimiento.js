@@ -1,5 +1,9 @@
 import React from 'react';
 
+// Constant
+const __debug__ = process.env.REACT_APP_DEBUG
+const __cacheName__ = "_procedure";
+
 
 class Procedimiento extends React.Component {
   constructor(props){

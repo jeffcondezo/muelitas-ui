@@ -52,6 +52,10 @@ export function handleErrorResponse(type){
     }, 2700)
   }
 }
-export function capitalizeFirstLetter(word){
-  return word[0].toUpperCase()+word.slice(1, word.length);
+export function capitalizeFirstLetter(word, restLowerCase=true){
+  return word[0].toUpperCase()
+    + (restLowerCase
+      ? word.slice(1, word.length).toLowerCase()
+      : word.slice(1, word.length)
+    );
 }

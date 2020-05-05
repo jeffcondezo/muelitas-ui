@@ -4,12 +4,17 @@ import {
   UNSAFE_cache_getState,
   savePageHistory,
 } from '../HandleCache';
-import { handleErrorResponse, capitalizeFirstLetter } from '../../functions';
+import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+
+// Constant
+const __debug__ = process.env.REACT_APP_DEBUG
+const __cacheName__ = "_attention";
+
 
 function Atencion(props){
   const [attention_pk, setAttention] = useState(props.data &&  props.data.cita.atencion);
-  console.log(props);
-  console.log(attention_pk);
+
+  if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', ...props);
 
   return(
   <>
@@ -89,7 +94,18 @@ const AttentionDetail = (props) => {
   pk: 6
   */
 
-  return "ATTENTION DETAIL";
+  // Run only at first render
+  useEffect(() => {
+    let __state__ = UNSAFE_cache_getState("_atencion");
+    if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
+  }, []);
+
+  return (
+    <div>
+      {/* Patient data */}
+      <PatientData patient={null} />
+    </div>
+  );
 };
 const AttentionList = (props) => {
   const [latest_attentions, setAttentions] = useState(false);
@@ -128,8 +144,8 @@ const AttentionList = (props) => {
     );
   }
 
-  // Add DataTable rel docs
   useEffect(() => {
+    // Add DataTable rel docs
     const dt_script = document.createElement("script");
     dt_script.async = false;
     dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
@@ -138,10 +154,8 @@ const AttentionList = (props) => {
     dt_style.rel = "stylesheet";
     dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
     document.head.appendChild(dt_style);
-    console.log("DATATABLE");
-  }, []);
-  // Run at first execution
-  useEffect(() => {
+
+    // Run at first execution
     getLatestAttentions(props.sucursal_pk, 15);
 
     savePageHistory();  // Save page history
@@ -174,7 +188,7 @@ const AttentionList = (props) => {
         targets: 0,
         render: (data, type, row) => (
           row.paciente_data.ape_paterno.toUpperCase()+", "+
-          capitalizeFirstLetter(row.paciente_data.nombre_principal)
+          cFL(row.paciente_data.nombre_principal)
         ),
       }],
       pageLength: 10,
@@ -217,9 +231,8 @@ const AttentionList = (props) => {
 
     document.querySelectorAll("#last-attentions tbody tr td button.select-attention").forEach(el => {
       el.onclick = () => {
-        var data = datatable.row(el).data();
-        console.log("Selected", data);
-        setAttention(data.setAttention);
+        var data = datatable.row(el.parentElement.parentElement).data();
+        props.setAttention(data);
       }
     });
   }, [datatable]);
@@ -237,12 +250,78 @@ const AttentionList = (props) => {
   );
 };
 
+const PatientData = props => {
+  return (
+    <div class="card col-6" style={{width: "18rem"}}>
+      <div class="card-body">
+        <h5 class="card-title">{cFL(props.patient.ape_paterno)+", "+cFL(props.patient.nombre_principal)}</h5>
+        <h5 class="card-title">{cFL(props.programado)}</h5>
+        <h5 class="card-title">{props.fecha + props.hora + "  " + props.hora_fin}</h5>
+        <p class="card-text">{cFL(props.indicaciones)}</p>
+      </div>
+    </div>
+  );
+}
+const PatientAttentionHistory = props => {
+  console.log(props);
+  const [attention_list, setAttentionList] = useState(false);
+
+  const getAttentionHistory = (patient_pk) => {
+    // Get patient's attention history
+    let filter = `filtro={"paciente":"${patient_pk}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        console.log(response_obj);
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  useEffect(() => {
+    getAttentionHistory(props.patient.pk);
+  }, []);
+
+  return !attention_list
+    ? "loading"
+    : (
+      <div class="card col-6" style={{width: "18rem"}}>
+        <div class="card-body">
+          {attention_list}
+        </div>
+      </div>
+    );
+}
+
 export default Atencion;
 
 /*
-* Datos del paciente (show)
+Datos del paciente (show)
+* Historial atenciones (show)
+
 * Historia clinica (link)
+* Procedimientos realizados (add|link)
+
 * Registrar odontograma (link)
-* Procedimientos realizados (link)
 + Prescripción y medicamentos (show)
 */

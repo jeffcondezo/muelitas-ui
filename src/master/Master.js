@@ -11,6 +11,7 @@ import {
 import Login from './login/Login';
 import Navigation from './components/Navigation';
 
+
 function Master(){
   const [logged, setLogged] = useState(false);  // User is loged in?
   const [user, setUser] = useState({});  // Logged user data
