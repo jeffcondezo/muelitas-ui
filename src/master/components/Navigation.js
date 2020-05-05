@@ -200,6 +200,7 @@ function SelectComponent(props){  // CONTENT
         </Route>
         <Route path="/nav/atencion">
           <Atencion
+            sucursal_pk={props.current_sucursal_pk}
             data={props.redirect}
             redirectTo={props.redirectTo} />
         </Route>
