@@ -4,7 +4,9 @@ import {
   UNSAFE_cache_getState,
   savePageHistory,
 } from '../HandleCache';
+import { Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import { Icon } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -12,9 +14,11 @@ const __cacheName__ = "_attention";
 
 
 function Atencion(props){
-  const [attention_pk, setAttention] = useState(props.data &&  props.data.cita.atencion);
+  const [cita, setCita] = useState(props.data &&  props.data.cita);
 
-  if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', ...props);
+  useEffect(() => {
+    console.log(cita);
+  }, [cita]);
 
   return(
   <>
@@ -33,17 +37,16 @@ function Atencion(props){
       </h1>
     </div>
 
-    {attention_pk
-      ? <AttentionDetail sucursal_pk={props.sucursal_pk} cita={props.cita} />
-      : <AttentionList sucursal_pk={props.sucursal_pk} setAttention={setAttention} />}
+    {cita
+      ? <AttentionDetail sucursal_pk={props.sucursal_pk} cita={cita} redirectTo={props.redirectTo} />
+      : <AttentionList sucursal_pk={props.sucursal_pk} setCita={setCita} />}
   </>
   )
 }
 
 const AttentionDetail = (props) => {
-  console.log(props);
 
-  function getAttentionDetail(_atencion_id){
+  const getAttentionDetail = (_atencion_id) => {
     /* Promise as a component
     * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
     * that'd result in a function with much parameters than it'd less verbose
@@ -78,43 +81,49 @@ const AttentionDetail = (props) => {
       }
     );
   }
-
-  /*
-  sucursal: 1
-  fecha: "2020-05-01"
-  hora: "08:00:00"
-  atencion: 45
-  hora_fin: "12:00:00"
-  origen_cita: "3"
-  estado: "5"
-  indicaciones: "consulta"
-  programado: "CONSULTA REGULAR↵Atendido por neldo agustin y sam sachez"
-  paciente_data: {pk: 8, nombre_principal: "asdfawefsadf", nombre_secundario: "sadfsad", ape_paterno: "fsadfasdf", ape_materno: "asdfasdf", …}
-  personal: {nombre_principal: "neldo", nombre_secundario: "nombredos", ape_paterno: "agustin", ape_materno: "falcon", dni: "4567831", …}
-  pk: 6
-  */
+  const redirect = (url) => {
+    props.redirectTo(url, props.cita);
+  }
 
   // Run only at first render
   useEffect(() => {
-    let __state__ = UNSAFE_cache_getState("_atencion");
-    if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
+    console.log(props);
   }, []);
 
   return (
-    <div>
+    <div className="row">
       {/* Patient data */}
-      <PatientData patient={null} />
+      <div className="col-lg-6" style={{display: "inline-block"}}>
+        <div className="panel">
+          <PatientData cita={props.cita} />
+        </div>
+      </div>
+      {/* Patient attention history */}
+      <div className="col-lg-6" style={{display: "inline-block"}}>
+        <div className="panel">
+          <PatientAttentionHistory sucursal_pk={props.sucursal_pk} cita={props.cita} />
+        </div>
+        <div className="panel">
+          <Links redirectTo={redirect} />
+        </div>
+      </div>
     </div>
   );
 };
-const AttentionList = (props) => {
+const AttentionList = props => {
   const [latest_attentions, setAttentions] = useState(false);
   const [datatable, setDatatable] = useState(false);
+  const searchDate = useRef(false);
 
-  function getLatestAttentions(_sucursal_pk, _last_n){
-    // Get latest done citas
+  function getLatestAttentions(_date=false, _last_n=15, _sucursal_pk=props.sucursal_pk){
+    // Get today's finished citas
+    if(!_date){
+      let _tmp = new Date();
+      _date = _tmp.getFullYear()+"-"+(_tmp.getMonth()+1)+"-"+_tmp.getDate();
+    }else searchDate.current = _date;
+
     /* Send all values as string */
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "last": "${_last_n}"}`;
+    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha": "${_date}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
     url = url + '?' + filter;
     // Generate promise
@@ -149,14 +158,15 @@ const AttentionList = (props) => {
     const dt_script = document.createElement("script");
     dt_script.async = false;
     dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+    dt_script.onload = () => {
+      // Run at first execution
+      getLatestAttentions();
+    };
     document.body.appendChild(dt_script);
     const dt_style = document.createElement("link");
     dt_style.rel = "stylesheet";
     dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
     document.head.appendChild(dt_style);
-
-    // Run at first execution
-    getLatestAttentions(props.sucursal_pk, 15);
 
     savePageHistory();  // Save page history
     return () => {
@@ -166,7 +176,6 @@ const AttentionList = (props) => {
   // When latest_attentions are setted
   useEffect(() => {
     if(!latest_attentions) return;  // Abort if it's false
-    console.log("latest_attentions", latest_attentions);
 
     // Destroy previous DT if exists
     if(datatable) window.$('#last-attentions').DataTable().clear().destroy();
@@ -174,22 +183,30 @@ const AttentionList = (props) => {
     let _tmp = window.$('#last-attentions').DataTable({
       data: latest_attentions,
       columns: [
-        {title: "Paciente", data: 'paciente_data.dni'},
-        {title: "Indicaciones", data: 'indicaciones'},
         {title: "Fecha", data: 'fecha'},
-        {title: "Hora programada", data: 'hora'},
-        {title: "Hora fin", data: 'hora_fin'},
+        {title: "Hora", data: null},
+        {title: "Paciente", data: null},
+        {title: "Programado", data: 'programado'},
         {title: "", data: null},
       ],
       columnDefs: [{
+        // Button
         targets: -1,
-        defaultContent: "<button class='select-attention'>Seleccionar</button>",
+        orderable: false,
+        width: "1px",
+        defaultContent: "<button class='select-attention btn btn-light btn-pills waves-effect'>Seleccionar</button>",
       }, {
-        targets: 0,
+        // Paciente
+        targets: 2,
         render: (data, type, row) => (
           row.paciente_data.ape_paterno.toUpperCase()+", "+
-          cFL(row.paciente_data.nombre_principal)
+          cFL(row.paciente_data.nombre_principal)+" - "+
+          row.paciente_data.dni
         ),
+      }, {
+        // Hora
+        targets: 1,
+        render: (data, type, row) => (row.hora.slice(0, 5)+" - "+row.hora_fin.slice(0, 5)),
       }],
       pageLength: 10,
       language: {
@@ -197,7 +214,7 @@ const AttentionList = (props) => {
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",
         sZeroRecords:    "No se encontraron resultados",
-        sEmptyTable:     "Ningún dato disponible en esta tabla =(",
+        sEmptyTable:     "No hay atenciones registradas para la fecha seleccionada",
         sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
@@ -232,9 +249,14 @@ const AttentionList = (props) => {
     document.querySelectorAll("#last-attentions tbody tr td button.select-attention").forEach(el => {
       el.onclick = () => {
         var data = datatable.row(el.parentElement.parentElement).data();
-        props.setAttention(data);
+        props.setCita(data);
       }
     });
+    // Change search type && set default value today
+    let _input = document.querySelector('#last-attentions_filter input[type=search]');
+    _input.type = "date";
+    _input.value = searchDate.current ? searchDate.current : (new Date().toDateInputValue());
+    _input.onchange = (e) => getLatestAttentions(e.target.value);
   }, [datatable]);
 
   return (
@@ -242,7 +264,7 @@ const AttentionList = (props) => {
     ? "loading"
     : (
       <div>
-        <div className="datatable-container">
+        <div className="datatable-container col-12">
           <table id="last-attentions"></table>
         </div>
       </div>
@@ -252,12 +274,37 @@ const AttentionList = (props) => {
 
 const PatientData = props => {
   return (
-    <div class="card col-6" style={{width: "18rem"}}>
-      <div class="card-body">
-        <h5 class="card-title">{cFL(props.patient.ape_paterno)+", "+cFL(props.patient.nombre_principal)}</h5>
-        <h5 class="card-title">{cFL(props.programado)}</h5>
-        <h5 class="card-title">{props.fecha + props.hora + "  " + props.hora_fin}</h5>
-        <p class="card-text">{cFL(props.indicaciones)}</p>
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Paciente
+        </div>
+      </div>
+      <div className="card-body">
+        <h5 className="card-title">
+          {cFL(props.cita.paciente_data.ape_paterno)+" "+cFL(props.cita.paciente_data.ape_materno)
+            +", "+cFL(props.cita.paciente_data.nombre_principal)+
+            (props.cita.paciente_data.nombre_secundario?" "+cFL(props.cita.paciente_data.nombre_secundario):"")}&nbsp;
+          <code>{props.cita.paciente_data.dni}</code>
+        </h5>
+        <h5 className="card-title">
+          <b>Programado: </b>
+          {cFL(props.cita.programado)}
+        </h5>
+        <h5 className="card-title">
+          <b>Fecha y hora: </b>
+          {props.cita.fecha} <code>{props.cita.hora.slice(0, 5)} - {props.cita.hora_fin.slice(0, 5)}</code>
+        </h5>
+        <h5 className="card-title">
+          <b>Personal de atención: </b>
+          {cFL(props.cita.personal.ape_paterno)+" "+cFL(props.cita.personal.ape_materno)
+            +", "+cFL(props.cita.personal.nombre_principal)+
+            (props.cita.personal.nombre_secundario?" "+cFL(props.cita.personal.nombre_secundario):"")}
+        </h5>
+        <h5 className="card-title">
+          <b>Indicaciones: </b>
+          {cFL(props.cita.indicaciones)}
+        </h5>
       </div>
     </div>
   );
@@ -266,9 +313,9 @@ const PatientAttentionHistory = props => {
   console.log(props);
   const [attention_list, setAttentionList] = useState(false);
 
-  const getAttentionHistory = (patient_pk) => {
-    // Get patient's attention history
-    let filter = `filtro={"paciente":"${patient_pk}"}`;
+  const getAttentionHistory = (_patient_pk, _sucursal_pk=props.sucursal_pk) => {
+    // Get last n patient's attentions
+    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
     url = url + '?' + filter;
     // Generate promise
@@ -286,11 +333,17 @@ const PatientAttentionHistory = props => {
         }else{
           reject(response.statusText)
         }
-      }, () => handleErrorResponse('server'));
-    });
+      });
+    }, () => handleErrorResponse('server'));
     result.then(
       response_obj => {  // In case it's ok
-        console.log(response_obj);
+        // Remove current attention
+        let _tmp = response_obj;
+        if(_tmp.length>0){
+          _tmp = response_obj.filter(i => i.pk!=props.cita.pk);
+        }
+
+        setAttentionList(_tmp);
       },
       error => {  // In case of error
         console.log("WRONG!", error);
@@ -298,30 +351,77 @@ const PatientAttentionHistory = props => {
     );
   }
 
+  // Run at first render
   useEffect(() => {
-    getAttentionHistory(props.patient.pk);
+    getAttentionHistory(props.cita.paciente_data.pk);
   }, []);
+  // Run when attention_list is setted
+  useEffect(() => {
+    if(!attention_list) return;
+
+    console.log(attention_list);
+  }, [attention_list]);
 
   return !attention_list
     ? "loading"
     : (
-      <div class="card col-6" style={{width: "18rem"}}>
-        <div class="card-body">
-          {attention_list}
+      <div className="card col-12" style={{padding: "0px"}}>
+        <div className="card-header">
+          <div className="card-title">
+            Ultimas atenciones
+          </div>
+        </div>
+        <div className="card-body">
+          {/* attention_list */}
+          {attention_list.length>0 ? attention_list.map((i) => {return(
+            <div key={"inc_list_"+i.pk} style={{cursor: "pointer"}}>
+              <span>{i.fecha} <b>{i.programado}</b></span>
+            </div>
+          )}) : "No se encontraron otras atenciones"}
+        </div>
+        <div className="card-footer">
+          Para más información revise el apartado de atenciones de paciente en <Link to="/nav/admision/"><b>Admision</b></Link>
         </div>
       </div>
     );
+}
+const Links = props => {
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Agregar documento
+        </div>
+      </div>
+      <div className="card-body">
+        <div className="card-title">
+          <div className="card col-6" style={{display: "inline-block", textAlign: "center"}}>
+            <div className="card-header">
+              <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} />
+            </div>
+            <div className="card-body">
+              Odontograma
+            </div>
+          </div>
+          <div className="card col-6" style={{display: "inline-block", textAlign: "center"}}>
+            <div className="card-header">
+              <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} />
+            </div>
+            <div className="card-body">
+              Procedimiento
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default Atencion;
 
 /*
-Datos del paciente (show)
-* Historial atenciones (show)
-
-* Historia clinica (link)
 * Procedimientos realizados (add|link)
 
-* Registrar odontograma (link)
+* atención(roles, filtro fecha, print, receta, recomendación)
 + Prescripción y medicamentos (show)
 */

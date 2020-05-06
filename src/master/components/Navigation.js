@@ -15,10 +15,11 @@ import {
 } from './HandleCache';
 
 // Components to import
+import Admision from './admision/Admision';
 import Cita from './cita/Cita';
+import Atencion from './atencion/Atencion';
 import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
-import Atencion from './atencion/Atencion';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -206,17 +207,27 @@ function SelectComponent(props){  // CONTENT
             data={props.redirect}
             redirectTo={props.redirectTo} />
         </Route>
-        <Route path="/nav/procedimiento">
-          <Procedimiento
+        <Route path="/nav/admision">
+          <Admision
+            sucursal_pk={props.current_sucursal_pk}
             data={props.redirect}
             redirectTo={props.redirectTo} />
         </Route>
+
         {/* Components accessed only by redirect */}
         <Route path="/nav/odontograma">
-          <Odontograma
-            data={props.redirect}
-            redirectTo={props.redirectTo} />
+          {!props.redirect
+            ? <Redirect to="/nav/home" />
+            : <Odontograma data={props.redirect} redirectTo={props.redirectTo} />
+          }
         </Route>
+        <Route path="/nav/procedimiento">
+          {!props.redirect
+            ? <Redirect to="/nav/home" />
+            : <Procedimiento data={props.redirect} redirectTo={props.redirectTo} />
+          }
+        </Route>
+
         {/* Default link */}
         <Route>
           <Redirect to="/nav/home" />
@@ -235,14 +246,14 @@ function AsideLinks(props){
           <span className="nav-link-text">HOME</span>
         </Link>
       </li>
+      <li className={props.history.location.pathname==="/nav/admision"?"active":""}>
+        <Link data-filter-tags="admision" to='/nav/admision'>
+          <span className="nav-link-text">ADMISION</span>
+        </Link>
+      </li>
       <li className={props.history.location.pathname==="/nav/cita"?"active":""}>
         <Link data-filter-tags="cita" to='/nav/cita'>
           <span className="nav-link-text">CITA</span>
-        </Link>
-      </li>
-      <li className={props.history.location.pathname==="/nav/odontograma"?"active":""}>
-        <Link data-filter-tags="odontograma" to='/nav/odontograma'>
-          <span className="nav-link-text">ODONTOGRAMA</span>
         </Link>
       </li>
       <li className={props.history.location.pathname==="/nav/atencion"?"active":""}>

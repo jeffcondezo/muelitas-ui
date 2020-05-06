@@ -6,6 +6,7 @@
 */
 const StandarFetchAndPromise(){
   // Description of endpoint and fetch purpose
+  /* Send all values as string */
   let filter = `filtro={"filter_name":"filter_value"}`;
   // let filter = `filtro={"filter_name":"${var_name}"}`;  // We could use ${} too
   let url = process.env.REACT_APP_PROJECT_API+`module/endpoint/`;

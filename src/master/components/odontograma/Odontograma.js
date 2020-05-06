@@ -8,6 +8,7 @@ import { handleErrorResponse } from '../../functions';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
+const cacheAction = false;
 const __cacheName__ = "_odontogram";
 
 // General properties
@@ -1652,7 +1653,8 @@ function Odontograma(props){
       currentTooth.path = null;
       currentTooth.preserve = false;
       odontogram_type.current = type;  // DOM odontogram type indicator
-      // Save to cache
+
+      if(cacheAction) // Save to cache
       UNSAFE_cache_postState(__cacheName__, {
         ...UNSAFE_cache_getState(__cacheName__),
         odontogram_type: odontogram_type.current,
@@ -1984,7 +1986,9 @@ function Odontograma(props){
     /* Check if there is component state data stored in cache
     * This is a great security risk if data is not encrypted
     */
-    let __state__ = UNSAFE_cache_getState(__cacheName__);
+
+    // Get from cache
+    let __state__ = cacheAction ? UNSAFE_cache_getState(__cacheName__) : false;
     if(__state__){  // If there is state data in cache
       if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
       // Check if all state's parameters exists in cache before setting 'em
@@ -2015,9 +2019,9 @@ function Odontograma(props){
       }
     }
     // Start saving cita
-    if(cita) UNSAFE_cache_postState(__cacheName__, {...__state__, cita: cita});
+    if(cacheAction && cita) UNSAFE_cache_postState(__cacheName__, {...__state__, cita: cita});
     if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
-    savePageHistory();  // Save page history
+    if(cacheAction) savePageHistory();  // Save page history
 
     // Elements
     let odontogram_el = document.getElementById('odontogram');
@@ -2096,11 +2100,13 @@ function Odontograma(props){
         // Save odontogram
         odontogram.id = response.id;
         odontogram.type = response.tipo==1?"A":"K";
-        // Save to cache
+
+        if(cacheAction) // Save to cache
         UNSAFE_cache_postState(__cacheName__, {
           ...UNSAFE_cache_getState(__cacheName__),
           odontogram: odontogram,
         });
+
         // Get incidences in case odontogram exists
         getIncidences();
       },
