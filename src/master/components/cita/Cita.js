@@ -333,8 +333,8 @@ class Cita extends React.Component {
     // VALIDATIONS FIRST
     // Validate date
     let _fecha = document.getElementById("date").value;
-    let now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
-    if(_fecha < now.toJSON().slice(0,10)){
+    let now = new Date().toDateInputValue();
+    if(_fecha < now){
       // Show form error
       this.errorForm("No se puede programar una cita para días anteriores");
       return;
@@ -499,6 +499,13 @@ class Cita extends React.Component {
     this.setState(clone, ()=>{
       window.$('#modal_ver_cita').modal('show');
     });
+  }
+  addAttention = (cita) => {
+    let url = "/nav/atencion";
+    let data = {
+      cita: cita,
+    };
+    this.redirectTo(url, data);
   }
   addOdontograma = (cita) => {
     let url = "/nav/odontograma";
@@ -666,7 +673,7 @@ class Cita extends React.Component {
               <SelectProcedimiento state={this.state} />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="date">Fecha: </label>
-                <input type="date" id="date" name="date" className="form-control form-control-lg" required />
+                <input type="date" id="date" name="date" className="form-control form-control-lg" defaultValue={(new Date().toDateInputValue())} required />
               </div>
               <div className="form-group col-md-3" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="hour" style={{display:'block'}}>Hora: </label>
@@ -725,6 +732,7 @@ class Cita extends React.Component {
       <InfoCita cita={this.state.selected_cita}
         annulCita={this.annulCita}
         finishCita={this.finishCita}
+        addAttention={this.addAttention}
         addOdontograma={this.addOdontograma}
         addProcedure={this.addProcedure} />
 
@@ -976,8 +984,9 @@ function InfoCita(props){
               <br/>
             </div>
             <div className="modal-footer">
-              {/* Odontograma */}
+              {/* Icons */}
               <div className="btn-group">
+                <Icon type="attention" onClick={() => props.addAttention(props.cita)} data_dismiss={"modal"}/>
                 <Icon type="odontogram" onClick={() => props.addOdontograma(props.cita)} data_dismiss={"modal"}/>
                 <Icon type="procedure" onClick={() => props.addProcedure(props.cita)} data_dismiss={"modal"}/>
               </div>

@@ -18,6 +18,9 @@ function Atencion(props){
 
   useEffect(() => {
     console.log(cita);
+    return () => {
+      console.log("UNMOUNTING");
+    }
   }, [cita]);
 
   return(
@@ -92,13 +95,14 @@ const AttentionDetail = (props) => {
 
   return (
     <div className="row">
-      {/* Patient data */}
       <div className="col-lg-6" style={{display: "inline-block"}}>
         <div className="panel">
           <PatientData cita={props.cita} />
         </div>
+        <div className="panel">
+          <AttentionProcedures cita={props.cita} />
+        </div>
       </div>
-      {/* Patient attention history */}
       <div className="col-lg-6" style={{display: "inline-block"}}>
         <div className="panel">
           <PatientAttentionHistory sucursal_pk={props.sucursal_pk} cita={props.cita} />
@@ -109,7 +113,7 @@ const AttentionDetail = (props) => {
       </div>
     </div>
   );
-};
+}
 const AttentionList = props => {
   const [latest_attentions, setAttentions] = useState(false);
   const [datatable, setDatatable] = useState(false);
@@ -123,7 +127,7 @@ const AttentionList = props => {
     }else searchDate.current = _date;
 
     /* Send all values as string */
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha": "${_date}"}`;
+    let filter = `filtro={"sucursal":"${_sucursal_pk}", "fecha": "${_date}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
     url = url + '?' + filter;
     // Generate promise
@@ -145,7 +149,20 @@ const AttentionList = props => {
     }, () => handleErrorResponse('server'));
     result.then(
       response_obj => {  // In case it's ok
-        setAttentions(response_obj);
+        // Remove duplicated attention
+        let _tmp = response_obj;
+        let _tmp1 = [];  // Store attention's id
+        if(_tmp.length>0){
+          _tmp = response_obj.filter(i => {
+            if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
+              return false;  // Remove
+            }
+            _tmp1.push(i.atencion);  // Save attention in _tmp1 array
+            return true;
+          });
+        }
+
+        setAttentions(_tmp);
       },
       error => {  // In case of error
         console.log("WRONG!", error);
@@ -270,7 +287,7 @@ const AttentionList = props => {
       </div>
     )
   );
-};
+}
 
 const PatientData = props => {
   return (
@@ -281,30 +298,30 @@ const PatientData = props => {
         </div>
       </div>
       <div className="card-body">
-        <h5 className="card-title">
+        <h6>
           {cFL(props.cita.paciente_data.ape_paterno)+" "+cFL(props.cita.paciente_data.ape_materno)
             +", "+cFL(props.cita.paciente_data.nombre_principal)+
             (props.cita.paciente_data.nombre_secundario?" "+cFL(props.cita.paciente_data.nombre_secundario):"")}&nbsp;
           <code>{props.cita.paciente_data.dni}</code>
-        </h5>
-        <h5 className="card-title">
+        </h6>
+        <h6>
           <b>Programado: </b>
           {cFL(props.cita.programado)}
-        </h5>
-        <h5 className="card-title">
+        </h6>
+        <h6>
           <b>Fecha y hora: </b>
           {props.cita.fecha} <code>{props.cita.hora.slice(0, 5)} - {props.cita.hora_fin.slice(0, 5)}</code>
-        </h5>
-        <h5 className="card-title">
+        </h6>
+        <h6>
           <b>Personal de atención: </b>
           {cFL(props.cita.personal.ape_paterno)+" "+cFL(props.cita.personal.ape_materno)
             +", "+cFL(props.cita.personal.nombre_principal)+
             (props.cita.personal.nombre_secundario?" "+cFL(props.cita.personal.nombre_secundario):"")}
-        </h5>
-        <h5 className="card-title">
+        </h6>
+        <h6>
           <b>Indicaciones: </b>
           {cFL(props.cita.indicaciones)}
-        </h5>
+        </h6>
       </div>
     </div>
   );
@@ -390,28 +407,46 @@ const Links = props => {
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
         <div className="card-title">
-          Agregar documento
+          Acciones
         </div>
       </div>
       <div className="card-body">
         <div className="card-title">
-          <div className="card col-6" style={{display: "inline-block", textAlign: "center"}}>
-            <div className="card-header">
-              <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} />
-            </div>
-            <div className="card-body">
+        <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
+          <div>
+            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
+            Cobrar
+          </div>
+        </div>
+          <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
+            <div>
+              <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
               Odontograma
             </div>
           </div>
-          <div className="card col-6" style={{display: "inline-block", textAlign: "center"}}>
-            <div className="card-header">
-              <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} />
-            </div>
-            <div className="card-body">
+          <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
+            <div>
+              <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
               Procedimiento
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+const AttentionProcedures = props => {
+  console.log(props);
+
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Procedimientos realizados
+        </div>
+      </div>
+      <div className="card-body">
+        No se ha relizado ningún procedimiento
       </div>
     </div>
   );
@@ -421,7 +456,12 @@ export default Atencion;
 
 /*
 * Procedimientos realizados (add|link)
+* roles
+* filtro fecha
+* print
+* receta
+* recomendación
 
-* atención(roles, filtro fecha, print, receta, recomendación)
++ Link to admision get patient's data
 + Prescripción y medicamentos (show)
 */

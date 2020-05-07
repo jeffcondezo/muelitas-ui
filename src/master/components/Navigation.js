@@ -45,10 +45,10 @@ function Navigation(props){
   let user = useRef(props.user?props.user:null).current;
   const sucursales = useRef([]);  // User's sucursal
   const [current_sucursal_pk, setCurrentSucursal] = useState(-1);  // Current enviroment sucursal
-  const [redirect, setRedirect] = useState(false);  // Redirect object, default: false
+  const redirect = useRef(false);  // Only to store values, changes do not render
 
   if(__debug__==="true") console.log(`%c --------- MOUNTING ${props.history.location.pathname} ---------`, 'background: black; color: red');
-  if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect);
+  if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect.current);
 
   function setPersonalInfo(){
     let result = new Promise((resolve, reject) => {
@@ -86,7 +86,7 @@ function Navigation(props){
   }
   function redirectTo(url, data=null){
     props.history.push(url);
-    if(data) setRedirect(data);
+    if(data) redirect.current = data;
   }
 
   // Only run after first render
@@ -190,6 +190,12 @@ function Navigation(props){
 
 /*** COMPONENTS ***/
 function SelectComponent(props){  // CONTENT
+  let _redirect_obj = props.redirect.current;  // Copy its value
+  // By accessing .current we avoid memory reference
+  if(props.redirect){  // Reset redirect data
+    props.redirect.current = false;  // We can change useRef variable value only using .current
+  }
+
   return (
     <main id="js-page-content" role="main" className="page-content">
       <Switch>
@@ -204,21 +210,21 @@ function SelectComponent(props){  // CONTENT
         <Route path="/nav/atencion">
           <Atencion
             sucursal_pk={props.current_sucursal_pk}
-            data={props.redirect}
+            data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/admision">
           <Admision
             sucursal_pk={props.current_sucursal_pk}
-            data={props.redirect}
+            data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
 
         {/* Components accessed only by redirect */}
         <Route path="/nav/odontograma">
-          {!props.redirect
+          {!_redirect_obj
             ? <Redirect to="/nav/home" />
-            : <Odontograma data={props.redirect} redirectTo={props.redirectTo} />
+            : <Odontograma data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
         <Route path="/nav/procedimiento">
