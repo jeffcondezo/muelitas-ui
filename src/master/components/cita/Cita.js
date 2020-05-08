@@ -6,7 +6,7 @@ import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 import { savePageHistory } from '../HandleCache';
-import { Icon } from '../bits';
+import { Icon, SelectOptions_Procedimiento } from '../bits';
 
 /* We use extended class of React.Component instead of function components
 * because we'll need to use componentWillReceiveProps function
@@ -868,32 +868,11 @@ function SelectPersonal(props){
   )
 }
 function SelectProcedimiento(props){
-  const procedimiento = [];
-  let CONSULTA_REGULAR = 1;  // DB consulta regular regiter's pk
-  if(props.state.procedimiento!==false){
-    for(let p of props.state.procedimiento){
-      // Consulta
-      if(p.procedimiento_data.pk === CONSULTA_REGULAR){
-        procedimiento.push(
-          <option key={CONSULTA_REGULAR} value={CONSULTA_REGULAR} defaultValue>
-            CONSULTA REGULAR
-          </option>
-        )
-        continue;
-      }
-      // Regular execution
-      procedimiento.push(
-        <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
-          {p.procedimiento_data.nombre.toUpperCase()}
-        </option>
-      );
-    }
-  }
   return (
     <div className="form-group col-md-12">
       <label className="form-label" htmlFor="programado">Programado: </label>
       <select id="programado" className="custom-select form-control custom-select-lg">
-        {procedimiento}
+        <SelectOptions_Procedimiento procedimientos={props.state.procedimiento} />
       </select>
     </div>
   )

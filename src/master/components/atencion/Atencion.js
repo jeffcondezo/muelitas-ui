@@ -14,14 +14,7 @@ const __cacheName__ = "_attention";
 
 
 function Atencion(props){
-  const [cita, setCita] = useState(props.data &&  props.data.cita);
-
-  useEffect(() => {
-    console.log(cita);
-    return () => {
-      console.log("UNMOUNTING");
-    }
-  }, [cita]);
+  const [cita, setCita] = useState(props.data &&  props.data.cita || false);
 
   return(
   <>
@@ -48,7 +41,6 @@ function Atencion(props){
 }
 
 const AttentionDetail = (props) => {
-
   const getAttentionDetail = (_atencion_id) => {
     /* Promise as a component
     * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
@@ -85,13 +77,8 @@ const AttentionDetail = (props) => {
     );
   }
   const redirect = (url) => {
-    props.redirectTo(url, props.cita);
+    props.redirectTo(url, {cita: props.cita});
   }
-
-  // Run only at first render
-  useEffect(() => {
-    console.log(props);
-  }, []);
 
   return (
     <div className="row">
@@ -105,10 +92,10 @@ const AttentionDetail = (props) => {
       </div>
       <div className="col-lg-6" style={{display: "inline-block"}}>
         <div className="panel">
-          <PatientAttentionHistory sucursal_pk={props.sucursal_pk} cita={props.cita} />
+          <Links redirectTo={redirect} />
         </div>
         <div className="panel">
-          <Links redirectTo={redirect} />
+          <PatientAttentionHistory sucursal_pk={props.sucursal_pk} cita={props.cita} />
         </div>
       </div>
     </div>
@@ -187,7 +174,7 @@ const AttentionList = props => {
 
     savePageHistory();  // Save page history
     return () => {
-      console.log("UNMOUNTING");
+      console.log("UNMOUNTING ATTENTION LIST");
     }
   }, []);
   // When latest_attentions are setted
@@ -289,6 +276,37 @@ const AttentionList = props => {
   );
 }
 
+const Links = props => {
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Acciones
+        </div>
+      </div>
+      <div className="card-body">
+        <div className="card-title">
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Cobrar</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Odontograma</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
+            <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="prescription" onClick={() => props.redirectTo("/nav/prescripcion")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Receta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 const PatientData = props => {
   return (
     <div className="card col-12" style={{padding: "0px"}}>
@@ -327,7 +345,6 @@ const PatientData = props => {
   );
 }
 const PatientAttentionHistory = props => {
-  console.log(props);
   const [attention_list, setAttentionList] = useState(false);
 
   const getAttentionHistory = (_patient_pk, _sucursal_pk=props.sucursal_pk) => {
@@ -372,12 +389,6 @@ const PatientAttentionHistory = props => {
   useEffect(() => {
     getAttentionHistory(props.cita.paciente_data.pk);
   }, []);
-  // Run when attention_list is setted
-  useEffect(() => {
-    if(!attention_list) return;
-
-    console.log(attention_list);
-  }, [attention_list]);
 
   return !attention_list
     ? "loading"
@@ -402,62 +413,159 @@ const PatientAttentionHistory = props => {
       </div>
     );
 }
-const Links = props => {
-  return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Acciones
-        </div>
-      </div>
-      <div className="card-body">
-        <div className="card-title">
-        <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
-          <div>
-            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
-            Cobrar
-          </div>
-        </div>
-          <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
-            <div>
-              <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
-              Odontograma
-            </div>
-          </div>
-          <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
-            <div>
-              <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
-              Procedimiento
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 const AttentionProcedures = props => {
-  console.log(props);
+  const [procedures, setProcedures] = useState(false);
+  const delete_proc_pk = useRef(-1);
 
+  function getProcedures(_atencion){
+    // Add procedure to cita's attention
+    let filter = `filtro={"atencion":"${_atencion}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));  // Print server error
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        setProcedures(response_obj);
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  function modelConfirmDelete(_pk){
+    window.$('#modal_delete_procedure').modal('show');
+    delete_proc_pk.current = _pk;
+  }
+  function deleteProcedure(){
+    console.log("DELETE");
+    window.$('#modal_delete_procedure').modal('hide');  // Hide modal
+    if(delete_proc_pk.current==-1) return;
+
+    // Add procedure to cita's attention
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/${delete_proc_pk.current}/`;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        method: 'DELETE',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.text())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));  // Print server error
+    });
+    result.then(
+      response_obj => {  // In case it's ok
+        // Delete item from DOM
+        document.getElementById(delete_proc_pk.current).remove();
+        // Reset delete_proc_pk val
+        delete_proc_pk.current = -1;
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  useEffect(() => {
+    getProcedures(props.cita.atencion);
+  }, []);
+
+  return !procedures
+    ? "loading"
+    : (
+      <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
+        <div className="card-header">
+          <div className="card-title">
+            Procedimientos realizados
+          </div>
+        </div>
+        <div id="proc-list" className={procedures.length==0?"card-body":""}>
+          {procedures.length==0
+            ? "No se ha relizado ningún procedimiento"
+            : procedures.map(proc => (
+              <div key={"proc-"+proc.pk}>
+                <li className="list-group-item d-flex" id={proc.pk}
+                  data-toggle="collapse" data-target={"#proc-desc-"+proc.pk}
+                  aria-expanded="true" aria-controls={"proc-desc-"+proc.pk}
+                  style={{cursor: "pointer", borderBottom: "0"}}>
+                    <span style={{fontSize: "1.2em"}}>
+                        {cFL(proc.procedimiento_data.nombre)}
+                    </span>
+                    <button className="btn ml-auto"
+                      style={{paddingTop: "0", paddingBottom: "0"}}
+                      onClick={()=>modelConfirmDelete(proc.pk)}>
+                        <i className="fal fa-trash-alt"></i>
+                    </button>
+                </li>
+                <div id={"proc-desc-"+proc.pk} className="collapse"
+                  aria-labelledby={proc.pk} data-parent="#proc-list"
+                  style={{paddingLeft: "1.8rem", paddingTop: "0", paddingBottom: ".75rem"}}>
+                    <span>
+                      {proc.observaciones}
+                    </span>
+                </div>
+              </div>
+            ))}
+        </div>
+        <AlertModal func={deleteProcedure} />
+      </div>
+    );
+}
+const AlertModal = props => {
   return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Procedimientos realizados
+    <div className="modal modal-alert" id="modal_delete_procedure" tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
+      <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Anular cita</h5>
+            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true"><i className="fal fa-times"></i></span>
+            </button>
+          </div>
+          <div className="modal-body">
+            Esta seguro que quiere eliminar el procedimiento?
+          </div>
+          <div className="modal-footer">
+            <button type="button" data-dismiss="modal"
+              className="btn btn-secondary waves-effect waves-themed">Cancelar</button>
+            <button type="button" data-dismiss="modal"
+              className="btn btn-primary waves-effect waves-themed" onClick={props.func}>Eliminar</button>
+          </div>
         </div>
       </div>
-      <div className="card-body">
-        No se ha relizado ningún procedimiento
-      </div>
     </div>
-  );
+  )
 }
 
 export default Atencion;
 
 /*
-* Procedimientos realizados (add|link)
 * roles
-* filtro fecha
 * print
 * receta
 * recomendación

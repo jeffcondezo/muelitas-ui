@@ -15,9 +15,12 @@ const StandarFetchAndPromise(){
   let result = new Promise((resolve, reject) => {
     // Fetch data to api
     let request = fetch(url, {
+      method: 'POST',
       headers: {
         Authorization: localStorage.getItem('access_token'),  // Token
+        'Content-Type': 'application/json'  // JSON type
       },
+      body: JSON.stringify(request_data)  // Data
     });
     // Once we get response we either return json data or error
     request.then(response => {

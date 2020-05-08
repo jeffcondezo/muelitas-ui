@@ -20,6 +20,7 @@ import Cita from './cita/Cita';
 import Atencion from './atencion/Atencion';
 import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
+import Prescripcion from './prescripcion/Prescripcion';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -85,8 +86,8 @@ function Navigation(props){
     setCurrentSucursal(pk);
   }
   function redirectTo(url, data=null){
-    props.history.push(url);
     if(data) redirect.current = data;
+    props.history.push(url);
   }
 
   // Only run after first render
@@ -192,7 +193,7 @@ function Navigation(props){
 function SelectComponent(props){  // CONTENT
   let _redirect_obj = props.redirect.current;  // Copy its value
   // By accessing .current we avoid memory reference
-  if(props.redirect){  // Reset redirect data
+  if(props.redirect.current){  // Reset redirect data
     props.redirect.current = false;  // We can change useRef variable value only using .current
   }
 
@@ -228,9 +229,19 @@ function SelectComponent(props){  // CONTENT
           }
         </Route>
         <Route path="/nav/procedimiento">
-          {!props.redirect
+          {!_redirect_obj
             ? <Redirect to="/nav/home" />
-            : <Procedimiento data={props.redirect} redirectTo={props.redirectTo} />
+            : <Procedimiento
+                sucursal_pk={props.current_sucursal_pk}
+                data={_redirect_obj} redirectTo={props.redirectTo} />
+          }
+        </Route>
+        <Route path="/nav/prescripcion">
+          {!_redirect_obj
+            ? <Redirect to="/nav/home" />
+            : <Prescripcion
+                sucursal_pk={props.current_sucursal_pk}
+                data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
 

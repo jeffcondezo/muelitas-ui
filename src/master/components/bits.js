@@ -34,8 +34,18 @@ export function Icon(props){
         title="Atencion" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
-          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-contract" className="svg-inline--fa fa-file-contract fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" style={{width: "80%"}}>
-            <path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zM64 72c0-4.42 3.58-8 8-8h80c4.42 0 8 3.58 8 8v16c0 4.42-3.58 8-8 8H72c-4.42 0-8-3.58-8-8V72zm0 64c0-4.42 3.58-8 8-8h80c4.42 0 8 3.58 8 8v16c0 4.42-3.58 8-8 8H72c-4.42 0-8-3.58-8-8v-16zm192.81 248H304c8.84 0 16 7.16 16 16s-7.16 16-16 16h-47.19c-16.45 0-31.27-9.14-38.64-23.86-2.95-5.92-8.09-6.52-10.17-6.52s-7.22.59-10.02 6.19l-7.67 15.34a15.986 15.986 0 0 1-14.31 8.84c-.38 0-.75-.02-1.14-.05-6.45-.45-12-4.75-14.03-10.89L144 354.59l-10.61 31.88c-5.89 17.66-22.38 29.53-41 29.53H80c-8.84 0-16-7.16-16-16s7.16-16 16-16h12.39c4.83 0 9.11-3.08 10.64-7.66l18.19-54.64c3.3-9.81 12.44-16.41 22.78-16.41s19.48 6.59 22.77 16.41l13.88 41.64c19.77-16.19 54.05-9.7 66 14.16 2.02 4.06 5.96 6.5 10.16 6.5zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path>
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="id-card-alt" className="svg-inline--fa fa-id-card-alt fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style={{width: "100%"}}>
+            <path fill="currentColor" d="M528 64H384v96H192V64H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h480c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48zM288 224c35.3 0 64 28.7 64 64s-28.7 64-64 64-64-28.7-64-64 28.7-64 64-64zm93.3 224H194.7c-10.4 0-18.8-10-15.6-19.8 8.3-25.6 32.4-44.2 60.9-44.2h8.2c12.3 5.1 25.7 8 39.8 8s27.6-2.9 39.8-8h8.2c28.4 0 52.5 18.5 60.9 44.2 3.2 9.8-5.2 19.8-15.6 19.8zM352 32c0-17.7-14.3-32-32-32h-64c-17.7 0-32 14.3-32 32v96h128V32z"></path>
+          </svg>
+      </a>
+    ); break;
+    case "admision": el.push(  // Atención
+      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
+        title="Admision" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px"}}>
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-md" className="svg-inline--fa fa-user-md fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style={{width: "70%"}}>
+            <path fill="currentColor" d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zM104 424c0 13.3 10.7 24 24 24s24-10.7 24-24-10.7-24-24-24-24 10.7-24 24zm216-135.4v49c36.5 7.4 64 39.8 64 78.4v41.7c0 7.6-5.4 14.2-12.9 15.7l-32.2 6.4c-4.3.9-8.5-1.9-9.4-6.3l-3.1-15.7c-.9-4.3 1.9-8.6 6.3-9.4l19.3-3.9V416c0-62.8-96-65.1-96 1.9v26.7l19.3 3.9c4.3.9 7.1 5.1 6.3 9.4l-3.1 15.7c-.9 4.3-5.1 7.1-9.4 6.3l-31.2-4.2c-7.9-1.1-13.8-7.8-13.8-15.9V416c0-38.6 27.5-70.9 64-78.4v-45.2c-2.2.7-4.4 1.1-6.6 1.9-18 6.3-37.3 9.8-57.4 9.8s-39.4-3.5-57.4-9.8c-7.4-2.6-14.9-4.2-22.6-5.2v81.6c23.1 6.9 40 28.1 40 53.4 0 30.9-25.1 56-56 56s-56-25.1-56-56c0-25.3 16.9-46.5 40-53.4v-80.4C48.5 301 0 355.8 0 422.4v44.8C0 491.9 20.1 512 44.8 512h358.4c24.7 0 44.8-20.1 44.8-44.8v-44.8c0-72-56.8-130.3-128-133.8z"></path>
           </svg>
       </a>
     ); break;
@@ -49,6 +59,16 @@ export function Icon(props){
         </svg>
       </a>
     ); break;
+    case "prescription": el.push(  // Receta
+      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
+        title="Receta" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px"}}>
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pills" className="svg-inline--fa fa-pills fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style={{width: "100%"}}>
+            <path fill="currentColor" d="M112 32C50.1 32 0 82.1 0 144v224c0 61.9 50.1 112 112 112s112-50.1 112-112V144c0-61.9-50.1-112-112-112zm48 224H64V144c0-26.5 21.5-48 48-48s48 21.5 48 48v112zm139.7-29.7c-3.5-3.5-9.4-3.1-12.3.8-45.3 62.5-40.4 150.1 15.9 206.4 56.3 56.3 143.9 61.2 206.4 15.9 4-2.9 4.3-8.8.8-12.3L299.7 226.3zm229.8-19c-56.3-56.3-143.9-61.2-206.4-15.9-4 2.9-4.3 8.8-.8 12.3l210.8 210.8c3.5 3.5 9.4 3.1 12.3-.8 45.3-62.6 40.5-150.1-15.9-206.4z"></path>
+          </svg>
+      </a>
+    ); break;
     default: break;
   }
 
@@ -57,4 +77,30 @@ export function Icon(props){
       {el}
     </div>
   );
+}
+export function SelectOptions_Procedimiento(props){
+  const procedimiento = [];
+  let CONSULTA_REGULAR = 1;  // DB consulta regular regiter's pk
+
+  if(props.procedimientos!==false){
+    for(let p of props.procedimientos){
+      // Consulta
+      if(p.procedimiento_data.pk === CONSULTA_REGULAR){
+        procedimiento.push(
+          <option key={CONSULTA_REGULAR} value={CONSULTA_REGULAR} defaultValue>
+            CONSULTA REGULAR
+          </option>
+        )
+        continue;
+      }
+      // Regular execution
+      procedimiento.push(
+        <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
+          {p.procedimiento_data.nombre.toUpperCase()}
+        </option>
+      );
+    }
+  }
+
+  return procedimiento;
 }
