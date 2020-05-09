@@ -80,26 +80,15 @@ export function Icon(props){
 }
 export function SelectOptions_Procedimiento(props){
   const procedimiento = [];
-  let CONSULTA_REGULAR = 1;  // DB consulta regular regiter's pk
 
   if(props.procedimientos!==false){
-    for(let p of props.procedimientos){
-      // Consulta
-      if(p.procedimiento_data.pk === CONSULTA_REGULAR){
-        procedimiento.push(
-          <option key={CONSULTA_REGULAR} value={CONSULTA_REGULAR} defaultValue>
-            CONSULTA REGULAR
-          </option>
-        )
-        continue;
-      }
-      // Regular execution
+    props.procedimientos.map(p => {
       procedimiento.push(
         <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
           {p.procedimiento_data.nombre.toUpperCase()}
         </option>
       );
-    }
+    });
   }
 
   return procedimiento;

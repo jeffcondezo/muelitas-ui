@@ -93,14 +93,20 @@ function Navigation(props){
   // Only run after first render
   useEffect(() => {
     // Add resources
-    const main_script = document.createElement("script");
-    main_script.async = false;
-    main_script.src = "/js/vendors.bundle.js";
-    document.body.appendChild(main_script);
-    const main_script2 = document.createElement("script");
-    main_script2.async = false;
-    main_script2.src = "/js/app.bundle.js";
-    document.body.appendChild(main_script2);
+    if(!document.getElementById('main_script')){
+      const main_script = document.createElement("script");
+      main_script.id = "main_script";
+      main_script.async = false;
+      main_script.src = "/js/vendors.bundle.js";
+      document.body.appendChild(main_script);
+    }
+    if(!document.getElementById('main_script2')){
+      const main_script2 = document.createElement("script");
+      main_script2.async = false;
+      main_script2.id = "main_script2";
+      main_script2.src = "/js/app.bundle.js";
+      document.body.appendChild(main_script2);
+    }
 
     /* Check if there is data stored in cache
     * This is a great security risk if data is not encrypted

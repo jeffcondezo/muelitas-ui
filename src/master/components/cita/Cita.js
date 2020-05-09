@@ -193,6 +193,53 @@ class Cita extends React.Component {
     });
     _calendar.render();
   }
+  setCalendar(){
+    // Create calendar object
+    let calendarEl = document.querySelector('#calendar');
+    let calendar = new Calendar(calendarEl, {
+      plugins: [ timeGridPlugin, listPlugin , 'bootstrap' ],
+      locale: esLocale,  // https://fullcalendar.io/docs/locale
+      nowIndicator: true,
+      themeSystem: 'bootstrap',
+      minTime: "08:00:00",
+      maxTime: "21:00:00",
+      slotDuration: '00:15:00',  // Tab frequency
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      },
+      slotLabelFormat: {
+        hour: 'numeric',
+        minute: '2-digit',
+        omitZeroMinute: true,
+        hour12: true,
+      },
+      header: {
+        left: 'prev,next today addEventButton',
+        center: 'title',
+        right: 'timeGridWeek,timeGridDay,listWeek'
+      },
+      navLinks: true, // can click day/week names to navigate views
+      editable: false,  // Not editable
+      eventLimit: true, // allow "more" link when too many events
+      eventClick: this.getEventInfo,
+      customButtons: {
+        addEventButton: {  // Add Cita
+          text: '+',
+          click: function(){
+            document.querySelector('button#toggleModal').click()
+          }
+        }
+      },
+      eventColor: 'tomato',  // Default event color
+    });
+
+    // Handle calendar, citas and personal
+    let clone = Object.assign({}, this.state)  // Clone this.state object
+    clone.calendar = calendar  // Change attribute's value
+    this.setState(clone, this.getPersonal)  // Save change (re-render)
+  }
   // Errors
   handleBadRequest(response){
     switch(response){
@@ -744,76 +791,46 @@ class Cita extends React.Component {
   }
   componentDidMount(){
     // Fullcalendar Bundle
-    const fullcalendar_script = document.createElement("script");
-    fullcalendar_script.async = false;
-    fullcalendar_script.onload = ()=>{
-      // Create calendar object
-      let calendarEl = document.querySelector('#calendar');
-      let calendar = new Calendar(calendarEl, {
-        plugins: [ timeGridPlugin, listPlugin , 'bootstrap' ],
-        locale: esLocale,  // https://fullcalendar.io/docs/locale
-        nowIndicator: true,
-        themeSystem: 'bootstrap',
-        minTime: "08:00:00",
-        maxTime: "21:00:00",
-        slotDuration: '00:15:00',  // Tab frequency
-        eventTimeFormat: {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        },
-        slotLabelFormat: {
-          hour: 'numeric',
-          minute: '2-digit',
-          omitZeroMinute: true,
-          hour12: true,
-        },
-        header: {
-          left: 'prev,next today addEventButton',
-          center: 'title',
-          right: 'timeGridWeek,timeGridDay,listWeek'
-        },
-        navLinks: true, // can click day/week names to navigate views
-        editable: false,  // Not editable
-        eventLimit: true, // allow "more" link when too many events
-        eventClick: this.getEventInfo,
-        customButtons: {
-          addEventButton: {  // Add Cita
-            text: '+',
-            click: function(){
-              document.querySelector('button#toggleModal').click()
-            }
-          }
-        },
-        eventColor: 'tomato',  // Default event color
-      });
-
-      // Handle calendar, citas and personal
-      let clone = Object.assign({}, this.state)  // Clone this.state object
-      clone.calendar = calendar  // Change attribute's value
-      this.setState(clone, this.getPersonal)  // Save change (re-render)
-    };
-    fullcalendar_script.src = "/js/miscellaneous/fullcalendar/fullcalendar.bundle.js";
-    document.body.appendChild(fullcalendar_script);
+    if(!document.getElementById('fullcalendar_script')){
+      const fullcalendar_script = document.createElement("script");
+      fullcalendar_script.async = false;
+      fullcalendar_script.id = "fullcalendar_script";
+      fullcalendar_script.onload = ()=>this.setCalendar();
+      fullcalendar_script.src = "/js/miscellaneous/fullcalendar/fullcalendar.bundle.js";
+      document.body.appendChild(fullcalendar_script);
+    }else{
+      this.setCalendar();
+    }
 
     // Select2 for personal choose in Cita
     // CSS
-    const select2_link = document.createElement("link");
-    select2_link.rel = "stylesheet";
-    select2_link.media = "screen, print";
-    select2_link.href = "/css/formplugins/select2/select2.bundle.css";
-    document.head.appendChild(select2_link);
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link");
+      select2_link.rel = "stylesheet";
+      select2_link.id = "select2_link";
+      select2_link.media = "screen, print";
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+      document.head.appendChild(select2_link);
+    }
     // JS
-    const select2_script = document.createElement("script");
-    select2_script.async = false;
-    select2_script.onload = ()=>{
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script");
+      select2_script.async = false;
+      select2_script.id = "select2_script";
+      select2_script.onload = ()=>{
+        // Set select2 for personal
+        window.$("#personal").select2({
+          dropdownParent: window.$("#personal").parent()
+        });
+      };
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+      document.body.appendChild(select2_script);
+    }else{
       // Set select2 for personal
       window.$("#personal").select2({
         dropdownParent: window.$("#personal").parent()
       });
-    };
-    select2_script.src = "/js/formplugins/select2/select2.bundle.js";
-    document.body.appendChild(select2_script);
+    }
 
   }
 }

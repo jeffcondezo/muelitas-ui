@@ -159,18 +159,28 @@ const AttentionList = props => {
 
   useEffect(() => {
     // Add DataTable rel docs
-    const dt_script = document.createElement("script");
-    dt_script.async = false;
-    dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
-    dt_script.onload = () => {
-      // Run at first execution
+    // JS
+    if(!document.getElementById('dt_script')){
+      const dt_script = document.createElement("script");
+      dt_script.async = false;
+      dt_script.id = "dt_script";
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      dt_script.onload = () => {
+        // Run at first execution
+        getLatestAttentions();
+      };
+      document.body.appendChild(dt_script);
+    }else{
       getLatestAttentions();
-    };
-    document.body.appendChild(dt_script);
-    const dt_style = document.createElement("link");
-    dt_style.rel = "stylesheet";
-    dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-    document.head.appendChild(dt_style);
+    }
+    // CSS
+    if(!document.getElementById('dt_style')){
+      const dt_style = document.createElement("link");
+      dt_style.rel = "stylesheet";
+      dt_style.id = "dt_style";
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
+      document.head.appendChild(dt_style);
+    }
 
     savePageHistory();  // Save page history
     return () => {
@@ -269,7 +279,7 @@ const AttentionList = props => {
     : (
       <div>
         <div className="datatable-container col-12">
-          <table id="last-attentions"></table>
+          <table id="last-attentions" style={{width: "100%"}}></table>
         </div>
       </div>
     )
@@ -517,7 +527,7 @@ const AttentionProcedures = props => {
                         {cFL(proc.procedimiento_data.nombre)}
                     </span>
                     <button className="btn ml-auto"
-                      style={{paddingTop: "0", paddingBottom: "0"}}
+                      style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
                       onClick={()=>modelConfirmDelete(proc.pk)}>
                         <i className="fal fa-trash-alt"></i>
                     </button>
@@ -566,10 +576,6 @@ export default Atencion;
 
 /*
 * roles
+* Prescripción y medicamentos (show)
 * print
-* receta
-* recomendación
-
-+ Link to admision get patient's data
-+ Prescripción y medicamentos (show)
 */

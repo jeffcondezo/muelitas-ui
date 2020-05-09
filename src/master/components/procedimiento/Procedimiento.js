@@ -137,7 +137,3 @@ const AddProcedure = props => {
 }
 
 export default Procedimiento;
-
-/*
-* Add procedure
-*/

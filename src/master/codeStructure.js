@@ -44,3 +44,42 @@ const StandarFetchAndPromise(){
     }
   );
 } /* FIN --- Request to API */
+/* Chain function to save object
+* Return promise to be chained in saveAll function
+*/
+const saveObjectToAPI = _obj => {
+  // Return Promise object
+  return fetch(
+      process.env.REACT_APP_PROJECT_API+`module/endpoint/`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
+        body: JSON.stringify(_obj)  // Data
+      }
+    ).then(
+      undefined,
+      error => handleErrorResponse('server')
+    );
+}
+const saveAll = (_obj_list) => {
+  _obj_list.reduce(
+    (promise_chain, item) => promise_chain.then(saveObjectToAPI(item)),
+    Promise.resolve()
+  ).then(
+    response_obj => {
+      console.log("FINALIZADO");
+      /* Here goes your code */
+    },
+    error => {
+      console.log(error);
+    }
+  );
+}
+
+
+
+// Support functions
+function handleErrorResponse(){}
