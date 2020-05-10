@@ -4,7 +4,7 @@ import {
   UNSAFE_cache_getState,
   savePageHistory,
 } from '../HandleCache';
-import { handleErrorResponse } from '../../functions';
+import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -978,7 +978,7 @@ class Tooth {
     else if(!direction) _teeth = teeth.lower_teeth;
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
-      if(tooth.key===v.start_tooth_key){
+      if(tooth.key==v.start_tooth_key){
         start_index = inx;
         return true;
       }
@@ -1014,7 +1014,7 @@ class Tooth {
     else if(!direction) _teeth = teeth.lower_teeth;
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
-      if(tooth.key===v.start_tooth_key){
+      if(tooth.key==v.start_tooth_key){
         start_index = inx;
         return true;
       }
@@ -1615,6 +1615,8 @@ let inc_paths = [];
 let pvw_ctx;
 
 function Odontograma(props){
+  console.log(props);
+  console.log(odontogram);
   let cita = props.data&&props.data.cita ? props.data.cita : null;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
@@ -1987,6 +1989,10 @@ function Odontograma(props){
     * This is a great security risk if data is not encrypted
     */
 
+    // Reset global odontogram variable
+    console.log("------------ FIRST RENDER");
+    odontogram = {id: -1, type: ""};
+    console.log(odontogram);
     // Get from cache
     let __state__ = cacheAction ? UNSAFE_cache_getState(__cacheName__) : false;
     if(__state__){  // If there is state data in cache
@@ -2092,6 +2098,7 @@ function Odontograma(props){
     result.then(
       response_obj => {  // In case it's ok
         if(response_obj.length===0) return;
+        console.log(response_obj);
         let response = response_obj[0];
         // Change odontogram type
         resetAll(response.tipo==1?"A":"K");
@@ -2107,7 +2114,6 @@ function Odontograma(props){
           odontogram: odontogram,
         });
 
-        // Get incidences in case odontogram exists
         getIncidences();
       },
       error => {  // In case of error
@@ -2120,11 +2126,23 @@ function Odontograma(props){
     // Get teeth incidents' data
     teeth.lower_teeth.map((v) => {
       if(!v.incidents || v.incidents.length===0) return;
-      odontogram_data.incidents.push({diente: v.key, incidents: v.incidents});
+      // Fix support teeth
+      if(v.incidents.filter(i => !i.support).length==0) return;
+      // Save tooth with incidences
+      odontogram_data.incidents.push({
+        diente: v.key,
+        incidents: v.incidents
+      });
     });
     teeth.upper_teeth.map((v) => {
       if(!v.incidents || v.incidents.length===0) return;
-      odontogram_data.incidents.push({diente: v.key, incidents: v.incidents});
+      // Fix support teeth
+      if(v.incidents.filter(i => !i.support).length==0) return;
+      // Save tooth with incidences
+      odontogram_data.incidents.push({
+        diente: v.key,
+        incidents: v.incidents
+      });
     });
     // If there is no incident data
     if(odontogram_data.incidents.length===0){
@@ -2135,7 +2153,6 @@ function Odontograma(props){
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
     odontogram_data.tipo = odontogram_type.current==='A'?"1":"2";  // Conversion to match DB field choices
 
-    console.log(odontogram_data);
     // Create or modify?
     if(odontogram.id===-1){  // Save to API
       odontogram_data.atencion = cita.atencion;
@@ -2206,6 +2223,7 @@ function Odontograma(props){
     }
   }
   function getIncidences(){
+    console.log(odontogram);
     if(odontogram.id===-1) return;  // If it's a new odontogram, exit
     // Get incidents
     let filter = `filtro={"odontograma":"${odontogram.id}"}`;
@@ -2230,7 +2248,6 @@ function Odontograma(props){
     });
     result.then(
       response_obj => {  // In case it's ok
-        console.log(response_obj);
         // DRAW TEETH INCIDENCE FROM DB
         let new_inc_list = insertIncidencesInTeeth(response_obj);
         // Redraw odontogram teeth incidences
@@ -2247,6 +2264,7 @@ function Odontograma(props){
     let new_inc_list = [];
     objs.forEach((inc) => {
       let tooth = getToothByKey(inc.diente);
+
       let inc_obj = {};
       inc_obj.type = parseInt(inc.type);
       inc_obj.value = {};
@@ -2263,6 +2281,10 @@ function Odontograma(props){
         type: parseInt(inc.type),
         inx: tooth.incidents.length-1
       });
+
+      // Fix aside incidences
+      if(incident_type.component_beside.includes(inc_obj.type))
+        addBesideIncidence(tooth, inc_obj);
     });
     return new_inc_list;
   }
@@ -2295,7 +2317,9 @@ function Odontograma(props){
       setIncident(false);
     }
     genTeeth(odontogram_type.current);
-    if(type===odontogram.type) getIncidences();
+    console.log(type, odontogram);
+    if(type==odontogram.type) getIncidences();
+    if(!type) setIncidentList([]);
   }
 
   // Preview
@@ -2420,6 +2444,14 @@ function Odontograma(props){
           </label>
         </div>
       </div>
+      <h5>Paciente: <i>{
+        props.data.cita
+        ? cFL(props.data.cita.paciente_data.nombre_principal)+" "+
+          props.data.cita.paciente_data.ape_paterno.toUpperCase()+" "+
+          props.data.cita.paciente_data.ape_materno.toUpperCase()
+        : ""
+      }</i></h5>
+
       <div style={{whiteSpace: "nowrap"}}>
         <canvas id="odontogram" width="750" height="530" style={{background:"white",verticalAlign:"top"}}></canvas>
         <div style={{display: "inline-block"}}>
@@ -2617,40 +2649,7 @@ function IncidentForm(props){
       _tooth = _teeth[_teeth.length-1];  // Select last tooth
     }else if(select_type===4){
       if(incident_type.component_beside.includes(inc_code)){  // Only two teeth
-        let _sign = _inc_obj.value.orientation==='R'?1:-1;  // Aside tooth is left or right
-        // Get _inx && side tooth
-        let _inx = teeth.upper_teeth.indexOf(_tooth);
-        let _side_tooth;
-        if(_inx!==-1){
-          // Check if it's posible to add aside tooth incident
-          if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
-            alert("No es posible agregar la incidencia en esa dirección")
-            return;
-          }
-          _side_tooth = teeth.upper_teeth[_inx+_sign];
-        }else{
-          _inx = teeth.lower_teeth.indexOf(_tooth);
-          if(_inx!==-1){
-            // Check if it's posible to add aside tooth incident
-            if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
-              alert("No es posible agregar la incidencia en esa dirección")
-              return;
-            }
-            _side_tooth = teeth.lower_teeth[_inx+_sign];
-          }else{
-            alert("Ha ocurrido un error, diente no encontrado")
-            return;
-          }
-        }
-
-        // Fake incident object
-        let _inc_obj_fake = {};
-        _inc_obj_fake.type = inc_code;  // Incident code
-        _inc_obj_fake.value = Object.assign({}, _form_data);
-        _inc_obj_fake.value.orientation = _sign===1?'L':'R';  // Change orientation
-
-        // Add incident to aside tooth with other orientation
-        _side_tooth.incidents.push(_inc_obj_fake);
+        if( !addBesideIncidence(_tooth, _inc_obj) ) return;
       }else if(incident_type.component_range.includes(inc_code)){  // *Range of teeth
         if(inc_paths.length!==1 || !inc_paths[0].key){
           alert("Debe seleccionar el otro extremo del rango")
@@ -2919,11 +2918,52 @@ function IncidentList(props){
   )
 }
 
+function addBesideIncidence(_tooth, _inc){
+  // console.log(_tooth, _inc);
+  let _sign = _inc.value.orientation==='R'?1:-1;  // Aside tooth is left or right
+  // Get _inx && side tooth
+  let _inx = teeth.upper_teeth.indexOf(_tooth);
+  let _side_tooth;
+  if(_inx!==-1){
+    // Check if it's posible to add aside tooth incident
+    if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
+      alert("No es posible agregar la incidencia en esa dirección")
+      return false;
+    }
+    _side_tooth = teeth.upper_teeth[_inx+_sign];
+  }else{
+    _inx = teeth.lower_teeth.indexOf(_tooth);
+    if(_inx!==-1){
+      // Check if it's posible to add aside tooth incident
+      if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
+        alert("No es posible agregar la incidencia en esa dirección")
+        return false;
+      }
+      _side_tooth = teeth.lower_teeth[_inx+_sign];
+    }else{
+      alert("Ha ocurrido un error, diente no encontrado")
+      return false;
+    }
+  }
+
+  // console.log(_sign, _inx, _side_tooth);
+  // Fake incident object
+  let _inc_obj_fake = {};
+  _inc_obj_fake.support = true;  // This incidence is just to support
+  _inc_obj_fake.type = _inc.type;  // Incident code
+  _inc_obj_fake.value = Object.assign({}, _inc.value);  // Incident value
+  _inc_obj_fake.value.orientation = _sign===1?'L':'R';  // Change orientation
+  // console.log(_inc_obj_fake);
+
+  // Add incident to aside tooth with other orientation
+  _side_tooth.incidents.push(_inc_obj_fake);
+
+  return true;
+}
+
 export default Odontograma;
 // eslint-disable-next-line react-hooks/exhaustive-deps
 
 /*
-* Add sweetalert to handle successfull response
-* Fix save/get range teeth incidence
-* Incidences when odontogram type changes
+* Change to sweetalert to handle successfull response
 */
