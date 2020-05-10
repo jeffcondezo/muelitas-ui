@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { handleErrorResponse } from '../../functions';
 import { SelectOptions_Procedimiento } from '../bits';
+import { getPageHistory } from '../HandleCache';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -108,6 +109,9 @@ const AddProcedure = props => {
       document.getElementById('observaciones').value,
     );
   }
+  const getBack = () => {
+    props.redirectTo(getPageHistory().prev_pathname, {cita: props.cita});
+  }
 
   useEffect(() => {
     getProcedures(props.sucursal_pk);
@@ -129,9 +133,15 @@ const AddProcedure = props => {
           <textarea className="form-control" id="observaciones" rows="5"></textarea>
         </div>
 
-        <button className="btn btn-light" onClick={() => handleSubmit()}>
-          Agregar
-        </button>
+        <div className="col-sm d-flex">
+          <button className="btn btn-light" onClick={() => handleSubmit()}>
+            Agregar
+          </button>
+
+          <button className="btn btn-primary ml-auto" onClick={() => getBack()}>
+            Regresar
+          </button>
+        </div>
       </div>
     );
 }

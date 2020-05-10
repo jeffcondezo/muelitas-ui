@@ -149,9 +149,6 @@ function Navigation(props){
           // Redirect to previous page
           props.history.push(__dataInCache__.prev_pathname);
           return;
-        }else{  // If there is no data in cache, save current useRef data
-          if(__debug__==="true") console.log(`%c SAVE ONLY USER:`, 'background: #433; color: orange');
-          UNSAFE_cache_postState(__cacheName__, {user: user});
         }
       }
     }
@@ -163,9 +160,9 @@ function Navigation(props){
   useEffect(() => {
     if(current_sucursal_pk===-1) return;
     UNSAFE_cache_postState(__cacheName__, {
-      ...UNSAFE_cache_getState(__cacheName__),
       current_sucursal_pk: current_sucursal_pk,
-      sucursales: sucursales.current
+      sucursales: sucursales.current,
+      user: user,
     });
   }, [current_sucursal_pk]);
 

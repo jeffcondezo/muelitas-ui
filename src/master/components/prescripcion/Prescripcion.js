@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
 import { handleErrorResponse } from '../../functions';
 import { SelectOptions_Procedimiento } from '../bits';
+import { getPageHistory } from '../HandleCache';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -10,7 +10,6 @@ const __cacheName__ = "_prescription";
 
 const Prescripcion = props => {
   const [medicine_list, setMedicineList] = useState(false);
-  const history = useHistory();
 
   const addMedicineToList = _medc => {
     if(!medicine_list){
@@ -55,7 +54,7 @@ const Prescripcion = props => {
     );
   }
   const getBack = () => {
-    history.goBack();
+    props.redirectTo(getPageHistory().prev_pathname, {cita: props.data.cita});
   }
 
   useEffect(() => {
@@ -168,10 +167,15 @@ const AddMedicine = props => {
         body: JSON.stringify(_item)  // Data
       }
     ).then(
-      response => response.json(),
+      response => {
+        return response.ok
+        ? response.json()
+        : Promise.reject();
+      },
       error => handleErrorResponse('server')
     ).then(
-      response_obj => props.addMedicineToList(response_obj)
+      response_obj => props.addMedicineToList(response_obj),
+      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
     );
   }
   function handleSubmit(){

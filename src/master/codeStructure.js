@@ -50,6 +50,7 @@ const StandarFetchAndPromise(){
 const saveObjectToAPI = _obj => {
   // Return Promise object
   return fetch(
+      // Make request
       process.env.REACT_APP_PROJECT_API+`module/endpoint/`,
       {
         method: 'POST',
@@ -60,8 +61,18 @@ const saveObjectToAPI = _obj => {
         body: JSON.stringify(_obj)  // Data
       }
     ).then(
-      undefined,
+      // Response handling
+      response => {
+        // Handle error response
+        return response.ok
+        ? response.json()  // Continue with json data
+        : Promise.reject();  // Reject to execute next then's error function
+      },
       error => handleErrorResponse('server')
+    ).then(
+      // Handle individual response object
+      response_obj => props.addMedicineToList(response_obj),
+      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
     );
 }
 const saveAll = (_obj_list) => {

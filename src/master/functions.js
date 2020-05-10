@@ -1,6 +1,6 @@
 export function handleErrorResponse(type, ...data){
   let _id = false;
-  if(type==='server'){
+  if(type=='server'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-server')){
       console.error("DOM 'alert-server' NOT FOUND");
@@ -8,7 +8,7 @@ export function handleErrorResponse(type, ...data){
     }
 
     _id = 'alert-server';
-  }else if(type==='permission'){
+  }else if(type=='permission'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-permission')){
       console.error("DOM 'alert-permission' NOT FOUND");
@@ -16,7 +16,7 @@ export function handleErrorResponse(type, ...data){
     }
 
     _id = 'alert-permission';
-  }else if(type==='login'){
+  }else if(type=='login'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-login')){
       console.error("DOM 'alert-login' NOT FOUND");
@@ -24,10 +24,10 @@ export function handleErrorResponse(type, ...data){
     }
 
     _id = 'alert-login';
-  }else if(type==='custom'){
+  }else if(type=='custom'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-custom')){
-      console.error("DOM 'alert-login' NOT FOUND");
+      console.error("DOM 'alert-custom' NOT FOUND");
       return;
     }
 

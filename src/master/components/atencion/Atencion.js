@@ -401,7 +401,7 @@ const PatientAttentionHistory = props => {
   }, []);
 
   return !attention_list
-    ? "loading"
+    ? (<div className="card"><div className="card-body">loading</div></div>)
     : (
       <div className="card col-12" style={{padding: "0px"}}>
         <div className="card-header">
@@ -506,7 +506,7 @@ const AttentionProcedures = props => {
   }, []);
 
   return !procedures
-    ? "loading"
+    ? (<div className="card"><div className="card-body">loading</div></div>)
     : (
       <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
         <div className="card-header">
@@ -576,6 +576,5 @@ export default Atencion;
 
 /*
 * roles
-* Prescripción y medicamentos (show)
 * print
 */

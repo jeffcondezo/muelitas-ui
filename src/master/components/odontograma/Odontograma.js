@@ -2135,6 +2135,7 @@ function Odontograma(props){
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
     odontogram_data.tipo = odontogram_type.current==='A'?"1":"2";  // Conversion to match DB field choices
 
+    console.log(odontogram_data);
     // Create or modify?
     if(odontogram.id===-1){  // Save to API
       odontogram_data.atencion = cita.atencion;
@@ -2164,6 +2165,7 @@ function Odontograma(props){
       result.then(
         response_obj => {  // In case it's ok
           odontogram.id = response_obj.id;  // Save odontogram id
+          handleErrorResponse('custom', "Exito", "Odontograma guardado exitosamente")
         },
         error => {  // In case of error
           console.log("WRONG!", error);
@@ -2195,6 +2197,7 @@ function Odontograma(props){
       result.then(
         response_obj => {  // In case it's ok
           console.log("OKEY", response_obj);
+          handleErrorResponse('custom', "Exito", "Odontograma actualizado exitosamente")
         },
         error => {  // In case of error
           console.log("WRONG!", error);
@@ -2227,6 +2230,7 @@ function Odontograma(props){
     });
     result.then(
       response_obj => {  // In case it's ok
+        console.log(response_obj);
         // DRAW TEETH INCIDENCE FROM DB
         let new_inc_list = insertIncidencesInTeeth(response_obj);
         // Redraw odontogram teeth incidences
@@ -2394,6 +2398,10 @@ function Odontograma(props){
 
   return (
     <>
+      {/* ALERTS */}
+      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+      </div>
       {/* HEADER */}
       <div className="subheader">
         <h1 className="subheader-title">
@@ -2463,14 +2471,13 @@ function IncidentForm(props){
     select_type = 3;
     // Preview canvas
     elements.push(
-      <>
-      <br/>
-      <canvas key="preview-canvas" id="preview"
+      <div key="preview-canvas">
+      <canvas id="preview"
         width={(settings.width*1.3+preview_margin*2)*preview_scale}
         height={(settings.height+preview_margin*2)*preview_scale}
         style={{background:`${settings.toothhovercolor}`,verticalAlign:"top"}}>
       </canvas>
-      </>
+      </div>
     );
     dom_select_info = [<i key="inc_title">Seleccione los bordes de la incidencia</i>];
   }
@@ -2846,8 +2853,29 @@ function IncidentList(props){
   // Delete incidence
   function deleteIncidence(inx){
     let _fake_list = props.inc_list;
-    // Delete incidence from its tooth
+
+    // Get tooth from incidence
     let _tooth = props.getToothByKey(_fake_list[inx].diente);
+    // Fix beside teeth incidence before delete incidence
+    if(incident_type.component_beside.includes(_fake_list[inx].type)){
+      // Direction of aside tooth
+      let _direction =
+        (_tooth.incidents[_fake_list[inx].inx].value.orientation==="R")
+        ? 1 : -1;
+      // Get aside tooth
+      let _tooth2 = (_tooth.orientation=="U"?teeth.upper_teeth:teeth.lower_teeth)[
+        (_tooth.orientation=="U"?teeth.upper_teeth:teeth.lower_teeth)
+        .indexOf(_tooth)+_direction
+      ];
+      // Remove incidence from aside tooth
+      _tooth2.incidents = _tooth2.incidents.filter(i => {
+        return !(
+          i.type==_fake_list[inx].type ||
+          i.value.orientation=="R"?1:-1 != _direction
+        );
+      });
+    }
+    // Delete incidence from its tooth
     _tooth.incidents.splice(_fake_list[inx].inx, 1);
     // Delete incidence from list
     let a = _fake_list.splice(inx, 1);
@@ -2879,7 +2907,6 @@ function IncidentList(props){
     });
   }, []);
 
-  // style={{width:"280px", height: "505px"}}
   return (
     <div>
       <label className="form-label">Incidencias en el odontograma</label><br/>
@@ -2894,3 +2921,9 @@ function IncidentList(props){
 
 export default Odontograma;
 // eslint-disable-next-line react-hooks/exhaustive-deps
+
+/*
+* Add sweetalert to handle successfull response
+* Fix save/get range teeth incidence
+* Incidences when odontogram type changes
+*/
