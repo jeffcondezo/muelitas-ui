@@ -4,7 +4,7 @@ import {
   UNSAFE_cache_getState,
   savePageHistory,
 } from '../HandleCache';
-import { Link, useHistory } from "react-router-dom";
+import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { Icon } from '../bits';
 
@@ -14,8 +14,6 @@ const __cacheName__ = "_attention";
 
 
 function Atencion(props){
-  const [cita, setCita] = useState(props.data &&  props.data.cita || false);
-
   return(
   <>
     {/* ALERTS */}
@@ -33,14 +31,27 @@ function Atencion(props){
       </h1>
     </div>
 
-    {cita
-      ? <AttentionDetail sucursal_pk={props.sucursal_pk} cita={cita} redirectTo={props.redirectTo} />
-      : <AttentionList sucursal_pk={props.sucursal_pk} setCita={setCita} />}
+
+    <Switch>
+      <Route exact path="/nav/atencion">
+        <AttentionList sucursal_pk={props.sucursal_pk} data={props.data} redirectTo={props.redirectTo} />
+      </Route>
+      <Route exact path="/nav/atencion/detalle">
+        {!props.data.cita
+          ? <Redirect to="/nav/atencion" />
+          : <AttentionDetail sucursal_pk={props.sucursal_pk} cita={props.data.cita} redirectTo={props.redirectTo} />
+        }
+      </Route>
+      <Route>
+        <Redirect to="/nav/atencion" />
+      </Route>
+    </Switch>
   </>
   )
 }
 
 const AttentionDetail = (props) => {
+  console.log(props);
   const getAttentionDetail = (_atencion_id) => {
     /* Promise as a component
     * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
@@ -80,6 +91,10 @@ const AttentionDetail = (props) => {
     props.redirectTo(url, {cita: props.cita});
   }
 
+  useEffect(() => {
+    savePageHistory();  // Save page history
+  }, []);
+
   return (
     <div className="row">
       <div className="col-lg-6" style={{display: "inline-block"}}>
@@ -95,7 +110,10 @@ const AttentionDetail = (props) => {
           <Links redirectTo={redirect} />
         </div>
         <div className="panel">
-          <PatientAttentionHistory sucursal_pk={props.sucursal_pk} cita={props.cita} />
+          <PatientAttentionHistory
+            sucursal_pk={props.sucursal_pk}
+            cita={props.cita}
+            redirectTo={props.redirectTo} />
         </div>
       </div>
     </div>
@@ -108,10 +126,8 @@ const AttentionList = props => {
 
   function getLatestAttentions(_date=false, _last_n=15, _sucursal_pk=props.sucursal_pk){
     // Get today's finished citas
-    if(!_date){
-      let _tmp = new Date();
-      _date = _tmp.getFullYear()+"-"+(_tmp.getMonth()+1)+"-"+_tmp.getDate();
-    }else searchDate.current = _date;
+    if(!_date) _date = (new Date().toDateInputValue());
+    else searchDate.current = _date;
 
     /* Send all values as string */
     let filter = `filtro={"sucursal":"${_sucursal_pk}", "fecha": "${_date}"}`;
@@ -209,6 +225,12 @@ const AttentionList = props => {
         orderable: false,
         width: "1px",
         defaultContent: "<button class='select-attention btn btn-light btn-pills waves-effect'>Seleccionar</button>",
+        createdCell: (cell, data, rowData) => {
+          // Add click listener to button (children[0])
+          cell.children[0].onclick = () => {
+            props.redirectTo("/nav/atencion/detalle", {cita: rowData});
+          }
+        }
       }, {
         // Paciente
         targets: 2,
@@ -260,12 +282,6 @@ const AttentionList = props => {
   useEffect(() => {
     if(!datatable) return;
 
-    document.querySelectorAll("#last-attentions tbody tr td button.select-attention").forEach(el => {
-      el.onclick = () => {
-        var data = datatable.row(el.parentElement.parentElement).data();
-        props.setCita(data);
-      }
-    });
     // Change search type && set default value today
     let _input = document.querySelector('#last-attentions_filter input[type=search]');
     _input.type = "date";
@@ -418,7 +434,13 @@ const PatientAttentionHistory = props => {
           )}) : "No se encontraron otras atenciones"}
         </div>
         <div className="card-footer">
-          Para más información revise el apartado de atenciones de paciente en <Link to="/nav/admision/"><b>Admision</b></Link>
+          Para más información revise el apartado de atenciones de paciente en&nbsp;
+          <span style={{cursor: "pointer"}}
+            onClick={()=>{
+              props.redirectTo("/nav/admision/detalle", {patient: props.cita.paciente_data})
+            }}>
+              <b>Admision</b>
+          </span>
         </div>
       </div>
     );
@@ -575,6 +597,10 @@ const AlertModal = props => {
 export default Atencion;
 
 /*
-* roles
-* print
+* roles (admin, medic)
+
+* prescription (read only) (permission)
+* odontogram (read only) (permission)
+
+* print as file
 */

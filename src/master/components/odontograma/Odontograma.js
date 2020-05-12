@@ -675,7 +675,7 @@ class Tooth {
   }
   inc_PDExtruida(c, v){  // 5.3.12  Pieza dentaria extruida
     let y = this.y + settings.height+30;
-    let x = this.x + settings.width/2;
+    let x = this.x + (this.body===2?1.3:1)*settings.width/2;
     let height = 25;
     if(this.orientation==='D'){
       height *= -1;
@@ -696,7 +696,7 @@ class Tooth {
   }
   inc_PDIntruida(c, v){  // 5.3.13  Pieza dentaria intruida
     let y = this.y + settings.height+5;
-    let x = this.x + settings.width/2;
+    let x = this.x + (this.body===2?1.3:1)*settings.width/2;
     let height = 25;
     if(this.orientation==='D'){
       height *= -1;

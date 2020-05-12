@@ -69,6 +69,16 @@ export function Icon(props){
           </svg>
       </a>
     ); break;
+    case "add": el.push(  // Nuevo
+      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
+        title="Receta" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px"}}>
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pills" className="svg-inline--fa fa-pills fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style={{width: "100%"}}>
+            +
+          </svg>
+      </a>
+    ); break;
     default: break;
   }
 
