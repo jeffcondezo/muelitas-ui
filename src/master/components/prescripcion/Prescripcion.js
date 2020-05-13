@@ -92,7 +92,7 @@ const Prescripcion = props => {
             </div>
           </div>
 
-          <ListAddedMedicine medicine_list={medicine_list} removeMedicineFromList={removeMedicineFromList} />
+          <ListSavedMedicine medicine_list={medicine_list} removeMedicineFromList={removeMedicineFromList} />
 
         </div>
         <div className="position-absolute pos-bottom">
@@ -291,7 +291,8 @@ const AddMedicine = props => {
     </div>
   );
 }
-const ListAddedMedicine = props => {
+export const ListSavedMedicine = props => {
+  // Receive {medicine_list, removeMedicineFromList}
 
   function deleteMedicine(_medicine_pk){
     // Add procedure to cita's attention

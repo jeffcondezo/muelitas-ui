@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { savePageHistory } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import { ListSavedMedicine } from '../prescripcion/Prescripcion';
 import { Icon } from '../bits';
 
 // Constant
@@ -249,13 +250,13 @@ const LastAttendedPatients = props => {
   const [lastPatients, setLastPatients] = useState(false);
   const max_items = 5;
 
-  function getLastAttendedPatients(_sucursal_pk=props.sucursal_pk, ndays=4){
+  function getLastAttendedPatients(_sucursal_pk=props.sucursal_pk, ndays=3){
     // Get lastest attended patients within the last four days
     let _day = new Date();
     _day.setDate(_day.getDate()-ndays)
     _day = _day.toDateInputValue();
 
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "fecha_desde":"${_day}"}`;
+    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha_desde":"${_day}", "sort":"true"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
     url = url + '?' + filter;
     // Generate promise
@@ -277,7 +278,7 @@ const LastAttendedPatients = props => {
       response_obj => {
         let _fake_obj = [];
         let _tmp1 = [];
-        response_obj.map(cita => {
+        response_obj.map(cita => {  // Select only different patients
           if(_tmp1.includes(cita.paciente_data.pk)) return;  // Abort
           else _tmp1.push(cita.paciente_data.pk);  // Save patient's pk
 
@@ -370,6 +371,11 @@ const AdmisionDetail = props => {
             patient={props.patient}
             redirectTo={props.redirectTo} />
         </div>
+        <div className="panel">
+          <PatientPrescription
+            patient={props.patient}
+            redirectTo={props.redirectTo} />
+        </div>
       </div>
     </div>
   );
@@ -396,8 +402,62 @@ const PatientData = props => {
     </div>
   );
 }
-const PatientPrescription = props => { // Left
-  return "Current prescription";
+const PatientPrescription = props => {
+  // Receive {patient}
+  const [prescription_list, setPrescriptionList] = useState(false);
+
+  const getPrescriptionMedicine = (_patient_pk) => {
+    // Get patient's prescription
+    let filter = `filtro="paciente":"${_patient_pk}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/`;
+    url = url + '?' + filter;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        console.log(response_obj);
+
+        setPrescriptionList(response_obj);
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  useEffect(() => {
+    getPrescriptionMedicine(props.patient.pk)
+  }, []);
+
+  // ListSavedMedicine receive {medicine_list, removeMedicineFromList}
+  return !prescription_list
+    ? "loading"
+    : (
+      <div className="card col-12" style={{padding: "0px"}}>
+        <div className="card-header">
+          <div className="card-title">
+            Prescripciones actuales del paciente
+          </div>
+        </div>
+        <div className="card-body">
+          <ListSavedMedicine
+            removeMedicineFromList={()=>{}}
+            medicine_list={prescription_list} />
+        </div>
+      </div>
+    )
 }
 const LinksDetail = props => {
   return (

@@ -11,14 +11,12 @@ ReactDOM.render(<Master />, document.getElementById('root'));
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 /* TO DO:
-* Add patient data to Odontogram
 * Add week date range when getting data from api in calendary (cita)
-* When Odontogram is not accessed by redirect, show list of today's citas
+* Add 'tips' messages to show usefull functionalities
+* Actions icons (odontogram, procedure) in cita's detail in Cita should be read only
+and only appear when procedure or odontogram are already done
 
 * Encrypt data in localStorage
-* Separate duplicated components into reusable ones
-* Actions icons (odontogram, procedure) in cita's detail in Cita should be read only
-  and only appear when procedure or odontogram are already done
 */
 
 /* Additional notes:
