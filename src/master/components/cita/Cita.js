@@ -359,12 +359,12 @@ class Cita extends React.Component {
     // Other values
     document.getElementById("pac_pk").value = "";
     document.getElementById("pac_dni").value = "";
-    document.getElementById("date").value = "";
+    document.getElementById("date").value = new Date().toDateInputValue();
     document.getElementById("hour").value = "08";
     document.getElementById("minute").value = "00";
     document.getElementById("duracion").value = "15";
     document.getElementById("programado").value = '1';
-    window.$("#personal").empty().trigger("change");  // Set personal to empty
+    window.$("#personal").val([]).trigger("change");  // Set personal to empty
     // Paciente
     document.getElementById("pac_nom_pri").disabled = false;
     document.getElementById("pac_nom_pri").value = "";
@@ -866,6 +866,7 @@ function FilterPersonal(props){
 }
 function SelectPersonal(props){
   const personal = [];  // Declare variable to use
+  console.log(props);
   if(props.state.personal!==false){
     for(let p of props.state.personal){  // Iterate over all sucursales this user has
       personal.push(

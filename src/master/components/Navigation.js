@@ -21,6 +21,7 @@ import Atencion from './atencion/Atencion';
 import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
 import Prescripcion from './prescripcion/Prescripcion';
+import HistoriaClinica from './historia/Historia';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -243,6 +244,14 @@ function SelectComponent(props){  // CONTENT
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Prescripcion
+                sucursal_pk={props.current_sucursal_pk}
+                data={_redirect_obj} redirectTo={props.redirectTo} />
+          }
+        </Route>
+        <Route path="/nav/historiaclinica">
+          {!_redirect_obj
+            ? <Redirect to="/nav/home" />
+            : <HistoriaClinica
                 sucursal_pk={props.current_sucursal_pk}
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }

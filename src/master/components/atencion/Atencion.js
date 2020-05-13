@@ -597,6 +597,7 @@ const AlertModal = props => {
 export default Atencion;
 
 /*
+* Fill attention.detail when attention is over (clinic history)
 * roles (admin, medic)
 
 * prescription (read only) (permission)

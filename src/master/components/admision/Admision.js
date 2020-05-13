@@ -33,6 +33,11 @@ function Admision(props){
           sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
+      <Route exact path="/nav/admision/nuevo">
+        <RegisterPatient
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo} />
+      </Route>
       <Route exact path="/nav/admision/detalle">
         {!props.data.patient
           ? <Redirect to="/nav/admision" />
@@ -40,6 +45,15 @@ function Admision(props){
               sucursal_pk={props.sucursal_pk}
               redirectTo={props.redirectTo}
               patient={props.data.patient} />
+        }
+      </Route>
+      <Route exact path="/nav/admision/editar">
+        {!props.data.patient
+          ? <Redirect to="/nav/admision" />
+          : <EditPatient
+              patient={props.patient}
+              sucursal_pk={props.sucursal_pk}
+              redirectTo={props.redirectTo} />
         }
       </Route>
       <Route>
@@ -50,6 +64,7 @@ function Admision(props){
   )
 }
 
+// General
 const AdmisionHome = props => {
   console.log("AdmisionHome", props);
   useEffect(() => {
@@ -65,7 +80,7 @@ const AdmisionHome = props => {
       </div>
       <div className="col-lg-4">
         <div className="panel">
-          <Links />
+          <LinksHome redirectTo={props.redirectTo} />
         </div>
         <div className="panel">
           <LastAttendedPatients sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
@@ -232,6 +247,7 @@ const SearchPatient = props => {
 }
 const LastAttendedPatients = props => {
   const [lastPatients, setLastPatients] = useState(false);
+  const max_items = 5;
 
   function getLastAttendedPatients(_sucursal_pk=props.sucursal_pk, ndays=4){
     // Get lastest attended patients within the last four days
@@ -289,17 +305,17 @@ const LastAttendedPatients = props => {
             Pacientes atendidos en los últimos días
           </div>
         </div>
-        <div id="proc-list" className={lastPatients.length==0?"card-body":""}>
+        <div id="pat-list" className={lastPatients.length==0?"card-body":""}>
           {lastPatients.length==0
             ? "No hay pacientes atendidos ultimamente"
-            : lastPatients.map(pat => (
-              <div key={"proc-"+pat.pk}>
+            : lastPatients.map((pat, inx) => ( inx>max_items-1?"":
+              <div key={"pat-"+pat.pk}>
                 <li className="list-group-item d-flex" id={pat.pk}
+                  onClick={()=>{props.redirectTo("/nav/admision/detalle", {patient: pat})}}
                   data-toggle="collapse" data-target={"#pat-desc-"+pat.pk}
                   aria-expanded="true" aria-controls={"pat-desc-"+pat.pk}
                   style={{cursor: "pointer", borderBottom: "0"}}>
                     <span
-                      onClick={()=>{props.redirectTo("/nav/admision/detalle", {patient: pat})}}
                       style={{fontSize: "1.2em"}}>
                         {cFL(pat.nombre_principal)
                           +" "+(pat.nombre_secundario?" "+cFL(pat.nombre_secundario):"")
@@ -314,7 +330,7 @@ const LastAttendedPatients = props => {
       </div>
     );
 }
-const Links = props => {
+const LinksHome = props => {
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -323,17 +339,15 @@ const Links = props => {
         </div>
       </div>
       <div className="card-body">
-        <div className="card-title">
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="add" onClick={() => props.redirectTo("/nav/admision/nuevo")} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Nuevo</span>
-          </div>
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="new-patient" onClick={() => props.redirectTo("/nav/admision/nuevo")} />
+          <span style={{fontSize: "0.9rem"}}>Nuevo</span>
         </div>
       </div>
     </div>
   );
 }
-
+// By patient
 const AdmisionDetail = props => {
   console.log("AdmisionDetail", props);
   useEffect(() => {
@@ -352,12 +366,8 @@ const AdmisionDetail = props => {
       </div>
       <div className="col-lg-6">
         <div className="panel">
-          <Links />
-        </div>
-        <div className="panel">
-          <EditData
+          <LinksDetail
             patient={props.patient}
-            sucursal_pk={props.sucursal_pk}
             redirectTo={props.redirectTo} />
         </div>
       </div>
@@ -374,35 +384,65 @@ const PatientData = props => {
         </div>
       </div>
       <div className="card-body">
-        <h6>
-          {cFL(props.patient.ape_paterno)+" "+cFL(props.patient.ape_materno)
-            +", "+cFL(props.patient.nombre_principal)+
-            (props.patient.nombre_secundario?" "+cFL(props.patient.nombre_secundario):"")}&nbsp;
-          <code>{props.patient.dni}</code>
-        </h6>
+        <h5>Nombres: <span style={{color:"black"}}>{cFL(props.patient.nombre_principal)+
+          (props.patient.nombre_secundario?" "+
+          cFL(props.patient.nombre_secundario):"")}</span>
+        </h5>
+        <h5>Apellidos: <span style={{color:"black"}}>{cFL(props.patient.ape_paterno)+" "+
+          cFL(props.patient.ape_materno)}</span>
+        </h5>
+        <h5>DNI: <span style={{color:"black"}}>{props.patient.dni}</span></h5>
       </div>
     </div>
   );
 }
-const EditData = props => {
-  return "EDITAR DATOS";
+const PatientPrescription = props => { // Left
+  return "Current prescription";
 }
-const RegisterPatient = props => {
+const LinksDetail = props => {
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Acciones
+        </div>
+      </div>
+      <div className="card-body">
+        <div className="card-title">
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="edit-patient"
+              onClick={() => props.redirectTo("/nav/admision/editar", {patient: props.patient})} />
+            <span style={{fontSize: "0.9rem"}}>Editar</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="clinic-history"
+              onClick={() => props.redirectTo("/nav/historiaclinica", {patient: props.patient})} />
+            <span style={{fontSize: "0.9rem"}}>Historia</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const RegisterPatient = props => {  // Left
   return "Registrar paciente";
 }
-const ClinicHistory = props => {
-  return "Historia Clinica";
+const EditPatient = props => {  // Left
+  return "EDITAR DATOS";
 }
 
 export default Admision;
 
 /*
+Clinic history (link)
+
 * Show patient data (
-  * Clinic history (link)
-  * Procedimientos realizados (add|link)
   * Show current prescription
   * Show attention history
 )
 * Update patient data
 * Register patient
+
+* Add cita
 */
