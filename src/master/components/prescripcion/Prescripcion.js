@@ -81,10 +81,10 @@ const Prescripcion = props => {
     </div>
 
     <div className="row">
-      <div className="col-lg-8" style={{display: "inline-block", marginBottom: "30px", height: "425px"}}>
+      <div className="col-lg-8">
         <AddMedicine cita={props.data.cita} sucursal_pk={props.sucursal_pk} addMedicineToList={addMedicineToList} />
       </div>
-      <div className="col-lg-4 position-relative" style={{height: "425px"}}>
+      <div className="col-lg-4 position-relative">
         <div className="card">
           <div className="card-header">
             <div className="card-title">
@@ -191,13 +191,11 @@ const AddMedicine = props => {
       handleErrorResponse("custom", "Error", "Periodo no especificado");
       return;
     }
-    /*
-    _tmp1 = document.getElementById("indications");
+    _tmp1 = document.getElementById("end-date");
     if(!_tmp1 || _tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "El paciente necesita saber las indicaciones de la medicina");
+      handleErrorResponse("custom", "Error", "Debe indicar una fecha fin");
       return;
     }
-    */
 
     let _tmp = {
       atencion: props.cita.atencion,
@@ -207,6 +205,7 @@ const AddMedicine = props => {
       periodo: document.getElementById('period').value,
       indicaciones: document.getElementById('indications').value,
       contraindicaciones: document.getElementById('contraindications').value,
+      fecha_fin: document.getElementById('end-date').value,
     }
 
     saveMedicineItem(_tmp);
@@ -280,6 +279,11 @@ const AddMedicine = props => {
         <label className="form-label" htmlFor="contraindications">Contraindicaciones</label>
         <textarea className="form-control" id="contraindications" rows="2"></textarea>
       </div>
+      {/* Contraindicaciones */}
+      <div className="col-sm" style={{paddingBottom: "5px"}}>
+        <label className="form-label" htmlFor="end-date">Fecha fin</label>
+        <input className="form-control" id="end-date" type="date"></input>
+      </div>
 
       <br/>
       {/* Agregar button */}
@@ -293,7 +297,6 @@ const AddMedicine = props => {
 }
 export const ListSavedMedicine = props => {
   // Receive {medicine_list, removeMedicineFromList}
-
   function deleteMedicine(_medicine_pk){
     // Add procedure to cita's attention
     let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/${_medicine_pk}/`;
@@ -319,6 +322,7 @@ export const ListSavedMedicine = props => {
   }
 
   useEffect(() => {
+    /*
     if(window.$) window.$('#slimscroll').slimScroll({
       height: "305",
       size: "4px",
@@ -326,8 +330,8 @@ export const ListSavedMedicine = props => {
       distance: "4px",
       railcolor: "#fafafa",
     });
+    */
   }, []);
-
 
   // Generate elements from medicine_list
   if(!props.medicine_list || !props.medicine_list.length || props.medicine_list.length==0){
@@ -352,14 +356,15 @@ export const ListSavedMedicine = props => {
       <div id={"medc-desc-"+inx} className="collapse" aria-labelledby={inx}
         style={{paddingLeft: "1.8rem", paddingTop: "0", paddingBottom: ".75rem"}}>
           <span>
-            {medc.cantidad} {medc.periodo} {medc.indicaciones}
+            {medc.cantidad} {medc.periodo} {medc.indicaciones} <br/>
+            Hasta el {medc.fecha_fin}
           </span>
       </div>
     </div>
   )});
 
   return (
-    <div id="slimscroll" className="custom-scroll" style={{}}>
+    <div id="slimscroll" className="" style={{}}>
       {el}
     </div>
   );

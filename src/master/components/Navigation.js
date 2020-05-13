@@ -226,13 +226,13 @@ function SelectComponent(props){  // CONTENT
         </Route>
 
         {/* Components accessed only by redirect */}
-        <Route path="/nav/odontograma">
+        <Route exact path="/nav/odontograma">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Odontograma data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
-        <Route path="/nav/procedimiento">
+        <Route exact path="/nav/procedimiento">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Procedimiento
@@ -240,7 +240,7 @@ function SelectComponent(props){  // CONTENT
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
-        <Route path="/nav/prescripcion">
+        <Route exact path="/nav/prescripcion">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Prescripcion
@@ -248,7 +248,7 @@ function SelectComponent(props){  // CONTENT
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
-        <Route path="/nav/historiaclinica">
+        <Route exact path="/nav/historiaclinica">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <HistoriaClinica

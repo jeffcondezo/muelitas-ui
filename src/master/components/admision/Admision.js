@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { savePageHistory } from '../HandleCache';
+import { savePageHistory, getPageHistory } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
@@ -19,6 +19,9 @@ function Admision(props){
     </div>
     <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
         <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
+    </div>
+    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
     </div>
 
     {/* HEADER */}
@@ -52,9 +55,9 @@ function Admision(props){
         {!props.data.patient
           ? <Redirect to="/nav/admision" />
           : <EditPatient
-              patient={props.patient}
               sucursal_pk={props.sucursal_pk}
-              redirectTo={props.redirectTo} />
+              redirectTo={props.redirectTo}
+              patient={props.data.patient} />
         }
       </Route>
       <Route>
@@ -67,7 +70,6 @@ function Admision(props){
 
 // General
 const AdmisionHome = props => {
-  console.log("AdmisionHome", props);
   useEffect(() => {
     savePageHistory();
   }, []);
@@ -166,7 +168,6 @@ const SearchPatient = props => {
         {title: "Nombre", data: null},
         {title: "Apellidos", data: null},
         {title: "DNI", data: 'dni'},
-        {title: "Ultima atencion", data: null},
         {title: "", data: null},
       ],
       columnDefs: [{
@@ -194,12 +195,6 @@ const SearchPatient = props => {
         render: (data, type, row) => (
           cFL(row.ape_paterno)+" "+
           cFL(row.ape_materno)
-        ),
-      }, {
-        // Última atención
-        targets: 3,
-        render: (data, type, row) => (
-          row.dni
         ),
       }],
       pageLength: 8,
@@ -350,7 +345,6 @@ const LinksHome = props => {
 }
 // By patient
 const AdmisionDetail = props => {
-  console.log("AdmisionDetail", props);
   useEffect(() => {
     savePageHistory();
   }, []);
@@ -406,9 +400,15 @@ const PatientPrescription = props => {
   // Receive {patient}
   const [prescription_list, setPrescriptionList] = useState(false);
 
+  const removeMedicineFromList = _medc_pk => {
+    // Remove medicine by index in array
+    let _tmp = prescription_list.filter(i => i.pk!=_medc_pk);
+
+    setPrescriptionList(_tmp);
+  }
   const getPrescriptionMedicine = (_patient_pk) => {
     // Get patient's prescription
-    let filter = `filtro="paciente":"${_patient_pk}"}`;
+    let filter = `filtro={"paciente":"${_patient_pk}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/`;
     url = url + '?' + filter;
     let result = new Promise((resolve, reject) => {
@@ -427,8 +427,6 @@ const PatientPrescription = props => {
     });
     result.then(
       response_obj => {
-        console.log(response_obj);
-
         setPrescriptionList(response_obj);
       },
       error => {
@@ -451,11 +449,9 @@ const PatientPrescription = props => {
             Prescripciones actuales del paciente
           </div>
         </div>
-        <div className="card-body">
-          <ListSavedMedicine
-            removeMedicineFromList={()=>{}}
+        <ListSavedMedicine
+            removeMedicineFromList={removeMedicineFromList}
             medicine_list={prescription_list} />
-        </div>
       </div>
     )
 }
@@ -485,24 +481,234 @@ const LinksDetail = props => {
   );
 }
 
+const EditPatient = props => {
+  // Receive {patient, redirectTo}
+  const [ubication, setUbication] = useState([]);
+
+  function getUbicacion(){
+    return;  // Abort execution (API not ready)
+    let url = process.env.REACT_APP_PROJECT_API+`maestro/ubicacion/`;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),
+        },
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        console.log(response_obj);
+        // setUbication(response_obj);
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  function saveEdit(_data, _patient_pk){
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${_patient_pk}/`;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        method: 'PUT',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(_data)
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  function handleSubmit(){
+    // Values validation
+    let _tmp1;
+    _tmp1 = document.getElementById("name-pric");
+    if(!_tmp1 || _tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Nombre principal no especificado");
+      return;
+    }
+    _tmp1 = document.getElementById("name-sec");
+    if(!_tmp1 || _tmp1.value.trim().length==0){
+      if(!isNaN(parseInt(_tmp1))){
+        handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+        return;
+      }
+    }
+    _tmp1 = document.getElementById("ape-p");
+    if(!_tmp1 || _tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
+      return;
+    }
+    _tmp1 = document.getElementById("ape-m");
+    if(!_tmp1 || _tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido materno no especificado");
+      return;
+    }
+    // Continue validation /**/
+
+    let _tmp = {
+      nombre_principal: document.getElementById('name-pric').value,
+      nombre_secundario: document.getElementById('name-sec').value,
+      ape_paterno: document.getElementById('ape-p').value,
+      ape_materno: document.getElementById('ape-m').value,
+      dni: document.getElementById('dni').value,
+      sexo: document.getElementById('sexo').value,  // Handle select
+      fecha_nacimiento: document.getElementById('born-date').value,
+      celular: document.getElementById('phone').value,
+      direccion: document.getElementById('address').value,
+      procedencia: document.getElementById('select_provenance').value,  // Handle select
+      residencia: document.getElementById('select_residence').value,  // Handle select
+    }
+
+    saveEdit(_tmp, props.patient.pk);
+  }
+  const getBack = () => {
+    props.redirectTo(getPageHistory().prev_pathname, {patient: props.patient});
+  }
+
+  useEffect(() => {
+    // Select2 for medicine choose in Prescripcion
+    // CSS
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link");
+      select2_link.rel = "stylesheet";
+      select2_link.id = "select2_link";
+      select2_link.media = "screen, print";
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+      document.head.appendChild(select2_link);
+    }
+    // JS
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script");
+      select2_script.async = false;
+      select2_script.id = "select2_script";
+      select2_script.onload = () => {
+        // Continue execution here to avoid file not load error
+        getUbicacion();
+      }
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+      document.body.appendChild(select2_script);
+    }else{
+      getUbicacion();
+    }
+
+    savePageHistory();
+  }, []);
+  useEffect(() => {
+    if(ubication.length==0) return;
+
+    // Active select2
+  }, [ubication]);
+
+  return (
+      <div className="form-group col-md-12">  {/* Form */}
+        <div className="col-sm">
+          <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
+          <input type="text" id="name-pric" className="form-control" placeholder="Nombre Principal" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
+          <input type="text" id="name-sec" className="form-control" placeholder="Nombre Secundario" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="ape-p">Apellido parterno: </label>
+          <input type="text" id="ape-p" className="form-control" placeholder="Apellido Paterno" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
+          <input type="text" id="ape-m" className="form-control" placeholder="Apellido Materno" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="dni">DNI: </label>
+          <input type="text" id="dni" className="form-control" placeholder="DNI" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="sexo">Sexo: </label>
+          <select id="sexo" className="custom-select form-control">
+            <option value="1">Masculino</option>
+            <option value="2">Femenino</option>
+          </select>
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
+          <input type="date" id="born-date" className="form-control" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="phone">Celular: </label>
+          <input type="text" id="phone" className="form-control" placeholder="Número de celular" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="address">Dirección: </label>
+          <input type="text" id="address" className="form-control" placeholder="Dirección" />
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="select_provenance">Procedencia: </label>
+          {!ubication
+            ? "loading"
+            : (
+              <select id="select_provenance" className="custom-select form-control custom-select-lg">
+              </select>
+            )}
+        </div>
+        <div className="col-sm">
+          <label className="form-label" htmlFor="select_residence">Residencia: </label>
+          {!ubication
+            ? "loading"
+            : (
+              <select id="select_residence" className="custom-select form-control custom-select-lg">
+              </select>
+            )}
+        </div>
+
+        <div className="col-sm d-flex">
+          <button className="btn btn-light" onClick={() => handleSubmit()}>
+            Guardar
+          </button>
+
+          <button className="btn btn-primary ml-auto" onClick={() => getBack()}>
+            Regresar
+          </button>
+        </div>
+      </div>
+  );
+}
 const RegisterPatient = props => {  // Left
   return "Registrar paciente";
-}
-const EditPatient = props => {  // Left
-  return "EDITAR DATOS";
 }
 
 export default Admision;
 
 /*
 Clinic history (link)
+Show current prescription
 
 * Show patient data (
-  * Show current prescription
   * Show attention history
+  * Update patient data
 )
-* Update patient data
 * Register patient
 
 * Add cita
+* Deudas (optional)
 */

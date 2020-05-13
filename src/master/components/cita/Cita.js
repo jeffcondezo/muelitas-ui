@@ -866,7 +866,6 @@ function FilterPersonal(props){
 }
 function SelectPersonal(props){
   const personal = [];  // Declare variable to use
-  console.log(props);
   if(props.state.personal!==false){
     for(let p of props.state.personal){  // Iterate over all sucursales this user has
       personal.push(

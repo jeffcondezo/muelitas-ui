@@ -99,7 +99,7 @@ const AttentionDetail = (props) => {
     <div className="row">
       <div className="col-lg-6" style={{display: "inline-block"}}>
         <div className="panel">
-          <PatientData cita={props.cita} />
+          <CitaData cita={props.cita} />
         </div>
         <div className="panel">
           <AttentionProcedures cita={props.cita} />
@@ -333,16 +333,17 @@ const Links = props => {
     </div>
   );
 }
-const PatientData = props => {
+const CitaData = props => {
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
         <div className="card-title">
-          Paciente
+          Cita
         </div>
       </div>
       <div className="card-body">
         <h6>
+          <b>Paciente: </b>
           {cFL(props.cita.paciente_data.ape_paterno)+" "+cFL(props.cita.paciente_data.ape_materno)
             +", "+cFL(props.cita.paciente_data.nombre_principal)+
             (props.cita.paciente_data.nombre_secundario?" "+cFL(props.cita.paciente_data.nombre_secundario):"")}&nbsp;
@@ -597,6 +598,7 @@ const AlertModal = props => {
 export default Atencion;
 
 /*
+* Estado atención (cita|proceso|finalizado)
 * Fill attention.detail when attention is over (clinic history)
 * roles (admin, medic)
 
