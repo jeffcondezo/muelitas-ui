@@ -32,6 +32,7 @@ const Procedimiento = props => {
 }
 
 const AddProcedure = props => {
+  // Receive {cita}
   const [procedures, setProcedures] = useState(false);
 
   function getProcedures(_sucursal_pk){
@@ -95,7 +96,7 @@ const AddProcedure = props => {
     result.then(
       response_obj => {  // In case it's ok
         // Redirect to attention
-        props.redirectTo('/nav/atencion/', {cita: props.cita});
+        props.redirectTo('/nav/atencion/detalle', {cita: props.cita});
       },
       error => {  // In case of error
         console.log("WRONG!", error);

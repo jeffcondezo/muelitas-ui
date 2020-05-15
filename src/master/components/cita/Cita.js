@@ -548,7 +548,7 @@ class Cita extends React.Component {
     });
   }
   addAttention = (cita) => {
-    let url = "/nav/atencion";
+    let url = "/nav/atencion/detalle";
     let data = {
       cita: cita,
     };

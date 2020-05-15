@@ -341,11 +341,11 @@ export const ListSavedMedicine = props => {
   props.medicine_list.map((medc, inx) => {el.push(
     <div key={"medc-"+inx}>
       <li className="list-group-item d-flex" id={inx}
-        style={{cursor: "pointer", borderBottom: "0"}}>
-          <span style={{fontSize: "1.2em", width: "100%"}}
-            data-toggle="collapse" data-target={"#medc-desc-"+inx}
-            aria-expanded="true" aria-controls={"medc-desc-"+inx}>
-              {medc.medicamento_name}
+        style={{cursor: "pointer", borderBottom: "0"}}
+        data-toggle="collapse" data-target={"#medc-desc-"+inx}
+        aria-expanded="true" aria-controls={"medc-desc-"+inx}>
+          <span style={{fontSize: "1.2em", width: "100%"}}>
+            {medc.medicamento_name}
           </span>
           <button className="btn ml-auto"
             style={{paddingTop: "0", paddingBottom: "0"}}

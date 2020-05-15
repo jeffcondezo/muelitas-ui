@@ -96,7 +96,7 @@ const SearchPatient = props => {
   const [patients, setPatients] = useState(false);
   const [datatable, setDatatable] = useState(false);
 
-  function getAllPatients(_sucursal_pk=props.sucursal_pk){
+  const getAllPatients = (_sucursal_pk=props.sucursal_pk) => {
     let filter = `filtro={"all":"all"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/`;
     url = url + '?' + filter;
@@ -245,7 +245,7 @@ const LastAttendedPatients = props => {
   const [lastPatients, setLastPatients] = useState(false);
   const max_items = 5;
 
-  function getLastAttendedPatients(_sucursal_pk=props.sucursal_pk, ndays=3){
+  const getLastAttendedPatients = (_sucursal_pk=props.sucursal_pk, ndays=3) => {
     // Get lastest attended patients within the last four days
     let _day = new Date();
     _day.setDate(_day.getDate()-ndays)
@@ -375,7 +375,7 @@ const AdmisionDetail = props => {
   );
 }
 const PatientData = props => {
-  // Receive props.cita.paciente_data
+  // Receive {patient}
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -392,6 +392,22 @@ const PatientData = props => {
           cFL(props.patient.ape_materno)}</span>
         </h5>
         <h5>DNI: <span style={{color:"black"}}>{props.patient.dni}</span></h5>
+        <h5>Genero: <span style={{color:"black"}}>{props.patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
+        {!props.patient.fecha_nacimiento ? ""
+          : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{props.patient.fecha_nacimiento}</span></h5>
+        }
+        {!props.patient.celular ? ""
+          : <h5>Número de contacto: <span style={{color:"black"}}>{props.patient.celular}</span></h5>
+        }
+        {!props.patient.direccion ? ""
+          : <h5>Dirección: <span style={{color:"black"}}>{props.patient.direccion}</span></h5>
+        }
+        {!props.patient.procedencia ? ""
+          : <h5>Procedencia: <span style={{color:"black"}}>{props.patient.procedencia}</span></h5>
+        }
+        {!props.patient.residencia ? ""
+          : <h5>Residencia: <span style={{color:"black"}}>{props.patient.residencia}</span></h5>
+        }
       </div>
     </div>
   );
@@ -482,8 +498,98 @@ const LinksDetail = props => {
 }
 
 const EditPatient = props => {
-  // Receive {patient, redirectTo}
+  // Receive {patient, redirectTo, sucursal_pk}
+  if(!props.patient) console.error("FATAL ERROR, patient PROPERTY NOT SPECIFIED");
+
+  const [patient, updatePatientData] = useState(props.patient||{});
+
+  const saveEdit = (_data, _patient_pk) => {
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${_patient_pk}/`;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        method: 'PUT',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(_data)
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        updatePatientData(response_obj);
+        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  const getBack = () => {
+    props.redirectTo(getPageHistory().prev_pathname, {patient: patient});
+  }
+
+  return <PatientForm
+          patient={patient}
+          first_button_text={"Guardar"}
+          handleSubmit={saveEdit}
+          second_button_text={"Cancelar"}
+          secondButtonHandler={getBack} />
+}
+const RegisterPatient = props => {
+  // Receive {sucursal_pk, redirectTo}
+  if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED");
+
+  const savePatient = (_data) => {
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/`;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(_data)
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        // Redirect to AdmisionDetail
+        props.redirectTo('/nav/admision/detalle', {patient: response_obj});
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  const getBack = () => {
+    props.redirectTo(getPageHistory().prev_pathname);
+  }
+
+  return <PatientForm
+          first_button_text={"Guardar"}
+          handleSubmit={savePatient}
+          second_button_text={"Regresar"}
+          secondButtonHandler={getBack} />
+}
+const PatientForm = props => {
+  // Receive {patient?, first_button_text?, handleSubmit(form_data, patient_pk?), second_button_text, secondButtonHandler}
   const [ubication, setUbication] = useState([]);
+  const patient = props.patient || false;
 
   function getUbicacion(){
     return;  // Abort execution (API not ready)
@@ -512,34 +618,6 @@ const EditPatient = props => {
       }
     );
   }
-  function saveEdit(_data, _patient_pk){
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${_patient_pk}/`;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(_data)
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
-      response_obj => {
-        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
   function handleSubmit(){
     // Values validation
     let _tmp1;
@@ -548,24 +626,86 @@ const EditPatient = props => {
       handleErrorResponse("custom", "Error", "Nombre principal no especificado");
       return;
     }
-    _tmp1 = document.getElementById("name-sec");
-    if(!_tmp1 || _tmp1.value.trim().length==0){
-      if(!isNaN(parseInt(_tmp1))){
-        handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
-        return;
-      }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+      return;
     }
+
+    _tmp1 = document.getElementById("name-sec");
+    if(!_tmp1){
+      handleErrorResponse("custom", "Error", "Nombre secundario no especificado");
+      return;
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+      return;
+    }
+
     _tmp1 = document.getElementById("ape-p");
-    if(!_tmp1 || _tmp1.value.trim().length==0){
+    if(!_tmp1){
       handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
       return;
     }
+    if(_tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio");
+      return;
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+      return;
+    }
+
     _tmp1 = document.getElementById("ape-m");
-    if(!_tmp1 || _tmp1.value.trim().length==0){
+    if(!_tmp1){
       handleErrorResponse("custom", "Error", "Apellido materno no especificado");
       return;
     }
-    // Continue validation /**/
+    if(_tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio");
+      return;
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+      return;
+    }
+
+    _tmp1 = document.getElementById("dni");
+    if(!_tmp1){
+      handleErrorResponse("custom", "Error", "DNI no especificado");
+      return;
+    }
+    if(_tmp1.value.trim().length!=8){
+      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos");
+      return;
+    }
+    if(isNaN(parseInt(_tmp1.value.trim()))){
+      handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
+      return;
+    }
+
+    _tmp1 = document.getElementById("born-date");
+    if(_tmp1){
+      if(_tmp1.value>=(new Date().toDateInputValue)){
+        handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy");
+        return;
+      }
+    }
+
+    _tmp1 = document.getElementById("phone");
+    if(_tmp1 && !!_tmp1.value){
+      if(_tmp1.value.length!=9){
+        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
+        return;
+      }
+      if(isNaN(parseInt(_tmp1.value))){
+        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
+        return;
+      }
+    }
+
+    // Address no not need validation
+    // Provenance no not need validation
+    // Residence no not need validation
 
     let _tmp = {
       nombre_principal: document.getElementById('name-pric').value,
@@ -573,18 +713,21 @@ const EditPatient = props => {
       ape_paterno: document.getElementById('ape-p').value,
       ape_materno: document.getElementById('ape-m').value,
       dni: document.getElementById('dni').value,
-      sexo: document.getElementById('sexo').value,  // Handle select
-      fecha_nacimiento: document.getElementById('born-date').value,
-      celular: document.getElementById('phone').value,
-      direccion: document.getElementById('address').value,
-      procedencia: document.getElementById('select_provenance').value,  // Handle select
-      residencia: document.getElementById('select_residence').value,  // Handle select
+      sexo: document.getElementById('sexo').value,
     }
+    // Add non-required fields
+    if(document.getElementById('born-date').value)
+      _tmp.fecha_nacimiento = document.getElementById('born-date').value;
+    if(document.getElementById('phone').value)
+      _tmp.celular = document.getElementById('phone').value;
+    if(document.getElementById('address').value)
+      _tmp.direccion = document.getElementById('address').value;
+    if(document.getElementById('select_provenance').value)
+      _tmp.procedencia = document.getElementById('select_provenance').value;
+    if(document.getElementById('select_residence').value)
+      _tmp.residencia = document.getElementById('select_residence').value;
 
-    saveEdit(_tmp, props.patient.pk);
-  }
-  const getBack = () => {
-    props.redirectTo(getPageHistory().prev_pathname, {patient: props.patient});
+    props.handleSubmit(_tmp, (patient&&patient.pk||null));
   }
 
   useEffect(() => {
@@ -612,103 +755,85 @@ const EditPatient = props => {
     }else{
       getUbicacion();
     }
-
-    savePageHistory();
   }, []);
   useEffect(() => {
     if(ubication.length==0) return;
 
-    // Active select2
+    // Fill data to selects
+    if(window.$){
+      window.$("#select_residence").select2({data: ubication});
+      window.$("#select_provenance").select2({data: ubication});
+    }
   }, [ubication]);
 
   return (
-      <div className="form-group col-md-12">  {/* Form */}
-        <div className="col-sm">
-          <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
-          <input type="text" id="name-pric" className="form-control" placeholder="Nombre Principal" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
-          <input type="text" id="name-sec" className="form-control" placeholder="Nombre Secundario" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="ape-p">Apellido parterno: </label>
-          <input type="text" id="ape-p" className="form-control" placeholder="Apellido Paterno" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
-          <input type="text" id="ape-m" className="form-control" placeholder="Apellido Materno" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="dni">DNI: </label>
-          <input type="text" id="dni" className="form-control" placeholder="DNI" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="sexo">Sexo: </label>
-          <select id="sexo" className="custom-select form-control">
-            <option value="1">Masculino</option>
-            <option value="2">Femenino</option>
-          </select>
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
-          <input type="date" id="born-date" className="form-control" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="phone">Celular: </label>
-          <input type="text" id="phone" className="form-control" placeholder="Número de celular" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="address">Dirección: </label>
-          <input type="text" id="address" className="form-control" placeholder="Dirección" />
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="select_provenance">Procedencia: </label>
-          {!ubication
-            ? "loading"
-            : (
-              <select id="select_provenance" className="custom-select form-control custom-select-lg">
-              </select>
-            )}
-        </div>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="select_residence">Residencia: </label>
-          {!ubication
-            ? "loading"
-            : (
-              <select id="select_residence" className="custom-select form-control custom-select-lg">
-              </select>
-            )}
-        </div>
-
-        <div className="col-sm d-flex">
-          <button className="btn btn-light" onClick={() => handleSubmit()}>
-            Guardar
-          </button>
-
-          <button className="btn btn-primary ml-auto" onClick={() => getBack()}>
-            Regresar
-          </button>
-        </div>
+    <div className="form-group col-md-12">  {/* Form */}
+      <div className="col-sm">
+        <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
+        <input type="text" id="name-pric" className="form-control" defaultValue={patient&&patient.nombre_principal||""} />
       </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
+        <input type="text" id="name-sec" className="form-control" defaultValue={patient&&patient.nombre_secundario||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="ape-p">Apellido parterno: </label>
+        <input type="text" id="ape-p" className="form-control" defaultValue={patient&&patient.ape_paterno||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
+        <input type="text" id="ape-m" className="form-control" defaultValue={patient&&patient.ape_materno||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="dni">DNI: </label>
+        <input type="text" id="dni" className="form-control" maxLength="8" defaultValue={patient&&patient.dni||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="sexo">Sexo: </label>
+        <select id="sexo" className="custom-select form-control">
+          <option value="1" defaultValue={patient&&patient.sexo=="1"||true}>Masculino</option>
+          <option value="2" defaultValue={patient&&patient.sexo=="2"||false}>Femenino</option>
+        </select>
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
+        <input type="date" id="born-date" className="form-control" defaultValue={patient&&patient.fecha_nacimiento||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="phone">Celular: </label>
+        <input type="text" id="phone" className="form-control" maxLength="9" defaultValue={patient&&patient.celular||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="address">Dirección: </label>
+        <input type="text" id="address" className="form-control" defaultValue={patient&&patient.direccion||""} />
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="select_provenance">Procedencia: </label>
+        <select id="select_provenance" className="custom-select form-control custom-select-lg">
+        </select>
+      </div>
+      <div className="col-sm">
+        <label className="form-label" htmlFor="select_residence">Residencia: </label>
+        <select id="select_residence" className="custom-select form-control custom-select-lg">
+        </select>
+      </div>
+
+      <div className="col-sm d-flex" style={{paddingTop: "25px"}}>
+        <button className="btn btn-light" onClick={() => handleSubmit()}>
+          {props.first_button_text||"Guardar"}
+        </button>
+
+        <button className="btn btn-primary ml-auto" onClick={() => props.secondButtonHandler()}>
+          {props.second_button_text}
+        </button>
+      </div>
+    </div>
   );
-}
-const RegisterPatient = props => {  // Left
-  return "Registrar paciente";
 }
 
 export default Admision;
 
 /*
-Clinic history (link)
-Show current prescription
-
-* Show patient data (
-  * Show attention history
-  * Update patient data
-)
-* Register patient
-
 * Add cita
 * Deudas (optional)
 */

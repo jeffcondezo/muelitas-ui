@@ -14,6 +14,7 @@ const __cacheName__ = "_attention";
 
 
 function Atencion(props){
+  // Receive {cita}
   return(
   <>
     {/* ALERTS */}
@@ -367,6 +368,16 @@ const CitaData = props => {
           <b>Indicaciones: </b>
           {cFL(props.cita.indicaciones)}
         </h6>
+        <h6>
+          <b>Estado: </b>
+          {props.cita.estado==1
+            ? "Cita"
+            : props.cita.estado==4
+            ? "Paciente no se presento"
+            : props.cita.estado==5
+            ? "Atendido"
+            : "Cancelado"}
+        </h6>
       </div>
     </div>
   );
@@ -598,12 +609,11 @@ const AlertModal = props => {
 export default Atencion;
 
 /*
-* Estado atención (cita|proceso|finalizado)
+* Add return from Odontogram (only from atencion)
+
 * Fill attention.detail when attention is over (clinic history)
 * roles (admin, medic)
-
 * prescription (read only) (permission)
 * odontogram (read only) (permission)
-
 * print as file
 */
