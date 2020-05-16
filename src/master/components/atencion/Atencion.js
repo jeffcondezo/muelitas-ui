@@ -51,75 +51,6 @@ function Atencion(props){
   )
 }
 
-const AttentionDetail = (props) => {
-  console.log(props);
-  const getAttentionDetail = (_atencion_id) => {
-    /* Promise as a component
-    * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
-    * that'd result in a function with much parameters than it'd less verbose
-    */
-    // Get plan trabajo
-    let filter = `filtro={"atencion":"${_atencion_id}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {  // In case it's ok
-        console.log(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
-  }
-  const redirect = (url) => {
-    props.redirectTo(url, {cita: props.cita});
-  }
-
-  useEffect(() => {
-    savePageHistory();  // Save page history
-  }, []);
-
-  return (
-    <div className="row">
-      <div className="col-lg-6" style={{display: "inline-block"}}>
-        <div className="panel">
-          <CitaData cita={props.cita} />
-        </div>
-        <div className="panel">
-          <AttentionProcedures cita={props.cita} />
-        </div>
-      </div>
-      <div className="col-lg-6" style={{display: "inline-block"}}>
-        <div className="panel">
-          <Links redirectTo={redirect} />
-        </div>
-        <div className="panel">
-          <PatientAttentionHistory
-            sucursal_pk={props.sucursal_pk}
-            cita={props.cita}
-            redirectTo={props.redirectTo} />
-        </div>
-      </div>
-    </div>
-  );
-}
 const AttentionList = props => {
   const [latest_attentions, setAttentions] = useState(false);
   const [datatable, setDatatable] = useState(false);
@@ -303,32 +234,70 @@ const AttentionList = props => {
   );
 }
 
-const Links = props => {
+const AttentionDetail = (props) => {
+  console.log(props);
+  const getAttentionDetail = (_atencion_id) => {
+    /* Promise as a component
+    * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
+    * that'd result in a function with much parameters than it'd less verbose
+    */
+    // Get plan trabajo
+    let filter = `filtro={"atencion":"${_atencion_id}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
+    url = url + '?' + filter;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      });
+    }, () => handleErrorResponse('server'));
+    result.then(
+      response_obj => {  // In case it's ok
+        console.log(response_obj);
+      },
+      error => {  // In case of error
+        console.log("WRONG!", error);
+      }
+    );
+  }
+  const redirect = (url) => {
+    props.redirectTo(url, {cita: props.cita});
+  }
+
+  useEffect(() => {
+    savePageHistory();  // Save page history
+  }, []);
+
   return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Acciones
+    <div className="row">
+      <div className="col-lg-6" style={{display: "inline-block"}}>
+        <div className="panel">
+          <CitaData cita={props.cita} />
+        </div>
+        <div className="panel">
+          <AttentionProcedures cita={props.cita} />
         </div>
       </div>
-      <div className="card-body">
-        <div className="card-title">
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Cobrar</span>
-          </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Odontograma</span>
-          </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
-            <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
-          </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="prescription" onClick={() => props.redirectTo("/nav/prescripcion")} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Receta</span>
-          </div>
+      <div className="col-lg-6" style={{display: "inline-block"}}>
+        <div className="panel">
+          <Links redirectTo={redirect} />
+        </div>
+        <div className="panel">
+          <PatientAttentionHistory
+            sucursal_pk={props.sucursal_pk}
+            cita={props.cita}
+            redirectTo={props.redirectTo} />
         </div>
       </div>
     </div>
@@ -605,11 +574,42 @@ const AlertModal = props => {
     </div>
   )
 }
+const Links = props => {
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Acciones
+        </div>
+      </div>
+      <div className="card-body">
+        <div className="card-title">
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Cobrar</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Odontograma</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
+            <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
+          </div>
+          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+            <Icon type="prescription" onClick={() => props.redirectTo("/nav/prescripcion")} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Receta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Atencion;
 
 /*
-* Add return from Odontogram (only from atencion)
+* Add return from Odontogram (only from atencion) (¿permission?)
 
 * Fill attention.detail when attention is over (clinic history)
 * roles (admin, medic)

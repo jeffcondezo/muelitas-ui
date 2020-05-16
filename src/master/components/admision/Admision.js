@@ -151,9 +151,6 @@ const SearchPatient = props => {
     }
 
     savePageHistory();  // Save page history
-    return () => {
-      console.log("UNMOUNTING PATIENT LIST");
-    }
   }, []);
   // When patients are setted
   useEffect(() => {
@@ -383,34 +380,40 @@ const PatientData = props => {
           Paciente
         </div>
       </div>
-      <div className="card-body">
-        <h5>Nombres: <span style={{color:"black"}}>{cFL(props.patient.nombre_principal)+
-          (props.patient.nombre_secundario?" "+
-          cFL(props.patient.nombre_secundario):"")}</span>
-        </h5>
-        <h5>Apellidos: <span style={{color:"black"}}>{cFL(props.patient.ape_paterno)+" "+
-          cFL(props.patient.ape_materno)}</span>
-        </h5>
-        <h5>DNI: <span style={{color:"black"}}>{props.patient.dni}</span></h5>
-        <h5>Genero: <span style={{color:"black"}}>{props.patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
-        {!props.patient.fecha_nacimiento ? ""
-          : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{props.patient.fecha_nacimiento}</span></h5>
-        }
-        {!props.patient.celular ? ""
-          : <h5>Número de contacto: <span style={{color:"black"}}>{props.patient.celular}</span></h5>
-        }
-        {!props.patient.direccion ? ""
-          : <h5>Dirección: <span style={{color:"black"}}>{props.patient.direccion}</span></h5>
-        }
-        {!props.patient.procedencia ? ""
-          : <h5>Procedencia: <span style={{color:"black"}}>{props.patient.procedencia}</span></h5>
-        }
-        {!props.patient.residencia ? ""
-          : <h5>Residencia: <span style={{color:"black"}}>{props.patient.residencia}</span></h5>
-        }
-      </div>
+      <PatientDataList patient={props.patient} />
     </div>
   );
+}
+export const PatientDataList = props => {
+  // Receive {patient}
+  return (
+    <div className="card-body">
+      <h5>Nombres: <span style={{color:"black"}}>{cFL(props.patient.nombre_principal)+
+        (props.patient.nombre_secundario?" "+
+        cFL(props.patient.nombre_secundario):"")}</span>
+      </h5>
+      <h5>Apellidos: <span style={{color:"black"}}>{cFL(props.patient.ape_paterno)+" "+
+        cFL(props.patient.ape_materno)}</span>
+      </h5>
+      <h5>DNI: <span style={{color:"black"}}>{props.patient.dni}</span></h5>
+      <h5>Genero: <span style={{color:"black"}}>{props.patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
+      {!props.patient.fecha_nacimiento ? ""
+        : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{props.patient.fecha_nacimiento}</span></h5>
+      }
+      {!props.patient.celular ? ""
+        : <h5>Número de contacto: <span style={{color:"black"}}>{props.patient.celular}</span></h5>
+      }
+      {!props.patient.direccion ? ""
+        : <h5>Dirección: <span style={{color:"black"}}>{props.patient.direccion}</span></h5>
+      }
+      {!props.patient.procedencia ? ""
+        : <h5>Procedencia: <span style={{color:"black"}}>{props.patient.procedencia}</span></h5>
+      }
+      {!props.patient.residencia ? ""
+        : <h5>Residencia: <span style={{color:"black"}}>{props.patient.residencia}</span></h5>
+      }
+    </div>
+  )
 }
 const PatientPrescription = props => {
   // Receive {patient}
@@ -488,7 +491,7 @@ const LinksDetail = props => {
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
             <Icon type="clinic-history"
-              onClick={() => props.redirectTo("/nav/historiaclinica", {patient: props.patient})} />
+              onClick={() => props.redirectTo("/nav/historiaclinica", {patient_pk: props.patient.pk})} />
             <span style={{fontSize: "0.9rem"}}>Historia</span>
           </div>
         </div>

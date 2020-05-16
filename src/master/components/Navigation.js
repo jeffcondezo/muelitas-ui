@@ -124,7 +124,7 @@ function Navigation(props){
       * the next renders and reloads in the system will use that stored data
       */
       // Check if page was reloaded
-      if(props.history.length===__dataInCache__.prev_length){  // Page was reloaded
+      if(props.history.length>=__dataInCache__.prev_length){  // Page was reloaded
         if(__debug__==="true") console.log(`%c RELOADED`, 'background: #433; color: gray');
 
         // Check if there is component state data in cache
