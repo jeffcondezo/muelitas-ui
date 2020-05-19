@@ -7,6 +7,8 @@ import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 import { savePageHistory } from '../HandleCache';
 import { Icon, SelectOptions_Procedimiento } from '../bits';
+import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+
 
 /* We use extended class of React.Component instead of function components
 * because we'll need to use componentWillReceiveProps function
@@ -194,6 +196,7 @@ class Cita extends React.Component {
     _calendar.render();
   }
   setCalendar(){
+    let that = this;  // Fake this var to handle conflicts with other 'this' inside calendar function
     // Create calendar object
     let calendarEl = document.querySelector('#calendar');
     let calendar = new Calendar(calendarEl, {
@@ -230,7 +233,13 @@ class Cita extends React.Component {
           click: function(){
             document.querySelector('button#toggleModal').click()
           }
-        }
+        },
+        addEventButton: {  // Refresh citas
+          text: 'Actualizar',
+          click: function(){
+            that.getCitas();
+          }
+        },
       },
       eventColor: 'tomato',  // Default event color
     });
@@ -473,11 +482,17 @@ class Cita extends React.Component {
       let _minres = parseInt(_duracion)+parseInt(_minutos);
       let _temp_hora = parseInt(_hora)+parseInt(_minres/60);
       let _temp_min = _minres%60;
+      // Handle more than 24hrs time
+      if(_temp_hora>=22 && _temp_min>0) return -1;
       // Fix left zeros
       _temp_hora = String(_temp_hora).length === 1 ? '0'+_temp_hora:_temp_hora;
       _temp_min = String(_temp_min).length === 1 ? '0'+_temp_min:_temp_min;
       return `${_temp_hora}:${_temp_min}`;
     })();  // OBTENER
+    if(_hora_fin==-1){  // Handle error in hours
+      alert("La hora de finalización no debe exceder el horario de trabajo");
+      return;  // Abort function
+    }
 
 
     // Generate data object
@@ -517,12 +532,10 @@ class Cita extends React.Component {
           if(response.status===403){
             this.handlePermissionError();
           }else{
-            resolve(response.json());
+            reject(response.json());
           }
         }
-      }, error => {
-        this.handleServerError();
-      });
+      }, () => handleErrorResponse('server'));  // Print server error
     });
     result.then(
       response_obj => {  // In case it's ok
@@ -532,9 +545,17 @@ class Cita extends React.Component {
           return;
         }
 
-        alert("Cita creada exitosamente");
+        handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info");
         document.getElementById("cita-close").click()  // Cerrar formulario cita
         this.getCitas()  // Re render fullcalendar
+      },
+      error => {
+        console.log("ERROR:", error);
+        // The next function is a solution to a UB (at least idk what does cause it)
+        error.then((er) => {
+          handleErrorResponse("custom", "Error", er.non_field_errors.join(", "), "danger")
+        })
+        document.getElementById("cita-close").click()  // Cerrar formulario cita
       }
     );
   }
@@ -670,6 +691,9 @@ class Cita extends React.Component {
       <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
           <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
       </div>
+      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+      </div>
 
       {/* HEADER */}
       <div className="subheader">
@@ -750,14 +774,14 @@ class Cita extends React.Component {
               <div className="form-group col-md-3" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="hour" style={{display:'block'}}>Duración aproximada: </label>
                 <select id="duracion" className="custom-select form-control">
-                  <option value="15" defaultValue>15 minutos</option>
-                  <option value="30">30 minutos</option>
-                  <option value="45">45 minutos</option>
-                  <option value="60">60 minutos</option>
-                  <option value="90">90 minutos</option>
-                  <option value="120">2 horas</option>
-                  <option value="180">3 horas</option>
-                  <option value="240">4 horas</option>
+                  <option value="13" defaultValue>15 minutos</option>
+                  <option value="33">30 minutos</option>
+                  <option value="43">45 minutos</option>
+                  <option value="63">60 minutos</option>
+                  <option value="93">90 minutos</option>
+                  <option value="123">2 horas</option>
+                  <option value="183">3 horas</option>
+                  <option value="243">4 horas</option>
                 </select>
               </div>
               <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
@@ -1061,7 +1085,5 @@ Child components that receive props from parent component should append the data
   https://reactjs.org/blog/2018/03/27/update-on-async-rendering.html
 */
 
-
-/* EXPORT CITA */
 export default Cita;
 // eslint-disable-next-line react-hooks/exhaustive-deps

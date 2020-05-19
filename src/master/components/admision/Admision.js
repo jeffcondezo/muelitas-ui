@@ -3,7 +3,7 @@ import { savePageHistory, getPageHistory } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
-import { Icon } from '../bits';
+import { PageTitle, Icon } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -13,23 +13,7 @@ const __cacheName__ = "_admision";
 function Admision(props){
   return(
   <>
-    {/* ALERTS */}
-    <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-        <strong>Error</strong> No se ha podido establecer conexión con el servidor.
-    </div>
-    <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
-        <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
-    </div>
-    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
-    </div>
-
-    {/* HEADER */}
-    <div className="subheader">
-      <h1 className="subheader-title">
-        <i className="subheader-icon fal fa-chart-area"></i> Admision
-      </h1>
-    </div>
+    <PageTitle title={"Admision"} />
 
     <Switch>
       <Route exact path="/nav/admision">
@@ -355,6 +339,12 @@ const AdmisionDetail = props => {
             sucursal_pk={props.sucursal_pk}
             redirectTo={props.redirectTo} />
         </div>
+        <div>
+          <PatientDebts
+            patient={props.patient}
+            sucursal_pk={props.sucursal_pk}
+            redirectTo={props.redirectTo} />
+        </div>
       </div>
       <div className="col-lg-6">
         <div className="panel">
@@ -474,6 +464,64 @@ const PatientPrescription = props => {
       </div>
     )
 }
+const PatientDebts = props => {
+  // Receive {patient}
+  const [list, setList] = useState(false);
+
+  const getPatientDebts = (_patient_dni) => {
+    // Get patient's debts
+    let filter = `filtro={"by_dni":"${_patient_dni}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`finanzas/cuentacorriente/`;
+    url = url + '?' + filter;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        console.log(response_obj);
+
+        // setList(response_obj);
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  useEffect(() => {
+    // Get patient's data by dni
+    getPatientDebts(props.patient.dni)
+  }, []);
+
+  return (
+    <div className="card col-12" style={{padding: "0px"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Deudas
+        </div>
+      </div>
+      <div className="card-body">
+        {!list
+          ? "loading"
+          : (
+            <h3>BODY</h3>
+          )
+        }
+      </div>
+    </div>
+  )
+}
 const LinksDetail = props => {
   return (
     <div className="card col-12" style={{padding: "0px"}}>
@@ -499,7 +547,7 @@ const LinksDetail = props => {
     </div>
   );
 }
-
+// Extra
 const EditPatient = props => {
   // Receive {patient, redirectTo, sucursal_pk}
   if(!props.patient) console.error("FATAL ERROR, patient PROPERTY NOT SPECIFIED");
@@ -837,6 +885,5 @@ const PatientForm = props => {
 export default Admision;
 
 /*
-* Add cita
-* Deudas (optional)
+* Add cita (optional|maybe later)
 */

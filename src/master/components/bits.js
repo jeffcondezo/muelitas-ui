@@ -2,7 +2,7 @@ import React from 'react';
 
 
 // Here there will be placed small components to be reused all over navigation
-export function Icon(props){
+export const Icon = props => {
   const onClick = (ev) => {
     if(props.onClick) props.onClick();
   }
@@ -108,7 +108,31 @@ export function Icon(props){
     </div>
   );
 }
-export function SelectOptions_Procedimiento(props){
+export const PageTitle = props => {
+  // Receive {title}
+  return (
+    <>
+    {/* ALERTS */}
+      <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
+          <strong>Error</strong> No se ha podido establecer conexión con el servidor.
+      </div>
+      <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
+          <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
+      </div>
+      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+      </div>
+
+      {/* HEADER */}
+      <div className="subheader">
+        <h1 className="subheader-title">
+          <i className="subheader-icon fal fa-chart-area"></i> {props.title}
+        </h1>
+      </div>
+    </>
+  )
+}
+export const SelectOptions_Procedimiento = props => {
   const procedimiento = [];
 
   if(props.procedimientos!==false){

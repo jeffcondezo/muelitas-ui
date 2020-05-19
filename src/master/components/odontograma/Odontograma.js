@@ -1615,8 +1615,6 @@ let inc_paths = [];
 let pvw_ctx;
 
 function Odontograma(props){
-  console.log(props);
-  console.log(odontogram);
   let cita = props.data&&props.data.cita ? props.data.cita : null;
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)

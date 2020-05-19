@@ -1,40 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { savePageHistory } from '../HandleCache';
-import { Icon } from '../bits';
+import { Icon, PageTitle } from '../bits';
 import { PatientDataList } from '../admision/Admision';
 
 
-const HistoriaClinicaWrapper = props => {
-  return (
-    <>
-    {/* ALERTS */}
-      <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Error</strong> No se ha podido establecer conexión con el servidor.
-      </div>
-      <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
-      </div>
-
-      {/* HEADER */}
-      <div className="subheader">
-        <h1 className="subheader-title">
-          <i className="subheader-icon fal fa-chart-area"></i> Historia Clinica
-        </h1>
-      </div>
-    </>
-  )
-}
 const HistoriaClinica = props => {
   // Receive {data.patient_pk, sucursal_pk, redirectTo}
   const patient_pk = useRef(props.data.patient_pk).current;
+  const [selected_cita, selectCita] = useState(false);
 
   return (
     <>
-      <HistoriaClinicaWrapper />
+      <PageTitle title={"Historia Clinica"} />
+
       <h5 style={{paddingBottom: "15px"}}>Fecha de generación de documento: {new Date().toDateInputValue()}</h5>
-      <HistoriaPatientData patient_pk={patient_pk} />
-      <HistoriaCitaList patient_pk={patient_pk} />
+      {/*<HistoriaPatientData patient_pk={patient_pk} />*/}
+      <HistoriaCitaList redirectTo={props.redirectTo} patient_pk={patient_pk} selectCita={selectCita} />
     </>
   )
 }
@@ -131,8 +113,74 @@ const HistoriaCitaList = props => {
   }
 
   useEffect(() => {
-    getCitas(props.patient_pk);
+    // Add DataTable rel docs
+    // JS
+    if(!document.getElementById('dt_script')){
+      const dt_script = document.createElement("script");
+      dt_script.async = false;
+      dt_script.id = "dt_script";
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      dt_script.onload = () => {
+        // Run at first execution
+        getCitas(props.patient_pk);
+      };
+      document.body.appendChild(dt_script);
+    }else{
+      getCitas(props.patient_pk);
+    }
+    // CSS
+    if(!document.getElementById('dt_style')){
+      const dt_style = document.createElement("link");
+      dt_style.rel = "stylesheet";
+      dt_style.id = "dt_style";
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
+      document.head.appendChild(dt_style);
+    }
   }, []);
+
+  useEffect(() => {
+    if(!citaList || citaList.length==0) return;
+
+    // Gen Datatable
+    let _tmp = window.$('#list-attention').DataTable({
+      dom: 'trip',  // t: table, r: process display, i: information, p: pagination
+      pageLength: 2,
+      columnDefs: [{
+        targets: -1,
+        orderable: false,
+      }],
+      language: {
+        // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
+        sProcessing:     "Procesando...",
+        sLengthMenu:     "Mostrar _MENU_ registros",
+        sZeroRecords:    "No se encontraron resultados",
+        sEmptyTable:     "No hay atenciones registradas para la fecha seleccionada",
+        sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+        sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
+        sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
+        sInfoPostFix:    "",
+        // "sSearch":         "Buscar:",
+        sUrl:            "",
+        sInfoThousands:  ",",
+        sLoadingRecords: "Cargando...",
+        oPaginate: {
+          sFirst:    "Primero",
+          sLast:     "Último",
+          sNext:     "Siguiente",
+          sPrevious: "Anterior"
+        },
+        oAria: {
+          sSortAscending:  ": Activar para ordenar la columna de manera ascendente",
+          sSortDescending: ": Activar para ordenar la columna de manera descendente"
+        },
+        buttons: {
+          copy: "Copiar",
+          colvis: "Visibilidad"
+        }
+      },
+    });
+  }, [citaList]);
+
 
   return (
     <div>
@@ -140,29 +188,50 @@ const HistoriaCitaList = props => {
       {!citaList
         ? (<div className="card"><div className="card-body">loading</div></div>)
         : (
-          <div className="col-12" style={{padding: "0px", userSelect: "none", fontSize: "1.2em"}}>
-            <div id="cita-list" className={citaList.length==0?"card-body":""}>
-              {citaList.length==0
-                ? "No se tiene registro de atenciones anteriores del paciente"
-                : citaList.map(cita => (
-                  <div key={"cita-"+cita.pk} className="card-body" style={{paddingBottom:"10px"}}>
-                    <span>
-                      La cita se realizó el día {cita.fecha} a las {cita.hora.slice(0, 5)} - {cita.hora_fin.slice(0, 5)} <br/>
-                      El paciente fue atendido por el {cita.personal.especialidad_descripcion}
-                      <span style={{color:"black"}}> {
+          <table id="list-attention" className="col-12" style={{userSelect: "none", fontSize: "1.2em"}}>
+            {citaList.length!=0
+            ? (
+              <thead>
+                <tr>
+                  <td>Fecha</td>
+                  <td>Hora</td>
+                  <td>Personal</td>
+                  <td>Ver detalle</td>
+                </tr>
+              </thead>
+            )
+            : ""}
+            {citaList.length==0
+              ? "No se tiene registro de atenciones anteriores del paciente"
+              : (
+                <tbody>
+                {citaList.map(cita => (
+                  <tr key={"cita-"+cita.pk} className="card-body" style={{paddingBottom:"10px"}}>
+                    {/* FECHA */}
+                    <td>
+                      {cita.fecha}
+                    </td>
+                    {/* HORA */}
+                    <td>
+                      {cita.hora.slice(0, 5)} - {cita.hora_fin.slice(0, 5)}
+                    </td>
+                    {/* PERSONAL */}
+                    <td>
+                      {
+                        cFL(cita.personal.nombre_principal)+" "+
                         cFL(cita.personal.ape_paterno)+" "+
-                        cFL(cita.personal.ape_materno)+", "+
-                        cFL(cita.personal.nombre_principal)+
-                        (cita.personal.nombre_secundario?" "+cFL(cita.personal.nombre_secundario):"")
-                      }</span><br/>
-                    </span>
-                    <div>
-                      <h4>Procedimientos</h4>
-                    </div>
-                  </div>
+                        cFL(cita.personal.ape_materno)
+                      }
+                    </td>
+                    {/* MODAL LINK */}
+                    <td>
+                      <Icon type="attention" onClick={() => props.redirectTo('/nav/atencion/detalle', {cita: cita})} />
+                    </td>
+                  </tr>
                 ))}
-            </div>
-          </div>
+                </tbody>
+              )}
+          </table>
         )
       }
     </div>
@@ -170,10 +239,3 @@ const HistoriaCitaList = props => {
 }
 
 export default HistoriaClinica;
-
-/*
-* change history format to table
-* procedimientos por atencion
-
-* Handle cache state
-*/

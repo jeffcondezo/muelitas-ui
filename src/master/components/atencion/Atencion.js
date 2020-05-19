@@ -6,7 +6,7 @@ import {
 } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
-import { Icon } from '../bits';
+import { PageTitle, Icon } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -17,21 +17,7 @@ function Atencion(props){
   // Receive {cita}
   return(
   <>
-    {/* ALERTS */}
-    <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-        <strong>Error</strong> No se ha podido establecer conexión con el servidor.
-    </div>
-    <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
-        <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
-    </div>
-
-    {/* HEADER */}
-    <div className="subheader">
-      <h1 className="subheader-title">
-        <i className="subheader-icon fal fa-chart-area"></i> Atencion
-      </h1>
-    </div>
-
+    <PageTitle title={"Atención"} />
 
     <Switch>
       <Route exact path="/nav/atencion">
