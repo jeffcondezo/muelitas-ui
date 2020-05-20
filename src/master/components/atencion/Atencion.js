@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  UNSAFE_cache_postState,
-  UNSAFE_cache_getState,
   savePageHistory,
+  getCacheData
 } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
-import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import {
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL,
+  getDataByPK
+} from '../../functions';
 import { PageTitle, Icon } from '../bits';
 
 // Constant
@@ -24,9 +27,12 @@ function Atencion(props){
         <AttentionList sucursal_pk={props.sucursal_pk} data={props.data} redirectTo={props.redirectTo} />
       </Route>
       <Route exact path="/nav/atencion/detalle">
-        {!props.data.cita
+        {!props.data.cita && !getCacheData().cita
           ? <Redirect to="/nav/atencion" />
-          : <AttentionDetail sucursal_pk={props.sucursal_pk} cita={props.data.cita} redirectTo={props.redirectTo} />
+          : <AttentionDetail
+            sucursal_pk={props.sucursal_pk}
+            cita={props.data.cita}
+            redirectTo={props.redirectTo} />
         }
       </Route>
       <Route>
@@ -221,73 +227,52 @@ const AttentionList = props => {
 }
 
 const AttentionDetail = (props) => {
-  console.log(props);
-  const getAttentionDetail = (_atencion_id) => {
-    /* Promise as a component
-    * We don't use Promise and Fetch as components 'cuz we need to customize a lot of its properties
-    * that'd result in a function with much parameters than it'd less verbose
-    */
-    // Get plan trabajo
-    let filter = `filtro={"atencion":"${_atencion_id}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {  // In case it's ok
-        console.log(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  // Receive {cita, sucursal_pk, redirectTo}
+  // Handle prev data flag from cache
+  const [cita, setCita] = useState(props.cita);
+
   const redirect = (url) => {
-    props.redirectTo(url, {cita: props.cita});
+    props.redirectTo(url, {cita: cita});
   }
 
   useEffect(() => {
-    savePageHistory();  // Save page history
-  }, []);
+    if(!cita){
+      // Get cita data by cache
+      getDataByPK('atencion/cita', getCacheData().cita )
+      .then( data => setCita(data) );
+    }else{
+      savePageHistory({cita: cita.pk});
+    }
+  }, [cita]);
 
-  return (
-    <div className="row">
-      <div className="col-lg-6" style={{display: "inline-block"}}>
-        <div className="panel">
-          <CitaData cita={props.cita} />
+  return !cita
+    ? "loading"
+    : (
+      <div className="row">
+        <div className="col-lg-6" style={{display: "inline-block"}}>
+          <div className="panel">
+            <CitaData cita={cita} />
+          </div>
+          <div className="panel">
+            <AttentionProcedures cita={cita} />
+          </div>
         </div>
-        <div className="panel">
-          <AttentionProcedures cita={props.cita} />
+        <div className="col-lg-6" style={{display: "inline-block"}}>
+          <div className="panel">
+            <Links redirectTo={redirect} />
+          </div>
+          <div className="panel">
+            <PatientAttentionHistory
+              sucursal_pk={props.sucursal_pk}
+              cita={cita}
+              redirectTo={props.redirectTo} />
+          </div>
         </div>
+        <ModalPayment
+          redirectTo={props.redirectTo}
+          attention_pk={cita.atencion} />
       </div>
-      <div className="col-lg-6" style={{display: "inline-block"}}>
-        <div className="panel">
-          <Links redirectTo={redirect} />
-        </div>
-        <div className="panel">
-          <PatientAttentionHistory
-            sucursal_pk={props.sucursal_pk}
-            cita={props.cita}
-            redirectTo={props.redirectTo} />
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 const CitaData = props => {
   return (
@@ -571,7 +556,7 @@ const Links = props => {
       <div className="card-body">
         <div className="card-title">
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="finance" onClick={() => props.redirectTo("/nav/finanzas")} /><br/>
+            <Icon type="finance" onClick={() => window.$('#modal-attention-debts').modal('show')} /><br/>
             <span style={{fontSize: "0.9rem"}}>Cobrar</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
@@ -591,15 +576,103 @@ const Links = props => {
     </div>
   );
 }
+const ModalPayment = props => {
+  // Receive {attention_pk,redirectTo}
+  const [debts, setDebts] = useState(false);
+
+  const getAttentionDebt = (_attention_pk) => {
+    // Get patient's debts by attention
+    let filter = `filtro={"atencion":"${_attention_pk}"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
+    url = url + '?' + filter;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(
+      response_obj => {
+        setDebts(response_obj);
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  useEffect(() => {
+    getAttentionDebt(props.attention_pk)
+  }, []);
+
+  return (
+    <div className="modal fade" id="modal-attention-debts" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+      <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <span className="modal-title fw-500" style={{fontSize:'2em'}}>
+              Deuda por atención
+            </span>
+            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true"><i className="fal fa-times"></i></span>
+            </button>
+          </div>
+          <div className="modal-body" id="cita-info-form">
+            {!debts
+              ? "BODY"
+              : (
+                <table style={{fontSize: "1.2em"}}>
+                  <thead>
+                    <tr>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {debts.map(d => (
+                    <tr key={d.pk}>
+                      <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
+                      <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
+                    </tr>
+                  ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td> <b>Total: </b> </td>
+                      <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )
+            }
+          </div>
+          <div className="modal-footer">
+            <button type="button" data-dismiss="modal"
+              className="btn btn-secondary waves-effect waves-themed"
+              onClick={()=>props.redirectTo('/nav/cobro', {atencion: props.attention_pk})}>Cobrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default Atencion;
 
 /*
-* Add return from Odontogram (only from atencion) (¿permission?)
+* BUG: Modal background do not disappear when change page without closing modal
 
-* Fill attention.detail when attention is over (clinic history)
 * roles (admin, medic)
+* Fill attention.detail when attention is over (clinic history) (but where to ask that?)
+* Add return from Odontogram (only from atencion) (necessary?)
 * prescription (read only) (permission)
 * odontogram (read only) (permission)
-* print as file
 */

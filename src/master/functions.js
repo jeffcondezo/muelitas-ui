@@ -71,3 +71,24 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
       : word.slice(1, word.length)
     );
 }
+export function getDataByPK(end_point, _pk){
+  // Get patient data by id
+  return fetch(
+    process.env.REACT_APP_PROJECT_API+end_point+`/${_pk}/`,
+    {
+      headers: {
+        Authorization: localStorage.getItem('access_token'),  // Token
+      },
+    }
+  ).then(
+    response => {
+      return response.ok
+      ? response.json()
+      : Promise.reject(response.text());
+    },
+    error => handleErrorResponse('server')
+  ).then(
+    response_obj => response_obj,
+    error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
+  );
+}

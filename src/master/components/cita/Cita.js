@@ -774,14 +774,14 @@ class Cita extends React.Component {
               <div className="form-group col-md-3" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="hour" style={{display:'block'}}>Duración aproximada: </label>
                 <select id="duracion" className="custom-select form-control">
-                  <option value="13" defaultValue>15 minutos</option>
-                  <option value="33">30 minutos</option>
-                  <option value="43">45 minutos</option>
-                  <option value="63">60 minutos</option>
-                  <option value="93">90 minutos</option>
-                  <option value="123">2 horas</option>
-                  <option value="183">3 horas</option>
-                  <option value="243">4 horas</option>
+                  <option value="15" defaultValue>15 minutos</option>
+                  <option value="30">30 minutos</option>
+                  <option value="45">45 minutos</option>
+                  <option value="60">60 minutos</option>
+                  <option value="90">90 minutos</option>
+                  <option value="120">2 horas</option>
+                  <option value="180">3 horas</option>
+                  <option value="240">4 horas</option>
                 </select>
               </div>
               <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>

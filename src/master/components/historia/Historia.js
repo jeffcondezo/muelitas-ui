@@ -223,7 +223,6 @@ const HistoriaCitaList = props => {
                         cFL(cita.personal.ape_materno)
                       }
                     </td>
-                    {/* MODAL LINK */}
                     <td>
                       <Icon type="attention" onClick={() => props.redirectTo('/nav/atencion/detalle', {cita: cita})} />
                     </td>

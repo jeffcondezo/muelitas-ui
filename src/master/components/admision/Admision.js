@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { savePageHistory, getPageHistory } from '../HandleCache';
+import { savePageHistory, getPageHistory, getCacheData } from '../HandleCache';
 import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
-import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import {
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL,
+  getDataByPK
+} from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
 import { PageTitle, Icon } from '../bits';
 
@@ -27,7 +31,7 @@ function Admision(props){
           redirectTo={props.redirectTo} />
       </Route>
       <Route exact path="/nav/admision/detalle">
-        {!props.data.patient
+        {!props.data.patient && !getCacheData().patient
           ? <Redirect to="/nav/admision" />
           : <AdmisionDetail
               sucursal_pk={props.sucursal_pk}
@@ -326,40 +330,52 @@ const LinksHome = props => {
 }
 // By patient
 const AdmisionDetail = props => {
-  useEffect(() => {
-    savePageHistory();
-  }, []);
+  // Handle prev data flag from cache
+  const [patient, setPatient] = useState(props.patient);
 
-  return (
-    <div className="row">
-      <div className="col-lg-6">
-        <div style={{marginBottom: "25px"}}>
-          <PatientData
-            patient={props.patient}
-            sucursal_pk={props.sucursal_pk}
-            redirectTo={props.redirectTo} />
+  useEffect(() => {
+    if(!patient){
+      // Get patient data by cache
+      getDataByPK('atencion/paciente', getCacheData().patient )
+      .then( data => setPatient(data) );
+    }else{
+      // Regular behavior
+      savePageHistory({patient: patient.pk});
+    }
+  }, [patient]);
+
+  return !patient
+    ? "loading"
+    : (
+      <div className="row">
+        <div className="col-lg-6">
+          <div style={{marginBottom: "25px"}}>
+            <PatientData
+              patient={patient}
+              sucursal_pk={props.sucursal_pk}
+              redirectTo={props.redirectTo} />
+          </div>
+          <div>
+            <PatientDebts
+              patient={patient}
+              sucursal_pk={props.sucursal_pk}
+              redirectTo={props.redirectTo} />
+          </div>
         </div>
-        <div>
-          <PatientDebts
-            patient={props.patient}
-            sucursal_pk={props.sucursal_pk}
-            redirectTo={props.redirectTo} />
+        <div className="col-lg-6">
+          <div className="panel">
+            <LinksDetail
+              patient={patient}
+              redirectTo={props.redirectTo} />
+          </div>
+          <div className="panel">
+            <PatientPrescription
+              patient={patient}
+              redirectTo={props.redirectTo} />
+          </div>
         </div>
       </div>
-      <div className="col-lg-6">
-        <div className="panel">
-          <LinksDetail
-            patient={props.patient}
-            redirectTo={props.redirectTo} />
-        </div>
-        <div className="panel">
-          <PatientPrescription
-            patient={props.patient}
-            redirectTo={props.redirectTo} />
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 const PatientData = props => {
   // Receive {patient}
@@ -468,6 +484,7 @@ const PatientDebts = props => {
   // Receive {patient}
   const [list, setList] = useState(false);
 
+  /* Missing */
   const getPatientDebts = (_patient_dni) => {
     // Get patient's debts
     let filter = `filtro={"by_dni":"${_patient_dni}"}`;
@@ -489,9 +506,7 @@ const PatientDebts = props => {
     });
     result.then(
       response_obj => {
-        console.log(response_obj);
-
-        // setList(response_obj);
+        setList(response_obj);
       },
       error => {
         console.log("WRONG!", error);
@@ -514,9 +529,11 @@ const PatientDebts = props => {
       <div className="card-body">
         {!list
           ? "loading"
-          : (
-            <h3>BODY</h3>
-          )
+          : list.length==0
+            ? <span style={{fontSize: "1.2em"}}>El paciente no tiene deudas</span>
+            : (
+              <h3>Tiene deudas</h3>
+            )
         }
       </div>
     </div>

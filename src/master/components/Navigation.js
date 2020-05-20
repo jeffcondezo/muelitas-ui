@@ -22,6 +22,7 @@ import Odontograma from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
 import Prescripcion from './prescripcion/Prescripcion';
 import HistoriaClinica from './historia/Historia';
+import Cobranza from './finanzas/Cobranza';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -194,7 +195,7 @@ function Navigation(props){
 }
 
 /*** COMPONENTS ***/
-function SelectComponent(props){  // CONTENT
+function SelectComponent(props){
   let _redirect_obj = props.redirect.current;  // Copy its value
   // By accessing .current we avoid memory reference
   if(props.redirect.current){  // Reset redirect data
@@ -252,6 +253,14 @@ function SelectComponent(props){  // CONTENT
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <HistoriaClinica
+                sucursal_pk={props.current_sucursal_pk}
+                data={_redirect_obj} redirectTo={props.redirectTo} />
+          }
+        </Route>
+        <Route exact path="/nav/cobro">
+          {!_redirect_obj
+            ? <Redirect to="/nav/home" />
+            : <Cobranza
                 sucursal_pk={props.current_sucursal_pk}
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }
