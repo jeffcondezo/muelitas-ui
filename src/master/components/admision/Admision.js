@@ -654,8 +654,8 @@ const RegisterPatient = props => {
           second_button_text={"Regresar"}
           secondButtonHandler={getBack} />
 }
-const PatientForm = props => {
-  // Receive {patient?, first_button_text?, handleSubmit(form_data, patient_pk?), second_button_text, secondButtonHandler}
+export const PatientForm = props => {
+  // Receive {patient?, first_button_text?, handleSubmit(form_data, patient_pk?), second_button_text?, secondButtonHandler}
   const [ubication, setUbication] = useState([]);
   const patient = props.patient || false;
 
@@ -892,7 +892,7 @@ const PatientForm = props => {
         </button>
 
         <button className="btn btn-primary ml-auto" onClick={() => props.secondButtonHandler()}>
-          {props.second_button_text}
+          {props.second_button_text||"Cancelar"}
         </button>
       </div>
     </div>

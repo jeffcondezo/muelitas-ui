@@ -17,22 +17,22 @@ const __cacheName__ = "_attention";
 
 
 function Atencion(props){
-  // Receive {cita}
+  // Receive {data.cita, sucursal_pk, redirectTo}
   return(
   <>
     <PageTitle title={"Atención"} />
 
     <Switch>
       <Route exact path="/nav/atencion">
-        <AttentionList sucursal_pk={props.sucursal_pk} data={props.data} redirectTo={props.redirectTo} />
+        <AttentionList sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
       </Route>
       <Route exact path="/nav/atencion/detalle">
         {!props.data.cita && !getCacheData().cita
           ? <Redirect to="/nav/atencion" />
           : <AttentionDetail
-            sucursal_pk={props.sucursal_pk}
-            cita={props.data.cita}
-            redirectTo={props.redirectTo} />
+              sucursal_pk={props.sucursal_pk}
+              cita={props.data.cita}
+              redirectTo={props.redirectTo} />
         }
       </Route>
       <Route>
@@ -44,6 +44,7 @@ function Atencion(props){
 }
 
 const AttentionList = props => {
+  // Receive {sucursal_pk, redirectTo}
   const [latest_attentions, setAttentions] = useState(false);
   const [datatable, setDatatable] = useState(false);
   const searchDate = useRef(false);
@@ -270,6 +271,7 @@ const AttentionDetail = (props) => {
         </div>
         <ModalPayment
           redirectTo={props.redirectTo}
+          patient={cita.paciente_data}
           attention_pk={cita.atencion} />
       </div>
     );
@@ -577,7 +579,37 @@ const Links = props => {
   );
 }
 const ModalPayment = props => {
-  // Receive {attention_pk,redirectTo}
+  // Receive {attention_pk, patient, redirectTo}
+  return (
+    <div className="modal fade" id="modal-attention-debts" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
+      <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <span className="modal-title fw-500" style={{fontSize:'2em'}}>
+              Deuda por atención
+            </span>
+            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true"><i className="fal fa-times"></i></span>
+            </button>
+          </div>
+          <div className="modal-body" id="cita-info-form">
+            <DebtsTable attention_pk={props.attention_pk} />
+          </div>
+          <div className="modal-footer">
+            <button type="button" data-dismiss="modal"
+              className="btn btn-secondary waves-effect waves-themed"
+              onClick={()=>props.redirectTo('/nav/cobro',
+              {atencion: props.attention_pk, patient: props.patient})}>
+                Cobrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+export const DebtsTable = props => {
+  // Receive {attention_pk}
   const [debts, setDebts] = useState(false);
 
   const getAttentionDebt = (_attention_pk) => {
@@ -613,66 +645,48 @@ const ModalPayment = props => {
     getAttentionDebt(props.attention_pk)
   }, []);
 
-  return (
-    <div className="modal fade" id="modal-attention-debts" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
-      <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <span className="modal-title fw-500" style={{fontSize:'2em'}}>
-              Deuda por atención
-            </span>
-            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true"><i className="fal fa-times"></i></span>
-            </button>
-          </div>
-          <div className="modal-body" id="cita-info-form">
-            {!debts
-              ? "BODY"
-              : (
-                <table style={{fontSize: "1.2em"}}>
-                  <thead>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {debts.map(d => (
-                    <tr key={d.pk}>
-                      <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
-                      <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
-                    </tr>
-                  ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td> <b>Total: </b> </td>
-                      <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              )
-            }
-          </div>
-          <div className="modal-footer">
-            <button type="button" data-dismiss="modal"
-              className="btn btn-secondary waves-effect waves-themed"
-              onClick={()=>props.redirectTo('/nav/cobro', {atencion: props.attention_pk})}>Cobrar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return !debts
+    ? "loading"
+    : (
+      <table style={{fontSize: "1.2em"}}>
+        <thead>
+          <tr>
+            <td></td>
+            <td></td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {debts.length==0&&"No se ha agregado ningún procedimiento"||""}
+            </td>
+          </tr>
+          {debts.map(d => (
+            <tr key={d.pk}>
+              <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
+              <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><td style={{paddingTop: "10px"}}></td></tr>
+          <tr>
+            <td> <b>Total: </b> </td>
+            <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
+          </tr>
+        </tfoot>
+      </table>
+    )
 }
 
 export default Atencion;
 
 /*
-* BUG: Modal background do not disappear when change page without closing modal
+* badge (to pay/paid)
 
 * roles (admin, medic)
 * Fill attention.detail when attention is over (clinic history) (but where to ask that?)
-* Add return from Odontogram (only from atencion) (necessary?)
 * prescription (read only) (permission)
 * odontogram (read only) (permission)
+* BUG: Modal background do not disappear when change page without closing modal
 */
