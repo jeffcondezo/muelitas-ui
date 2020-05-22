@@ -62,12 +62,14 @@ const saveObjectToAPI = _obj => {
       }
     ).then(
       // Response handling
-      response => {
+      response => (
+        response.ok
         // Handle error response
-        return response.ok
         ? response.json()  // Continue with json data
-        : Promise.reject();  // Reject to execute next then's error function
-      },
+        : response.status==403
+        ? handleErrorResponse('permission')
+        : Promise.reject()  // Reject to execute next then's error function
+      ),
       error => handleErrorResponse('server')
     ).then(
       // Handle individual response object
@@ -89,8 +91,3 @@ const saveAll = (_obj_list) => {
     }
   );
 }
-
-
-
-// Support functions
-function handleErrorResponse(){}

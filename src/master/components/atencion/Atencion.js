@@ -683,6 +683,7 @@ export default Atencion;
 
 /*
 * badge (to pay/paid)
+* Disable cobranza button when there is nothing to pay for
 
 * roles (admin, medic)
 * Fill attention.detail when attention is over (clinic history) (but where to ask that?)

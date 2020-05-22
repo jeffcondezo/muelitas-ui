@@ -92,3 +92,25 @@ export function getDataByPK(end_point, _pk){
     error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
   );
 }
+export function simplePostData(end_point, data){
+  return fetch(
+    process.env.REACT_APP_PROJECT_API+end_point,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: localStorage.getItem('access_token'),  // Token
+        'Content-Type': 'application/json'  // JSON type
+      },
+      body: JSON.stringify(data)  // Data
+    }
+  ).then(
+    response => (
+      response.ok
+      ? response.json()
+      : response.status==403
+      ? handleErrorResponse('permission')
+      : Promise.reject()
+    ),
+    error => handleErrorResponse('server')
+  );
+}
