@@ -13,6 +13,7 @@ const __cacheName__ = "_cobranza";
 const Cobranza = props => {
   // Receive {data.atencion, data.patient, sucursal_pk, redirectTo}
   // This page will not be saved in cache nor data nor history
+  const [selected_attention_detail, setSelectedAD] = useState([]);
 
   return (
   <>
@@ -22,12 +23,18 @@ const Cobranza = props => {
       <div className="col-lg-8">
         <PaymentForm
           redirectTo={props.redirectTo}
+          attention_pk={props.data.attention_pk}
+          selected={selected_attention_detail}
+          sucursal_pk={props.sucursal_pk}
           patient={props.data.patient} />
       </div>
       <div className="col-lg-4">
         <div style={{marginTop: "30px", marginLeft: "20px"}}>
           <DebtsTable
-            attention_pk={props.data.atencion}/>
+            checkbox={true}
+            selected={selected_attention_detail}
+            select={setSelectedAD}
+            attention_pk={props.data.attention_pk}/>
         </div>
       </div>
     </div>
@@ -35,11 +42,12 @@ const Cobranza = props => {
   )
 }
 const PaymentForm = props => {
-  // Receive {patient}
-  const [type, setType] = useState(1);
-  const [clienttype, setClientType] = useState(1);
-  const [client, setClient] = useState(-1);
-  const [knownclient, setNC] = useState(true);
+  // Receive {patient, selected, sucursal_pk}
+  const [type, setType] = useState(1);  // Efectivo && Credito
+  const [clienttype, setClientType] = useState(1);  // Natural && Empresa
+  const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
+  const [knownclient, setNC] = useState(true);  // Paciente es Cliente
+  // cuentacorriente can be setted by CreditType component
 
   useEffect(() => {
     if(clienttype==1){
@@ -117,6 +125,12 @@ const PaymentForm = props => {
   }
   // Form submit function
   const handleSubmit = () => {
+    // Check selected attention detail
+    if(props.selected.length==0){
+      handleErrorResponse("custom", "Error", "Debe seleccionar los elementos a cobrar en el panel de la derecha")
+      return;
+    }
+
     // Client exists
     if(knownclient)
       if(client) savePayment(client)
@@ -284,7 +298,25 @@ const PaymentForm = props => {
   // Save payment
   const savePayment = (_client) => {
     setClient(_client)
-    console.log("savePayment", _client);
+    // Sent payment
+    simplePostData('finanzas/cuentacorriente/', {
+      cliente: _client.pk,
+      sucursal: props.sucursal_pk,
+      deuda_actual: 0,
+    }).then(
+      cuentacorriente => simplePostData('finanzas/cuentacorriente/pago/', {
+          origen_pago: "1",
+          selected_dt: String(props.selected),
+          total: 0,  // Total
+          monto: 333,  // Pagado
+          descuento: 0,  // Modificación del precio (+|-)
+          origen_pago: type,
+          cuentacorriente: cuentacorriente.pk,  // Cuenta corriente
+      })
+    ).then(
+      response_obj => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"),
+      error => handleErrorResponse("custom", "Error", "Ha ocurrido un error")
+    )
   }
 
 
@@ -393,7 +425,8 @@ const ConfirmationModal = props => {
 export default Cobranza;
 
 /*
-* Show CuentaCorriente debts
-* Open CuentaCorriente
-* Handle credit payment
+1. Change create DCC at Pago to DT
+2. Open CuentaCorriente (alert)
+0. Handle credit payment (check)
+* Handle pay more than total price
 */

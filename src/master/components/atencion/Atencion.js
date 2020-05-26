@@ -240,7 +240,7 @@ const AttentionDetail = (props) => {
     if(!cita){
       // Get cita data by cache
       getDataByPK('atencion/cita', getCacheData().cita )
-      .then( data => setCita(data) );
+      .then(setCita);
     }else{
       savePageHistory({cita: cita.pk});
     }
@@ -599,7 +599,7 @@ const ModalPayment = props => {
             <button type="button" data-dismiss="modal"
               className="btn btn-secondary waves-effect waves-themed"
               onClick={()=>props.redirectTo('/nav/cobro',
-              {atencion: props.attention_pk, patient: props.patient})}>
+              {attention_pk: props.attention_pk, patient: props.patient})}>
                 Cobrar
             </button>
           </div>
@@ -610,6 +610,7 @@ const ModalPayment = props => {
 }
 export const DebtsTable = props => {
   // Receive {attention_pk}
+  // Receive ?{checkbox, selected, select}
   const [debts, setDebts] = useState(false);
 
   const getAttentionDebt = (_attention_pk) => {
@@ -631,14 +632,23 @@ export const DebtsTable = props => {
         }
       }, () => handleErrorResponse('server'));
     });
-    result.then(
-      response_obj => {
-        setDebts(response_obj);
-      },
+    result.then(setDebts,
       error => {
         console.log("WRONG!", error);
       }
     );
+  }
+
+  const checkbox_addToSelectedOnes = ad_pk => {
+    // ad_pk: Attention Detail PK
+    // Handle ALL
+    if(ad_pk=="ALL"){
+      props.select(debts.map(v=>v.pk))
+      return;
+    }
+    // Regular Behavior
+    if(props.selected.includes(ad_pk)) props.select(props.selected.filter(v=>v!=ad_pk))
+    else props.select([...props.selected, ad_pk])
   }
 
   useEffect(() => {
@@ -663,14 +673,35 @@ export const DebtsTable = props => {
           </tr>
           {debts.map(d => (
             <tr key={d.pk}>
+              {props.checkbox && (
+                <td>
+                  <input type="checkbox"
+                    checked={props.selected.includes(d.pk)}
+                    onChange={(e)=>checkbox_addToSelectedOnes(d.pk)} />
+                </td>
+                ) || <td style={{display:"none"}}/>
+              }
               <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
               <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
+              <td>
+                <strong style={{color: d.paid?"green":"orange"}}>
+                {d.paid ? "Pagado" : "Debe"}
+                </strong>
+              </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr><td style={{paddingTop: "10px"}}></td></tr>
           <tr>
+            {props.checkbox && (
+              <td>
+                <input type="checkbox"
+                  checked={props.selected==debts}
+                  onChange={()=>checkbox_addToSelectedOnes("ALL")} />
+              </td>
+              ) || <td style={{display:"none"}}/>
+            }
             <td> <b>Total: </b> </td>
             <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
           </tr>

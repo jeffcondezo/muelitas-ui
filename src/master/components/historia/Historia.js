@@ -200,9 +200,9 @@ const HistoriaCitaList = props => {
                 </tr>
               </thead>
             )
-            : ""}
+            : <tbody><tr><td></td></tr></tbody>}
             {citaList.length==0
-              ? "No se tiene registro de atenciones anteriores del paciente"
+              ? <tbody><tr><td>No se tiene registro de atenciones anteriores del paciente</td></tr></tbody>
               : (
                 <tbody>
                 {citaList.map(cita => (

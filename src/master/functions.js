@@ -109,6 +109,8 @@ export function simplePostData(end_point, data){
       ? response.json()
       : response.status==403
       ? handleErrorResponse('permission')
+      : response.status==500
+      ? handleErrorResponse('server')
       : Promise.reject()
     ),
     error => handleErrorResponse('server')

@@ -481,13 +481,12 @@ const PatientPrescription = props => {
     )
 }
 const PatientDebts = props => {
-  // Receive {patient}
-  const [list, setList] = useState(false);
+  // Receive {patient, sucursal_pk}
+  const [cuentacorriente, setCC] = useState(false);
 
-  /* Missing */
   const getPatientDebts = (_patient_dni) => {
-    // Get patient's debts
-    let filter = `filtro={"by_dni":"${_patient_dni}"}`;
+    // Get patient's cuentacorriente
+    let filter = `filtro={"by_dni":"${_patient_dni}", "sucursal":"${props.sucursal_pk}"}`;
     let url = process.env.REACT_APP_PROJECT_API+`finanzas/cuentacorriente/`;
     url = url + '?' + filter;
     let result = new Promise((resolve, reject) => {
@@ -505,8 +504,9 @@ const PatientDebts = props => {
       }, () => handleErrorResponse('server'));
     });
     result.then(
-      response_obj => {
-        setList(response_obj);
+      obj => {
+        if(obj.length==1) setCC(obj[0])
+        else setCC({deuda_actual: 0})
       },
       error => {
         console.log("WRONG!", error);
@@ -519,6 +519,7 @@ const PatientDebts = props => {
     getPatientDebts(props.patient.dni)
   }, []);
 
+  console.log(cuentacorriente);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -527,18 +528,16 @@ const PatientDebts = props => {
         </div>
       </div>
       <div className="card-body">
-        {!list
+        {!cuentacorriente
           ? "loading"
-          : list.length==0
+          : cuentacorriente.deuda_actual==0
             ? <span style={{fontSize: "1.2em"}}>El paciente no tiene deudas</span>
-            : (
-              <h3>Tiene deudas</h3>
-            )
+            : (<h3>Deuda actual: {cuentacorriente.deuda_actual}</h3>)
         }
       </div>
     </div>
   )
-}
+} /**/
 const LinksDetail = props => {
   return (
     <div className="card col-12" style={{padding: "0px"}}>
