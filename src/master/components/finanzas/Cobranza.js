@@ -14,6 +14,7 @@ const Cobranza = props => {
   // Receive {data.atencion, data.patient, sucursal_pk, redirectTo}
   // This page will not be saved in cache nor data nor history
   const [selected_attention_detail, setSelectedAD] = useState([]);
+  const [refresh, setRefresh] = useState(false);
 
   return (
   <>
@@ -23,6 +24,7 @@ const Cobranza = props => {
       <div className="col-lg-8">
         <PaymentForm
           redirectTo={props.redirectTo}
+          setRefresh={setRefresh}
           attention_pk={props.data.attention_pk}
           selected={selected_attention_detail}
           sucursal_pk={props.sucursal_pk}
@@ -34,6 +36,8 @@ const Cobranza = props => {
             checkbox={true}
             selected={selected_attention_detail}
             select={setSelectedAD}
+            refresh={refresh}
+            setRefresh={setRefresh}
             attention_pk={props.data.attention_pk}/>
         </div>
       </div>
@@ -42,7 +46,7 @@ const Cobranza = props => {
   )
 }
 const PaymentForm = props => {
-  // Receive {patient, selected, sucursal_pk}
+  // Receive {patient, selected, sucursal_pk, setRefresh}
   const [type, setType] = useState(1);  // Efectivo && Credito
   const [clienttype, setClientType] = useState(1);  // Natural && Empresa
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
@@ -316,7 +320,9 @@ const PaymentForm = props => {
     ).then(
       response_obj => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"),
       error => handleErrorResponse("custom", "Error", "Ha ocurrido un error")
-    )
+    ).then(() => {
+      props.setRefresh(true);
+    })
   }
 
 
@@ -425,8 +431,7 @@ const ConfirmationModal = props => {
 export default Cobranza;
 
 /*
-1. Change create DCC at Pago to DT
+1 Handle pay less than total price (debt)
 2. Open CuentaCorriente (alert)
 0. Handle credit payment (check)
-* Handle pay more than total price
 */

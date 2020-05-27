@@ -528,7 +528,7 @@ const AlertModal = props => {
       <div className="modal-dialog modal-dialog-centered" role="document">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Anular cita</h5>
+            <h5 className="modal-title">Eliminar procedimiento</h5>
             <button type="button" className="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true"><i className="fal fa-times"></i></span>
             </button>
@@ -580,6 +580,7 @@ const Links = props => {
 }
 const ModalPayment = props => {
   // Receive {attention_pk, patient, redirectTo}
+  const [disabled, setDisabled] = useState(true);
   return (
     <div className="modal fade" id="modal-attention-debts" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
       <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -593,10 +594,10 @@ const ModalPayment = props => {
             </button>
           </div>
           <div className="modal-body" id="cita-info-form">
-            <DebtsTable attention_pk={props.attention_pk} />
+            <DebtsTable attention_pk={props.attention_pk} debtExist={setDisabled} />
           </div>
           <div className="modal-footer">
-            <button type="button" data-dismiss="modal"
+            <button type="button" data-dismiss="modal" disabled={disabled}
               className="btn btn-secondary waves-effect waves-themed"
               onClick={()=>props.redirectTo('/nav/cobro',
               {attention_pk: props.attention_pk, patient: props.patient})}>
@@ -609,7 +610,7 @@ const ModalPayment = props => {
   )
 }
 export const DebtsTable = props => {
-  // Receive {attention_pk}
+  // Receive {attention_pk, debtExist, refresh, setRefresh}
   // Receive ?{checkbox, selected, select}
   const [debts, setDebts] = useState(false);
 
@@ -643,7 +644,8 @@ export const DebtsTable = props => {
     // ad_pk: Attention Detail PK
     // Handle ALL
     if(ad_pk=="ALL"){
-      props.select(debts.map(v=>v.pk))
+      let _tmp = debts.filter(v=>!v.paid)
+      props.select(_tmp.map(v=>v.pk))
       return;
     }
     // Regular Behavior
@@ -654,6 +656,19 @@ export const DebtsTable = props => {
   useEffect(() => {
     getAttentionDebt(props.attention_pk)
   }, []);
+  useEffect(() => {
+    if(!debts || !props.debtExist) return;
+
+    // Check if all attentiondetails are paid
+    props.debtExist(!debts.reduce((r,v)=>(r||!v.paid), false))
+  }, [debts]);
+
+  if(props.refresh){
+    // refresh values
+    getAttentionDebt(props.attention_pk)
+    props.select([]);
+    props.setRefresh(false);
+  }
 
   return !debts
     ? "loading"
@@ -674,19 +689,20 @@ export const DebtsTable = props => {
           {debts.map(d => (
             <tr key={d.pk}>
               {props.checkbox && (
-                <td>
-                  <input type="checkbox"
-                    checked={props.selected.includes(d.pk)}
+                <td className="custom-control custom-checkbox">
+                  <input type="checkbox" className="custom-control-input" id={"pay-"+d.pk}
+                    checked={props.selected.includes(d.pk)} disabled={d.paid}
                     onChange={(e)=>checkbox_addToSelectedOnes(d.pk)} />
+                  <label className="custom-control-label" htmlFor={"pay-"+d.pk}>{cFL(d.procedimiento_data.nombre)}</label>
                 </td>
                 ) || <td style={{display:"none"}}/>
               }
-              <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
+              {!props.checkbox && (
+                <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
+              )}
               <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
               <td>
-                <strong style={{color: d.paid?"green":"orange"}}>
-                {d.paid ? "Pagado" : "Debe"}
-                </strong>
+                <span className={"badge badge-"+(d.paid?"success":"warning")+" badge-pill"}>{d.paid?"Pagado":"Debe"}</span>
               </td>
             </tr>
           ))}
@@ -696,13 +712,15 @@ export const DebtsTable = props => {
           <tr>
             {props.checkbox && (
               <td>
-                <input type="checkbox"
-                  checked={props.selected==debts}
-                  onChange={()=>checkbox_addToSelectedOnes("ALL")} />
+                <button className="btn " id="pay-all" onClick={()=>checkbox_addToSelectedOnes("ALL")}>
+                </button>
+                <label htmlFor="pay-all">Total: </label>
               </td>
               ) || <td style={{display:"none"}}/>
             }
-            <td> <b>Total: </b> </td>
+            {!props.checkbox && (
+              <td> <b>Total: </b> </td>
+            )}
             <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
           </tr>
         </tfoot>
@@ -713,6 +731,7 @@ export const DebtsTable = props => {
 export default Atencion;
 
 /*
+Update debts after removing procedure
 * badge (to pay/paid)
 * Disable cobranza button when there is nothing to pay for
 
