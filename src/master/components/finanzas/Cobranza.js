@@ -56,7 +56,6 @@ const PaymentForm = props => {
   useEffect(() => {
     if(clienttype==1){
       document.getElementById("client-dni").value = props.patient.dni;
-      setNC(true);
       setValues(props.patient);
     }else{
       setValues(false);
@@ -66,8 +65,10 @@ const PaymentForm = props => {
   }, [clienttype]);
   useEffect(() => {
     if(client==-1) getClient('dni', props.patient.dni);
+    console.log(client);
     if(client==false){
       setValues(props.patient)
+      setNC(false)
       return;
     }
 
@@ -124,7 +125,7 @@ const PaymentForm = props => {
         document.getElementById('ape-m').value = values?values.ape_materno:"";
     }else{
       if(document.getElementById('client-razon-social'))
-        document.getElementById('client-razon-social').value = values?values.razon_social:"";
+        document.getElementById('client-razon-social').value = values&&values.razon_social?values.razon_social:"";
     }
   }
   // Form submit function
@@ -177,7 +178,7 @@ const PaymentForm = props => {
         handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
         return;
       }
-      if(isNaN(parseInt(_tmp.value))){
+      if(!/^\d+$/.test(_tmp.value)){
         handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
         return;
       }
@@ -264,7 +265,7 @@ const PaymentForm = props => {
         handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
         return;
       }
-      if(isNaN(parseInt(_tmp.value))){
+      if(!/^\d+$/.test(_tmp.value)){
         handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
         return;
       }
@@ -321,8 +322,10 @@ const PaymentForm = props => {
       })
     ).then(
       response_obj => {
+        console.log(response_obj);
+        console.log(type);
         if(type==2) return;
-        simplePostData('finanzas/comprobante/', {
+        return simplePostData('finanzas/comprobante/', {
           dcc_list: String(response_obj.dccs),
           tipo: type,
           cliente: _client.pk,
@@ -337,6 +340,7 @@ const PaymentForm = props => {
   }
 
 
+  console.log("knownclient", knownclient, "type", type);
   return (
     <div>
       <div className="btn-group btn-group-toggle" data-toggle="buttons">
@@ -357,8 +361,6 @@ const PaymentForm = props => {
       </div>
 
       <div style={{paddingTop: "20px"}}>
-        {type==2 && <CreditType /> || ""}
-
         {clienttype==1
           ? (
             <div>
@@ -378,11 +380,11 @@ const PaymentForm = props => {
               </div>
               <div className="col-sm" style={{paddingBottom: "5px"}}>
                 <label className="form-label" htmlFor="client-razon-social">Razón Social: </label>
-                <input type="text" id="client-razon-social" className="form-control" disabled={knownclient} />
+                <input type="text" id="client-razon-social" className="form-control" disabled={knownclient && clienttype==2} />
               </div>
               <div className="col-sm" style={{paddingBottom: "5px"}}>
                 <label className="form-label" htmlFor="client-address">Dirección: </label>
-                <input type="text" id="client-address" className="form-control" disabled={knownclient} />
+                <input type="text" id="client-address" className="form-control" disabled={knownclient && clienttype==2} />
               </div>
             </div>
           )
@@ -428,23 +430,9 @@ const NewCustomerForm = props => {
     </div>
   )
 }
-const CreditType = props => {
-  return (
-    "C"
-  )
-}
-const ConfirmationModal = props => {
-  return (
-    "ConfirmationModal"
-  )
-}
 
 export default Cobranza;
 
 /*
-1. Redirect to FE (all paid)
-2. Redirect to FE (debts => optional)
-3. Handle pay less than total price (debt)
-4. Open CuentaCorriente (alert)
-5. Handle credit payment (check)
+0. Handle pay less than total price (debt) ?
 */
