@@ -219,7 +219,7 @@ class Cita extends React.Component {
         hour12: true,
       },
       header: {
-        left: 'prev,next today addEventButton',
+        left: 'prev,next today addCita refreshCita',
         center: 'title',
         right: 'timeGridWeek,timeGridDay,listWeek'
       },
@@ -228,13 +228,13 @@ class Cita extends React.Component {
       eventLimit: true, // allow "more" link when too many events
       eventClick: this.getEventInfo,
       customButtons: {
-        addEventButton: {  // Add Cita
+        addCita: {  // Add Cita
           text: '+',
           click: function(){
             document.querySelector('button#toggleModal').click()
           }
         },
-        addEventButton: {  // Refresh citas
+        refreshCita: {  // Refresh citas
           text: 'Actualizar',
           click: function(){
             that.getCitas();

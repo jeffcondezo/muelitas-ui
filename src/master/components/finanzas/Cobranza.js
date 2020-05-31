@@ -302,25 +302,36 @@ const PaymentForm = props => {
   // Save payment
   const savePayment = (_client) => {
     setClient(_client)
+    // Set data format
+    let _data = {
+      total: 0,  // Total
+      descuento: 0,  // Modificación del precio (+|-)
+      // origen_pago: "1",
+    }
+    _data[type==1?"selected_dt":"credit_dt"] = String(props.selected);
     // Sent payment
     simplePostData('finanzas/cuentacorriente/', {
       cliente: _client.pk,
       sucursal: props.sucursal_pk,
       deuda_actual: 0,
     }).then(
-      cuentacorriente => simplePostData('finanzas/cuentacorriente/pago/', {
-          origen_pago: "1",
-          selected_dt: String(props.selected),
-          total: 0,  // Total
-          monto: 333,  // Pagado
-          descuento: 0,  // Modificación del precio (+|-)
-          origen_pago: type,
-          cuentacorriente: cuentacorriente.pk,  // Cuenta corriente
+      cuentacorriente => simplePostData('finanzas/cuentacorriente/pago/create/', {
+        ..._data,
+        cuentacorriente: cuentacorriente.pk,  // Cuenta corriente
       })
     ).then(
-      response_obj => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"),
+      response_obj => {
+        if(type==2) return;
+        simplePostData('finanzas/comprobante/', {
+          dcc_list: String(response_obj.dccs),
+          tipo: type,
+          cliente: _client.pk,
+          sucursal: props.sucursal_pk,
+        })
+      },
       error => handleErrorResponse("custom", "Error", "Ha ocurrido un error")
     ).then(() => {
+      handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info")
       props.setRefresh(true);
     })
   }
@@ -431,7 +442,9 @@ const ConfirmationModal = props => {
 export default Cobranza;
 
 /*
-1 Handle pay less than total price (debt)
-2. Open CuentaCorriente (alert)
-0. Handle credit payment (check)
+1. Redirect to FE (all paid)
+2. Redirect to FE (debts => optional)
+3. Handle pay less than total price (debt)
+4. Open CuentaCorriente (alert)
+5. Handle credit payment (check)
 */
