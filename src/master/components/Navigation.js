@@ -233,7 +233,7 @@ function SelectComponent(props){
             : <Odontograma data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
-        <Route exact path="/nav/procedimiento">
+        <Route path="/nav/procedimiento">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Procedimiento

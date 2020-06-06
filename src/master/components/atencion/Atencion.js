@@ -237,12 +237,19 @@ const AttentionDetail = (props) => {
   }
 
   useEffect(() => {
+    setCita(props.cita)
+  }, [props.cita])
+  useEffect(() => {
     if(!cita){
       // Get cita data by cache
       getDataByPK('atencion/cita', getCacheData().cita )
       .then(setCita);
     }else{
-      savePageHistory({cita: cita.pk});
+      // Only save cita.pk to cache if there is no data in cache yet
+      // This will avoid loosing original cita by PatientAttentionHistory's links
+      if( !getCacheData().cita ) savePageHistory({cita: cita.pk});
+      else if(cita.pk != getCacheData().cita)  // Only print message if cita has changed
+        handleErrorResponse("custom", "Tip", "Retroceder pagina lo retornará a la cita original", "info");
     }
   }, [cita]);
 
@@ -255,7 +262,7 @@ const AttentionDetail = (props) => {
             <CitaData cita={cita} />
           </div>
           <div className="panel">
-            <AttentionProcedures cita={cita} />
+            <AttentionProcedures cita={cita} redirectTo={props.redirectTo} />
           </div>
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
@@ -325,6 +332,7 @@ const CitaData = props => {
   );
 }
 const PatientAttentionHistory = props => {
+  // Receive {cita, redirectTo, sucursal_pk}
   const [attention_list, setAttentionList] = useState(false);
 
   const getAttentionHistory = (_patient_pk, _sucursal_pk=props.sucursal_pk) => {
@@ -364,6 +372,9 @@ const PatientAttentionHistory = props => {
       }
     );
   }
+  const redirectToAttentionDetail = _cita => {
+    props.redirectTo("/nav/atencion/detalle", {cita: _cita});
+  }
 
   // Run at first render
   useEffect(() => {
@@ -382,8 +393,10 @@ const PatientAttentionHistory = props => {
         <div className="card-body">
           {/* attention_list */}
           {attention_list.length>0 ? attention_list.map((i) => {return(
-            <div key={"inc_list_"+i.pk} style={{cursor: "pointer"}}>
-              <span>{i.fecha} <b>{i.programado}</b></span>
+            <div key={"inc_list_"+i.pk}
+              style={{cursor: "pointer"}}
+              onClick={()=>redirectToAttentionDetail(i)}>
+                <span>{i.fecha} <b>{i.programado}</b></span>
             </div>
           )}) : "No se encontraron otras atenciones"}
         </div>
@@ -440,11 +453,10 @@ const AttentionProcedures = props => {
     delete_proc_pk.current = _pk;
   }
   function deleteProcedure(){
-    console.log("DELETE");
     window.$('#modal_delete_procedure').modal('hide');  // Hide modal
     if(delete_proc_pk.current==-1) return;
 
-    // Add procedure to cita's attention
+    // Delete procedure to cita's attention
     let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/${delete_proc_pk.current}/`;
     // Generate promise
     let result = new Promise((resolve, reject) => {
@@ -476,6 +488,9 @@ const AttentionProcedures = props => {
       }
     );
   }
+  function editProcedure(_pk){
+    props.redirectTo("/nav/procedimiento/edit", {procedimiento: _pk});
+  }
 
   useEffect(() => {
     getProcedures(props.cita.atencion);
@@ -503,6 +518,11 @@ const AttentionProcedures = props => {
                         {cFL(proc.procedimiento_data.nombre)}
                     </span>
                     <button className="btn ml-auto"
+                      style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
+                      onClick={()=>editProcedure(proc.pk)}>
+                        <i className="fal fa-edit"></i>
+                    </button>
+                    <button className="btn"
                       style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
                       onClick={()=>modelConfirmDelete(proc.pk)}>
                         <i className="fal fa-trash-alt"></i>
@@ -566,7 +586,7 @@ const Links = props => {
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento")} /><br/>
+            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento/agregar")} /><br/>
             <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>

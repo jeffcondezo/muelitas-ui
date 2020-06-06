@@ -628,45 +628,6 @@ class Cita extends React.Component {
       }
     );
   }
-  finishCita = (cita_pk) => {
-    let data = {};
-    data['estado'] = '5';
-
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
-        body: JSON.stringify(data)  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        window.$('#modal_ver_cita').modal('hide');
-        alert("Cita finalizada");
-        this.getCitas()  // Re render fullcalendar
-      }
-    );
-  }
   // Global functions
   setFilter = (personal_pk) => {
     let personal_array = this.state.calendar_filter;
@@ -802,7 +763,6 @@ class Cita extends React.Component {
       {/* INFO CITA (modal) */}
       <InfoCita cita={this.state.selected_cita}
         annulCita={this.annulCita}
-        finishCita={this.finishCita}
         addAttention={this.addAttention}
         addOdontograma={this.addOdontograma}
         addProcedure={this.addProcedure} />
@@ -1012,21 +972,15 @@ function InfoCita(props){
               </div>
               {/* Estado cita */}
               <div className="btn-group">
-                <button
-                  type="button"
-                  className="btn btn-primary waves-effect waves-themed"
-                  onClick={()=>props.finishCita(props.cita.pk)}>
-                  Concluir
-                </button>
+                <button className="btn btn-primary waves-effect waves-themed" data-dismiss="modal"
+                  onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 3)}>Anular cita</button>
                 <button type="button" className="btn btn-primary dropdown-toggle dropdown-toggle-split waves-effect waves-themed" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 </button>
                 <div className="dropdown-menu">
-                  <a className="dropdown-item"
-                    onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 3)}>Anular cita</a>
-                  <a className="dropdown-item"
-                    onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 2)}>Anulado por cliente</a>
-                  <a className="dropdown-item"
-                    onClick={()=>props.annulCita(props.cita.pk, 4)}>Paciente no se presento</a>
+                  <button className="dropdown-item" data-dismiss="modal"
+                    onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 2)}>Anulado por cliente</button>
+                  <button className="dropdown-item" data-dismiss="modal"
+                    onClick={()=>props.annulCita(props.cita.pk, 4)}>Paciente no se presento</button>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { handleErrorResponse } from '../../functions';
 import { SelectOptions_Procedimiento } from '../bits';
-import { getPageHistory } from '../HandleCache';
+import { savePageHistory, getPageHistory } from '../HandleCache';
 import { PageTitle } from '../bits';
 
 // Constant
@@ -10,6 +10,7 @@ const __cacheName__ = "_prescription";
 
 
 const Prescripcion = props => {
+  // Receive {data.cita}
   const [medicine_list, setMedicineList] = useState(false);
 
   const addMedicineToList = _medc => {
@@ -55,7 +56,47 @@ const Prescripcion = props => {
     );
   }
   const getBack = () => {
-    props.redirectTo(getPageHistory().prev_pathname, {cita: props.data.cita});
+    props.redirectTo("/nav/atencion/detalle", {cita: props.data.cita});
+  }
+  const finishCita = () => {
+    let data = {};
+    data['estado'] = '5';
+
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${props.data.cita.pk}/`;
+    // Generate promise
+    let result = new Promise((resolve, reject) => {
+      // Fetch data to api
+      let request = fetch(url, {
+        method: 'PUT',
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
+        body: JSON.stringify(data)  // Data
+      });
+      // Once we get response we either return json data or error
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          if(response.status===403){
+            this.handleErrorResponse("permission");
+          }else{
+            reject(response.statusText)
+          }
+        }
+      }, error => {
+        this.handleErrorResponse("server");
+      });
+    });
+    result.then(
+      res => {
+        handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success")
+        savePageHistory({cita: props.data.cita.pk})
+        props.redirectTo("/nav/atencion/detalle");
+      },
+      er => handleErrorResponse("custom", "Ups!","Un error ha ocurrido")
+    );
   }
 
   useEffect(() => {
@@ -65,10 +106,16 @@ const Prescripcion = props => {
   return(
   <>
     <PageTitle title={"Prescripción"} />
+    <div id="alert-info" className="alert bg-info-700" role="alert">
+      <strong id="alert-headline">Ojo</strong> <span id="alert-text">Al guardar la receta se finalizará la atención</span>.
+    </div>
 
     <div className="row">
       <div className="col-lg-8">
-        <AddMedicine cita={props.data.cita} sucursal_pk={props.sucursal_pk} addMedicineToList={addMedicineToList} />
+        <AddMedicine
+          cita={props.data.cita}
+          sucursal_pk={props.sucursal_pk}
+          addMedicineToList={addMedicineToList} />
       </div>
       <div className="col-lg-4 position-relative">
         <div className="card">
@@ -82,9 +129,14 @@ const Prescripcion = props => {
 
         </div>
         <div className="position-absolute pos-bottom">
-          <button className="btn btn-primary" onClick={() => getBack()}>
-            Regresar
-          </button>
+          {props.data.cita.estado==5
+            ? <button className="btn btn-primary" onClick={() => getBack()}>
+                Regresar
+              </button>
+            : <button className="btn btn-primary" onClick={() => finishCita()}>
+                FINALIZAR ATENCION
+              </button>
+          }
         </div>
       </div>
     </div>
