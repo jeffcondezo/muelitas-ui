@@ -519,7 +519,6 @@ const PatientDebts = props => {
     getPatientDebts(props.patient.dni)
   }, []);
 
-  console.log(cuentacorriente);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">

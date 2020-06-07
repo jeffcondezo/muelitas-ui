@@ -32,7 +32,6 @@ const Procedimiento = props => {
       return Promise.reject();
     })().then(
       res => {
-        console.log(res);
         // Redirect to attention
         props.redirectTo('/nav/atencion/detalle', {cita: props.cita});
       },
@@ -50,7 +49,7 @@ const Procedimiento = props => {
     <br/>
     <div className="d-flex">
       <button className="btn btn-light" onClick={() => handleSubmit()}>
-        Agregar
+        {props.data.procedimiento?"Guardar":"Agregar"}
       </button>
 
       <button className="btn btn-primary ml-auto" onClick={() => getBack()}>

@@ -232,8 +232,8 @@ const AttentionDetail = (props) => {
   // Handle prev data flag from cache
   const [cita, setCita] = useState(props.cita);
 
-  const redirect = (url) => {
-    props.redirectTo(url, {cita: cita});
+  const redirect = (url, data={cita: cita}) => {
+    props.redirectTo(url, data);
   }
 
   useEffect(() => {
@@ -267,7 +267,7 @@ const AttentionDetail = (props) => {
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
-            <Links redirectTo={redirect} />
+            <Links paciente_data={cita.paciente_data} redirectTo={redirect} />
           </div>
           <div className="panel">
             <PatientAttentionHistory
@@ -568,6 +568,7 @@ const AlertModal = props => {
   )
 }
 const Links = props => {
+  console.log(props);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -578,8 +579,8 @@ const Links = props => {
       <div className="card-body">
         <div className="card-title">
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="finance" onClick={() => window.$('#modal-attention-debts').modal('show')} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Cobrar</span>
+            <Icon type="admision" onClick={() => props.redirectTo("/nav/admision/detalle", {patient: props.paciente_data})} /><br/>
+            <span style={{fontSize: "0.9rem"}}>Admision</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
             <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
