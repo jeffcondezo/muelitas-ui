@@ -92,11 +92,11 @@ export function getDataByPK(end_point, _pk){
     error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
   );
 }
-export function simplePostData(end_point, data){
+export function simplePostData(end_point, data, method='POST'){
   return fetch(
     process.env.REACT_APP_PROJECT_API+end_point,
     {
-      method: 'POST',
+      method: method,
       headers: {
         Authorization: localStorage.getItem('access_token'),  // Token
         'Content-Type': 'application/json'  // JSON type

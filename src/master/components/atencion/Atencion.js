@@ -720,7 +720,7 @@ export const DebtsTable = props => {
               {!props.checkbox && (
                 <td> <b>{cFL(d.procedimiento_data.nombre)}</b> </td>
               )}
-              <td style={{paddingLeft: "10px"}}> <code>{d.procedimiento_precio}</code> </td>
+              <td style={{paddingLeft: "10px"}}> <code>{d.precio}</code> </td>
               <td>
                 <span className={"badge badge-"+(d.paid?"success":"warning")+" badge-pill"}>{d.paid?"Pagado":"Debe"}</span>
               </td>
@@ -741,7 +741,7 @@ export const DebtsTable = props => {
             {!props.checkbox && (
               <td> <b>Total: </b> </td>
             )}
-            <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.procedimiento_precio), 0)}</code> </td>
+            <td style={{paddingLeft: "10px"}}> <code>{debts.reduce((t,i)=>(t+i.precio), 0)}</code> </td>
           </tr>
         </tfoot>
       </table>
