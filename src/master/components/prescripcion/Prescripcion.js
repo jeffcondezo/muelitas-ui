@@ -229,11 +229,6 @@ const AddMedicine = props => {
       handleErrorResponse("custom", "Error", "Periodo no especificado");
       return;
     }
-    _tmp1 = document.getElementById("end-date");
-    if(!_tmp1 || _tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Debe indicar una fecha fin");
-      return;
-    }
 
     let _tmp = {
       atencion: props.cita.atencion,
@@ -243,10 +238,38 @@ const AddMedicine = props => {
       periodo: document.getElementById('period').value,
       indicaciones: document.getElementById('indications').value,
       contraindicaciones: document.getElementById('contraindications').value,
-      fecha_fin: document.getElementById('end-date').value,
+      hora_inicio: document.getElementById('start-time').value,
     }
 
     saveMedicineItem(_tmp);
+  }
+  function handlePeriodChange(period=4){
+    period -= 0; // Convert string to int
+    // Vars
+    let now_hour = new Date().getHours();
+    let now_minute = new Date().getMinutes();
+    let suggested_hour = 0;
+
+    // Algorithm
+    if(period==12){
+      // Breakfast & Dinner
+      suggested_hour = 7;  // 7 AM
+    }else if(period==8){
+      // Breakfast & Lunch & Dinner
+      suggested_hour = 6;  // 6 AM
+    }else if(period==4){
+      // Breakfast & Lunch & Dinner & Before sleep
+      suggested_hour = 7;  // 7 AM
+    }
+
+    // Fix
+    let tmp = suggested_hour;
+    while(suggested_hour <= now_hour){
+      suggested_hour += period;
+      if(suggested_hour > 23){suggested_hour=tmp; break;}
+    }
+    // Set value
+    document.getElementById('start-time').value = suggested_hour+":00";
   }
 
   // Run at first execution
@@ -275,6 +298,8 @@ const AddMedicine = props => {
     }else{
       getMedicines(props.sucursal_pk);
     }
+
+    handlePeriodChange();
   }, []);
   // Run when medicine is setted
   useEffect(() => {
@@ -299,13 +324,17 @@ const AddMedicine = props => {
       </div>
       {/* Cantidad */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="amount">Cantidad</label>
+        <label className="form-label" htmlFor="amount">Total a comprar</label>
         <input type="text" className="form-control" id="amount"></input>
       </div>
       {/* Periodo */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
         <label className="form-label" htmlFor="period">Periodo</label>
-        <input type="text" className="form-control" id="period"></input>
+        <select className="custom-select form-control" id="period" onChange={(e)=>handlePeriodChange(e.target.value)}>
+          <option value="4">cada 4 horas</option>
+          <option value="8">cada 8 horas</option>
+          <option value="12">cada 12 horas</option>
+        </select>
       </div>
       {/* Indicaciones */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
@@ -317,10 +346,10 @@ const AddMedicine = props => {
         <label className="form-label" htmlFor="contraindications">Contraindicaciones</label>
         <textarea className="form-control" id="contraindications" rows="2"></textarea>
       </div>
-      {/* Contraindicaciones */}
+      {/* Fecha Fin */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="end-date">Fecha fin</label>
-        <input className="form-control" id="end-date" type="date"></input>
+        <label className="form-label" htmlFor="start-time">Hora sugerida de inicio</label>
+        <input className="form-control" id="start-time" type="time"></input>
       </div>
 
       <br/>
@@ -394,8 +423,9 @@ export const ListSavedMedicine = props => {
       <div id={"medc-desc-"+inx} className="collapse" aria-labelledby={inx}
         style={{paddingLeft: "1.8rem", paddingTop: "0", paddingBottom: ".75rem"}}>
           <span>
-            {medc.cantidad} {medc.periodo} {medc.indicaciones} <br/>
-            Hasta el {medc.fecha_fin}
+            Cada {medc.periodo} horas <br/>
+            {medc.indicaciones} <br/>
+            {medc.contraindicaciones}
           </span>
       </div>
     </div>

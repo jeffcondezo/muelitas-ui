@@ -568,7 +568,6 @@ const AlertModal = props => {
   )
 }
 const Links = props => {
-  console.log(props);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">

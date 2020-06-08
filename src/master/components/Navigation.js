@@ -390,12 +390,14 @@ function Aside(props){
 function PageContent(props){
   return (
     <div className="page-content-wrapper">
-        <PageHeader
+        {/*
+          <PageHeader
           user={props.user}
           profile_pic={props.profile_pic}
           sucursales={props.sucursales}
           current_sucursal_pk={props.current_sucursal_pk}
           changeSucursal={props.changeSucursal} />
+          */}
         <SelectComponent
           history={props.history}
           redirect={props.redirect}
