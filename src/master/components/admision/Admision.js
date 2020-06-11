@@ -546,17 +546,20 @@ const LinksDetail = props => {
         </div>
       </div>
       <div className="card-body">
-        <div className="card-title">
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="edit-patient"
-              onClick={() => props.redirectTo("/nav/admision/editar", {patient: props.patient})} />
-            <span style={{fontSize: "0.9rem"}}>Editar</span>
-          </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="clinic-history"
-              onClick={() => props.redirectTo("/nav/historiaclinica", {patient_pk: props.patient.pk})} />
-            <span style={{fontSize: "0.9rem"}}>Historia</span>
-          </div>
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="edit-patient"
+            onClick={() => props.redirectTo("/nav/admision/editar", {patient: props.patient})} />
+          <span style={{fontSize: "0.9rem"}}>Editar</span>
+        </div>
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="clinic-history"
+            onClick={() => props.redirectTo("/nav/historiaclinica", {patient_pk: props.patient.pk})} />
+          <span style={{fontSize: "0.9rem"}}>Historia</span>
+        </div>
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="finance"
+            onClick={() => props.redirectTo("/nav/cobranza", {patient: props.patient})} />
+          <span style={{fontSize: "0.9rem"}}>Cobrar</span>
         </div>
       </div>
     </div>

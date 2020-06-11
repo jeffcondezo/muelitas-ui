@@ -257,7 +257,7 @@ function SelectComponent(props){
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }
         </Route>
-        <Route exact path="/nav/cobro">
+        <Route exact path="/nav/cobranza">
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <Cobranza

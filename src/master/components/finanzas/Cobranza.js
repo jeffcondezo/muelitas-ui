@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { handleErrorResponse, simplePostData } from '../../functions';
+import {
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL,
+  simplePostData,
+  getDataByPK
+} from '../../functions';
 import { getPageHistory } from '../HandleCache';
 import { PageTitle } from '../bits';
-import { DebtsTable } from '../atencion/Atencion';
 import { PatientForm } from '../admision/Admision';
 
 // Constant
@@ -11,7 +15,7 @@ const __cacheName__ = "_cobranza";
 
 
 const Cobranza = props => {
-  // Receive {data.atencion, data.patient, sucursal_pk, redirectTo}
+  // Receive {data.patient, sucursal_pk, redirectTo}
   // This page will not be saved in cache nor data nor history
   const [selected_attention_detail, setSelectedAD] = useState([]);
   const [refresh, setRefresh] = useState(false);
@@ -32,13 +36,12 @@ const Cobranza = props => {
       </div>
       <div className="col-lg-4">
         <div style={{marginTop: "30px", marginLeft: "20px"}}>
-          <DebtsTable
-            checkbox={true}
+          <PatientDebtsTable
             selected={selected_attention_detail}
             select={setSelectedAD}
             refresh={refresh}
             setRefresh={setRefresh}
-            attention_pk={props.data.attention_pk}/>
+            patient={props.data.patient}/>
         </div>
       </div>
     </div>
@@ -48,7 +51,7 @@ const Cobranza = props => {
 const PaymentForm = props => {
   // Receive {patient, selected, sucursal_pk, setRefresh}
   const [type, setType] = useState(1);  // Efectivo && Credito
-  const [clienttype, setClientType] = useState(1);  // Natural && Empresa
+  const [clienttype, setClientType] = useState(1);  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
   const [knownclient, setNC] = useState(true);  // Paciente es Cliente
   // cuentacorriente can be setted by CreditType component
@@ -65,7 +68,6 @@ const PaymentForm = props => {
   }, [clienttype]);
   useEffect(() => {
     if(client==-1) getClient('dni', props.patient.dni);
-    console.log(client);
     if(client==false){
       setValues(props.patient)
       setNC(false)
@@ -303,11 +305,15 @@ const PaymentForm = props => {
   // Save payment
   const savePayment = (_client) => {
     setClient(_client)
+    /*** REFORM TO SEND ONE BY ONE DCC'S PK TO PAY ***/
+    console.log("props.selected", props.selected);
+    return;
+    /*
     // Set data format
     let _data = {
       total: 0,  // Total
       descuento: 0,  // Modificación del precio (+|-)
-      // origen_pago: "1",
+      origen_pago: "1",
     }
     _data[type==1?"selected_dt":"credit_dt"] = String(props.selected);
     // Sent payment
@@ -337,10 +343,10 @@ const PaymentForm = props => {
       handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info")
       props.setRefresh(true);
     })
+    */
   }
 
 
-  console.log("knownclient", knownclient, "type", type);
   return (
     <div>
       <div className="btn-group btn-group-toggle" data-toggle="buttons">
@@ -358,6 +364,9 @@ const PaymentForm = props => {
         <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===2?'active':'')} onClick={()=>setClientType(2)}>
           <input type="radio" name="odontogram_type" /> Factura
         </label>
+        <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===3?'active':'')} onClick={()=>setClientType(3)}>
+          <input type="radio" name="odontogram_type" /> Sin FE
+        </label>
       </div>
 
       <div style={{paddingTop: "20px"}}>
@@ -371,7 +380,8 @@ const PaymentForm = props => {
               </div>
               <NewCustomerForm disabled={knownclient} />
             </div>
-          ) : (
+          ) : clienttype==2
+          ? (
             <div>
               <div className="col-sm" style={{paddingBottom: "5px"}}>
                 <label className="form-label" htmlFor="client-ruc">RUC: </label>
@@ -388,12 +398,18 @@ const PaymentForm = props => {
               </div>
             </div>
           )
+          : ""
         }
 
-        <div className="col-sm" style={{paddingBottom: "5px"}}>
-          <label className="form-label" htmlFor="client-phone">Número de contacto: </label>
-          <input type="text" id="client-phone" className="form-control" maxLength="9" disabled={knownclient} />
-        </div>
+        {clienttype!=3
+          ? (
+            <div className="col-sm" style={{paddingBottom: "5px"}}>
+              <label className="form-label" htmlFor="client-phone">Número de contacto: </label>
+              <input type="text" id="client-phone" className="form-control" maxLength="9" disabled={knownclient} />
+            </div>
+          )
+          : "OTHER INPUT"
+        }
       </div>
 
       <div className="col-sm d-flex" style={{paddingTop: "30px"}}>
@@ -430,9 +446,97 @@ const NewCustomerForm = props => {
     </div>
   )
 }
+const PatientDebtsTable = props => {
+  // Receive {patient, selected, select, refresh, setRefresh}
+  const [dccs, setDebts] = useState(false);
+
+  const getCuentaCorrienteDebts = () => {
+    // Get patient's not paid dccs
+    let filter = `filtro={"cliente_dni":"${props.patient.dni}", "estado_pago_not":"3"}`;
+    let url = process.env.REACT_APP_PROJECT_API+`finanzas/cuentacorriente/detalle/`;
+    url = url + '?' + filter;
+    let result = new Promise((resolve, reject) => {
+      let request = fetch(url, {
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+        },
+      });
+      request.then(response => {
+        if(response.ok){
+          resolve(response.json())
+        }else{
+          reject(response.statusText)
+        }
+      }, () => handleErrorResponse('server'));
+    });
+    result.then(setDebts,
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
+  }
+
+  const checkbox_addToSelectedOnes = dcc_pk => {
+    if(props.selected.includes(dcc_pk)) props.select(props.selected.filter(v=>v!=dcc_pk))
+    else props.select([...props.selected, dcc_pk])
+  }
+
+  useEffect(() => {
+    getCuentaCorrienteDebts(props.attention_pk)
+  }, []);
+  useEffect(() => {
+    if(!dccs || !props.debtExist) return;
+  }, [dccs]);
+
+  if(props.refresh){
+    // refresh values
+    getCuentaCorrienteDebts(props.attention_pk)
+    props.select([]);
+    props.setRefresh(false);
+  }
+
+  return !dccs
+    ? "loading"
+    : (
+      <table style={{fontSize: "1.2em"}}>
+        <thead>
+          <tr>
+            <td></td>
+            <td></td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+            </td>
+          </tr>
+          {dccs.map(dcc => (
+            <tr key={dcc.pk}>
+              <td className="custom-control custom-checkbox">
+                <input type="checkbox" className="custom-control-input"
+                  id={"pay-"+dcc.pk} checked={props.selected.includes(dcc.pk)}
+                  onChange={(e)=>checkbox_addToSelectedOnes(dcc.pk)} />
+                <label className="custom-control-label" htmlFor={"pay-"+dcc.pk}>{cFL(dcc.procedimiento)}</label>
+              </td>
+              <td style={{paddingLeft: "10px"}}> <code>{dcc.deuda}</code> de <code>{dcc.precio}</code> </td>
+              <td>
+                <span className={"badge badge-warning badge-pill"}>Debe</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><td style={{paddingTop: "10px"}}></td></tr>
+          <tr>
+            <td>
+              <label htmlFor="pay-all">Total: </label>
+            </td>
+            <td style={{paddingLeft: "10px"}}> <code>{dccs.reduce((t,i)=>(t+i.deuda), 0)}</code> </td>
+          </tr>
+        </tfoot>
+      </table>
+    )
+}
+
 
 export default Cobranza;
-
-/*
-0. Handle pay less than total price (debt) ?
-*/

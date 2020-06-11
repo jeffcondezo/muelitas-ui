@@ -136,9 +136,10 @@ const ProcedimientoForm = props => {
         <br/>
         <div className="col-sm">
           <label className="form-label" htmlFor="dues">N° de cuotas</label>
-          <input type="number" className="form-control custom-select-lg" id="dues" defaultValue="1"
+          <input type="number" className="form-control custom-select-lg" id="dues"
             min="1" max="36" onChange={(e) => handlePeriodChange(e.target)}
-            defaultValue={procedure?procedure.dues:""} />
+            defaultValue={procedure?procedure.dues:"1"}
+            disabled={procedure?procedure.dues==1:true} />
         </div>
         <br/>
         <div className="col-sm">
