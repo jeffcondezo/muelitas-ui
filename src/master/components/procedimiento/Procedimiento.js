@@ -64,8 +64,8 @@ const ProcedimientoForm = props => {
   const [procedures, setProcedures] = useState(false);
   const [procedure, setProcedure] = useState(false);
 
-  function getProcedureDataToUpdate(){
-    getDataByPK(`atencion/detalle`, props.procedimiento)
+  function getProcedureDataToUpdate(procedimiento_pk){
+    getDataByPK(`atencion/detalle`, procedimiento_pk)
     .then(setProcedure,
       er => console.log(er)
     )
@@ -102,20 +102,34 @@ const ProcedimientoForm = props => {
     );
   }
   function handlePeriodChange(el){
-    document.getElementById("payment_period").disabled = el.value=="1" ? true:false
+    if(el.value=="0"){
+      document.getElementById("payment_period").value = "0";
+      document.getElementById("payment_period").disabled = true;
+      document.getElementById("payment_period").options[0].disabled = false;
+    }else{
+      if(document.getElementById("payment_period").value=="0") document.getElementById("payment_period").value = "1";
+      document.getElementById("payment_period").disabled = false;
+      document.getElementById("payment_period").options[0].disabled = true;
+    }
   }
 
   useEffect(() => {
     getProcedures(props.sucursal_pk);
     // Get procedure to edit
     if(props.procedimiento)
-      getProcedureDataToUpdate();
+      getProcedureDataToUpdate(props.procedimiento);
   }, []);
   useEffect(() => {
     if(!procedure) return;
 
     document.getElementById('payment_period').value = procedure.payment_period;
   }, [procedure]);
+  useEffect(() => {
+    if(!procedures || procedure) return;
+
+    document.getElementById("payment_period").value = "0";
+    document.getElementById("payment_period").disabled = true;
+  }, [procedures]);
 
   return !procedures
     ? "loading"
@@ -137,20 +151,19 @@ const ProcedimientoForm = props => {
         <div className="col-sm">
           <label className="form-label" htmlFor="dues">N° de cuotas</label>
           <input type="number" className="form-control custom-select-lg" id="dues"
-            min="1" max="36" onChange={(e) => handlePeriodChange(e.target)}
-            defaultValue={procedure?procedure.dues:"1"}
-            disabled={procedure?procedure.dues==1:true} />
+            min="0" max="36" onChange={(e) => handlePeriodChange(e.target)}
+            defaultValue={procedure?procedure.dues:"0"} />
         </div>
         <br/>
         <div className="col-sm">
           <label className="form-label" htmlFor="payment_period">Periodo de pago</label>
-          <select className="custom-select form-control custom-select-lg"
-            disabled={procedure&&procedure.dues==1} id="payment_period">
-              <option value="1">1 mes</option>
-              <option value="2">2 meses</option>
-              <option value="3">3 meses</option>
-              <option value="4">4 meses</option>
-              <option value="6">6 meses</option>
+          <select className="custom-select form-control custom-select-lg" id="payment_period">
+            <option value="0">Sin cuotas</option>
+            <option value="1">1 mes</option>
+            <option value="2">2 meses</option>
+            <option value="3">3 meses</option>
+            <option value="4">4 meses</option>
+            <option value="6">6 meses</option>
           </select>
         </div>
       </div>

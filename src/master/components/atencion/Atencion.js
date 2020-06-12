@@ -475,7 +475,7 @@ const AttentionProcedures = props => {
     result.then(
       response_obj => {  // In case it's ok
         // Delete item from DOM
-        document.getElementById(delete_proc_pk.current).remove();
+        document.getElementById(delete_proc_pk.current).parentElement.remove();
         // Reset delete_proc_pk val
         delete_proc_pk.current = -1;
       },

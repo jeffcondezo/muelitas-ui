@@ -79,7 +79,8 @@ const saveObjectToAPI = _obj => {
 }
 const saveAll = (_obj_list) => {
   _obj_list.reduce(
-    (promise_chain, item) => promise_chain.then(saveObjectToAPI(item)),
+    (promise_chain, item) => promise_chain.then( () => saveObjectToAPI(item) ),
+    // (promise_chain, item) => promise_chain.then( () => new Promise( (res, rej) => {/* CODE */; res("valor")} ) ),
     Promise.resolve()
   ).then(
     response_obj => {

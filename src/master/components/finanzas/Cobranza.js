@@ -25,7 +25,7 @@ const Cobranza = props => {
     <PageTitle title={"Cobrar"} />
 
     <div className="row">
-      <div className="col-lg-8">
+      <div className="col-lg-7">
         <PaymentForm
           redirectTo={props.redirectTo}
           setRefresh={setRefresh}
@@ -34,7 +34,7 @@ const Cobranza = props => {
           sucursal_pk={props.sucursal_pk}
           patient={props.data.patient} />
       </div>
-      <div className="col-lg-4">
+      <div className="col-lg-5">
         <div style={{marginTop: "30px", marginLeft: "20px"}}>
           <PatientDebtsTable
             selected={selected_attention_detail}
@@ -54,7 +54,6 @@ const PaymentForm = props => {
   const [clienttype, setClientType] = useState(1);  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
   const [knownclient, setNC] = useState(true);  // Paciente es Cliente
-  // cuentacorriente can be setted by CreditType component
 
   useEffect(() => {
     if(clienttype==1){
@@ -305,45 +304,23 @@ const PaymentForm = props => {
   // Save payment
   const savePayment = (_client) => {
     setClient(_client)
-    /*** REFORM TO SEND ONE BY ONE DCC'S PK TO PAY ***/
-    console.log("props.selected", props.selected);
-    return;
-    /*
+
     // Set data format
-    let _data = {
-      total: 0,  // Total
-      descuento: 0,  // Modificación del precio (+|-)
+    let data = {
+      // detallecuentacorriente: 0,  // selected dcc's pk
+      monto: 0,
       origen_pago: "1",
     }
-    _data[type==1?"selected_dt":"credit_dt"] = String(props.selected);
     // Sent payment
-    simplePostData('finanzas/cuentacorriente/', {
-      cliente: _client.pk,
-      sucursal: props.sucursal_pk,
-      deuda_actual: 0,
-    }).then(
-      cuentacorriente => simplePostData('finanzas/cuentacorriente/pago/create/', {
-        ..._data,
-        cuentacorriente: cuentacorriente.pk,  // Cuenta corriente
-      })
-    ).then(
-      response_obj => {
-        console.log(response_obj);
-        console.log(type);
-        if(type==2) return;
-        return simplePostData('finanzas/comprobante/', {
-          dcc_list: String(response_obj.dccs),
-          tipo: type,
-          cliente: _client.pk,
-          sucursal: props.sucursal_pk,
-        })
-      },
-      error => handleErrorResponse("custom", "Error", "Ha ocurrido un error")
-    ).then(() => {
-      handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info")
-      props.setRefresh(true);
-    })
-    */
+    props.selected.reduce(
+      (promise_chain, item) => promise_chain.then(() => simplePostData(
+        'finanzas/cuentacorriente/pago/create/',
+        {detallecuentacorriente: item, ...data}
+      )), Promise.resolve()
+    )
+    .then(res => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
+    .finally(res => props.setRefresh(true))
+    .catch(er => console.log("ERROR", er))
   }
 
 
@@ -484,15 +461,12 @@ const PatientDebtsTable = props => {
   useEffect(() => {
     getCuentaCorrienteDebts(props.attention_pk)
   }, []);
-  useEffect(() => {
-    if(!dccs || !props.debtExist) return;
-  }, [dccs]);
 
   if(props.refresh){
     // refresh values
-    getCuentaCorrienteDebts(props.attention_pk)
     props.select([]);
     props.setRefresh(false);
+    getCuentaCorrienteDebts()
   }
 
   return !dccs
