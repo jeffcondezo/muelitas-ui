@@ -1,14 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
-import { savePageHistory } from '../HandleCache';
+import { savePageHistory, getPageHistory, getCacheData } from '../HandleCache';
 import { Icon, PageTitle } from '../bits';
 import { PatientDataList } from '../admision/Admision';
 
 
 const HistoriaClinica = props => {
   // Receive {data.patient_pk, sucursal_pk, redirectTo}
-  const patient_pk = useRef(props.data.patient_pk).current;
+  const [patient_pk, setPatientPK] = useState(props.data.patient_pk);
   const [selected_cita, selectCita] = useState(false);
+
+  useEffect(() => {
+    if( !patient_pk ){
+      let tmp = getCacheData().patient_pk
+      if(!tmp) props.redirectTo('/nav/admision')
+      setPatientPK(tmp)
+    }
+    savePageHistory({patient_pk: patient_pk});
+  }, [patient_pk])
 
   return (
     <>
@@ -144,7 +153,7 @@ const HistoriaCitaList = props => {
     // Gen Datatable
     let _tmp = window.$('#list-attention').DataTable({
       dom: 'trip',  // t: table, r: process display, i: information, p: pagination
-      pageLength: 2,
+      pageLength: 8,
       columnDefs: [{
         targets: -1,
         orderable: false,

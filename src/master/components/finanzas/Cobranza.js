@@ -144,6 +144,7 @@ const PaymentForm = props => {
     else  // New client
       if(clienttype==1) handleSubmit_ClientRegular()  // Regular
       else if(clienttype==2) handleSubmit_ClientEmpresa()  // Enterprise
+      else if(clienttype==3) saveNoPayment()  // No FE
   }
   // Save form as client
   const handleSubmit_ClientEmpresa = () => {
@@ -311,11 +312,23 @@ const PaymentForm = props => {
       monto: 0,
       origen_pago: "1",
     }
-    // Sent payment
+    // Send payment
     props.selected.reduce(
       (promise_chain, item) => promise_chain.then(() => simplePostData(
         'finanzas/cuentacorriente/pago/create/',
         {detallecuentacorriente: item, ...data}
+      )), Promise.resolve()
+    )
+    .then(res => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
+    .finally(res => props.setRefresh(true))
+    .catch(er => console.log("ERROR", er))
+  }
+  const saveNoPayment = () => {
+    // Pago sin FE
+    props.selected.reduce(
+      (promise_chain, pk) => promise_chain.then(() => simplePostData(
+        'finanzas/cuentacorriente/pago/nofe/',
+        {pk: pk}
       )), Promise.resolve()
     )
     .then(res => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
@@ -374,8 +387,7 @@ const PaymentForm = props => {
                 <input type="text" id="client-address" className="form-control" disabled={knownclient && clienttype==2} />
               </div>
             </div>
-          )
-          : ""
+          ) : ""
         }
 
         {clienttype!=3
@@ -385,7 +397,7 @@ const PaymentForm = props => {
               <input type="text" id="client-phone" className="form-control" maxLength="9" disabled={knownclient} />
             </div>
           )
-          : "OTHER INPUT"
+          : <div className="card-body"><h5>Emitir comprobante manualmente</h5></div>
         }
       </div>
 
