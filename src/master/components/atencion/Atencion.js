@@ -484,8 +484,8 @@ const AttentionProcedures = props => {
       }
     );
   }
-  function editProcedure(_pk){
-    props.redirectTo("/nav/procedimiento/edit", {procedimiento: _pk});
+  function editProcedure(proc){
+    props.redirectTo("/nav/procedimiento/edit", {procedimiento: proc});
   }
 
   useEffect(() => {
@@ -515,7 +515,7 @@ const AttentionProcedures = props => {
                     </span>
                     <button className="btn ml-auto"
                       style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                      onClick={()=>editProcedure(proc.pk)}>
+                      onClick={()=>editProcedure(proc)}>
                         <i className="fal fa-edit"></i>
                     </button>
                     <button className="btn"

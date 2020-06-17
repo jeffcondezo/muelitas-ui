@@ -27,11 +27,12 @@ const Procedimiento = props => {
         return simplePostData(`atencion/detalle/`, data, "POST")
       }else if(props.data.procedimiento){
         // Update Procedimiento
-        return simplePostData(`atencion/detalle/${props.data.procedimiento}/`, data, "PATCH")
+        return simplePostData(`atencion/detalle/${props.data.procedimiento.pk}/`, data, "PATCH")
       }
       return Promise.reject();
     })().then(
       res => {
+        console.log(res);
         // Redirect to attention
         props.redirectTo('/nav/atencion/detalle', {cita: props.cita});
       },
@@ -60,16 +61,10 @@ const Procedimiento = props => {
   )
 }
 const ProcedimientoForm = props => {
-  // Receive {procedure}
+  // Receive {procedimiento?}
   const [procedures, setProcedures] = useState(false);
-  const [procedure, setProcedure] = useState(false);
+  let procedure = props.procedimiento
 
-  function getProcedureDataToUpdate(procedimiento_pk){
-    getDataByPK(`atencion/detalle`, procedimiento_pk)
-    .then(setProcedure,
-      er => console.log(er)
-    )
-  }
   function getProcedures(_sucursal_pk){
     // Add procedure to cita's attention
     let filter = `filtro={"sucursal":"${_sucursal_pk}"}`;
@@ -115,20 +110,18 @@ const ProcedimientoForm = props => {
 
   useEffect(() => {
     getProcedures(props.sucursal_pk);
-    // Get procedure to edit
-    if(props.procedimiento)
-      getProcedureDataToUpdate(props.procedimiento);
   }, []);
   useEffect(() => {
-    if(!procedure) return;
+    if(!procedures) return;
 
-    document.getElementById('payment_period').value = procedure.payment_period;
-  }, [procedure]);
-  useEffect(() => {
-    if(!procedures || procedure) return;
-
-    document.getElementById("payment_period").value = "0";
-    document.getElementById("payment_period").disabled = true;
+    if(procedure){
+      console.log(procedure);
+      document.getElementById("payment_period").value = procedure.payment_period;
+      document.getElementById("payment_period").disabled = procedure.payment_period==0;
+    }else{
+      document.getElementById("payment_period").value = "0";
+      document.getElementById("payment_period").disabled = true;
+    }
   }, [procedures]);
 
   return !procedures
