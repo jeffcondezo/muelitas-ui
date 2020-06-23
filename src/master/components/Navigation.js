@@ -225,6 +225,11 @@ function SelectComponent(props){
             data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
+        <Route path="/nav/cobranza">
+          <Cobranza
+            sucursal_pk={props.current_sucursal_pk}
+            data={_redirect_obj} redirectTo={props.redirectTo} />
+        </Route>
 
         {/* Components accessed only by redirect */}
         <Route exact path="/nav/odontograma">
@@ -253,14 +258,6 @@ function SelectComponent(props){
           {!_redirect_obj
             ? <Redirect to="/nav/home" />
             : <HistoriaClinica
-                sucursal_pk={props.current_sucursal_pk}
-                data={_redirect_obj} redirectTo={props.redirectTo} />
-          }
-        </Route>
-        <Route exact path="/nav/cobranza">
-          {!_redirect_obj
-            ? <Redirect to="/nav/home" />
-            : <Cobranza
                 sucursal_pk={props.current_sucursal_pk}
                 data={_redirect_obj} redirectTo={props.redirectTo} />
           }
@@ -297,6 +294,11 @@ function AsideLinks(props){
       <li className={props.history.location.pathname==="/nav/atencion"?"active":""}>
         <Link data-filter-tags="atencion" to='/nav/atencion'>
           <span className="nav-link-text">ATENCION</span>
+        </Link>
+      </li>
+      <li className={props.history.location.pathname==="/nav/cobranza"?"active":""}>
+        <Link data-filter-tags="cobranza" to='/nav/cobranza'>
+          <span className="nav-link-text">COBRANZA</span>
         </Link>
       </li>
       {/*<li>

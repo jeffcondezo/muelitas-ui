@@ -1,56 +1,224 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Switch,
+  Route,
+  Redirect,
+  Link,
+  useParams,  // Get parameter from url
+} from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   simplePostData,
-  getDataByPK
+  getDataByPK,
 } from '../../functions';
-import { getPageHistory } from '../HandleCache';
+import { savePageHistory, getPageHistory } from '../HandleCache';
 import { PageTitle } from '../bits';
-import { PatientForm } from '../admision/Admision';
-
-// Constant
-const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_cobranza";
-
 
 const Cobranza = props => {
   // Receive {data.patient, sucursal_pk, redirectTo}
+  return <Switch>
+      <Route exact path='/nav/cobranza/list/'>
+        <CobranzaList
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo} />
+      </Route>
+      <Route exact path='/nav/cobranza/:patient/detalle/'>
+        <CobranzaDetail
+          patient={props.data.patient}
+          attention_pk={props.data.attention_pk}
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo} />
+      </Route>
+
+      <Route>
+        <Redirect to="/nav/cobranza/list/" />
+      </Route>
+    </Switch>
+}
+
+const CobranzaList = props => {
+  return (<DebtXPatientTable sucursal_pk={props.sucursal_pk} />)
+}
+const DebtXPatientTable = props => {
+  // Receive {sucursal_pk}
+  const [patientxdebt, setPxD] = useState(false);
+  const [datatable, setDatatable] = useState(false);
+
+  const getPxD = () => {
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/deuda/${props.sucursal_pk}/`;
+    // Generate promise
+    fetch(url, {headers: {Authorization: localStorage.getItem('access_token')}})
+    .then(response => {
+        if(response.ok){
+          Promise.resolve(response.json())
+        }else{
+          Promise.reject(response.statusText)
+        }
+    }, () => handleErrorResponse('server')
+    )
+    .then(setPxD);
+  }
+
+  useEffect(() => {
+    // Add DataTable rel docs
+    // JS
+    if(!document.getElementById('dt_script')){
+      const dt_script = document.createElement("script");
+      dt_script.async = false;
+      dt_script.id = "dt_script";
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      dt_script.onload = () => getPxD();
+      document.body.appendChild(dt_script);
+    }else getPxD();
+    // CSS
+    if(!document.getElementById('dt_style')){
+      const dt_style = document.createElement("link");
+      dt_style.rel = "stylesheet";
+      dt_style.id = "dt_style";
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
+      document.head.appendChild(dt_style);
+    }
+
+    savePageHistory();  // Save page history
+  }, []);
+  // When resource variable is setted
+  useEffect(() => {
+    console.log(patientxdebt);
+    if(!patientxdebt) return;  // Abort if it's false
+
+    // Destroy previous DT if exists
+    if(datatable) window.$('#patientxdebt-table').DataTable().clear().destroy();
+    // Gen Datatable
+    let _tmp = window.$('#patientxdebt-table').DataTable({
+      data: patientxdebt,
+      columns: [
+        {title: "Nombre", data: null},
+        {title: "Apellidos", data: null},
+        {title: "DNI", data: 'dni'},
+        {title: "", data: null},
+      ],
+      columnDefs: [{
+        // Button
+        targets: -1,
+        orderable: false,
+        width: "1px",
+        defaultContent: "<button class='select-patient btn btn-light btn-pills waves-effect'>Seleccionar</button>",
+        createdCell: (cell, data, rowData) => {
+          // Add click listener to button (children[0])
+          cell.children[0].onclick = () => {
+            props.redirectTo("/nav/admision/detalle", {patient: rowData});
+          }
+        }
+      }, {
+        // Nombre
+        targets: 0,
+        render: (data, type, row) => (
+          cFL(row.nombre_principal)+
+          (row.nombre_secundario?" "+cFL(row.nombre_secundario):"")
+        ),
+      }, {
+        // Apellidos
+        targets: 1,
+        render: (data, type, row) => (
+          cFL(row.ape_paterno)+" "+
+          cFL(row.ape_materno)
+        ),
+      }],
+      pageLength: 8,  // Default page length
+      lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
+      language: {
+        // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
+        sProcessing:     "Procesando...",
+        sLengthMenu:     "Mostrar _MENU_ registros",
+        sZeroRecords:    "No se encontraron resultados",
+        sEmptyTable:     "No hay atenciones registradas para la fecha seleccionada",
+        sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+        sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
+        sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
+        sInfoPostFix:    "",
+        // "sSearch":         "Buscar:",
+        sUrl:            "",
+        sInfoThousands:  ",",
+        sLoadingRecords: "Cargando...",
+        oPaginate: {
+          sFirst:    "Primero",
+          sLast:     "Último",
+          sNext:     "Siguiente",
+          sPrevious: "Anterior"
+        },
+        oAria: {
+          sSortAscending:  ": Activar para ordenar la columna de manera ascendente",
+          sSortDescending: ": Activar para ordenar la columna de manera descendente"
+        },
+        buttons: {
+          copy: "Copiar",
+          colvis: "Visibilidad"
+        }
+      },
+    });
+
+    setDatatable(_tmp);  // Save DT in state
+  }, [patientxdebt]);
+
+  return !patientxdebt
+    ? "loading"
+    : (
+      <div className="datatable-container col-12">
+        <table id="patientxdebt-table" style={{width: "100%"}}></table>
+      </div>
+    );
+}
+
+
+const CobranzaDetail = props => {
+  let __params__ = useParams();
+  // Receive {patient, sucursal_pk, redirectTo}
   // This page will not be saved in cache nor data nor history
   const [selected_attention_detail, setSelectedAD] = useState([]);
   const [refresh, setRefresh] = useState(false);
+  const [patient, setPatient] = useState(props.patient);
 
-  return (
-  <>
-    <PageTitle title={"Cobrar"} />
+  useEffect(() => {
+    if(props.patient) return;
 
-    <div className="row">
-      <div className="col-lg-7">
-        <PaymentForm
-          redirectTo={props.redirectTo}
-          setRefresh={setRefresh}
-          attention_pk={props.data.attention_pk}
-          selected={selected_attention_detail}
-          sucursal_pk={props.sucursal_pk}
-          patient={props.data.patient} />
-      </div>
-      <div className="col-lg-5">
-        <div style={{marginTop: "30px", marginLeft: "20px"}}>
-          <PatientDebtsTable
-            selected={selected_attention_detail}
-            select={setSelectedAD}
-            refresh={refresh}
+    // If patient is not in props, get from API
+    // Get patient from url'pk
+    getDataByPK('atencion/paciente', __params__.patient).then(setPatient)
+  }, [props.patient])
+
+  return !patient
+    ? "loading"
+    : (
+    <>
+      <PageTitle title={"Cobrar"} />
+
+      <div className="row">
+        <div className="col-lg-7">
+          <PaymentForm
+            redirectTo={props.redirectTo}
             setRefresh={setRefresh}
-            patient={props.data.patient}/>
+            attention_pk={props.attention_pk}
+            selected={selected_attention_detail}
+            sucursal_pk={props.sucursal_pk}
+            patient={patient} />
+        </div>
+        <div className="col-lg-5">
+          <div style={{marginTop: "30px", marginLeft: "20px"}}>
+            <PatientDebtsTable
+              selected={selected_attention_detail}
+              select={setSelectedAD}
+              refresh={refresh}
+              setRefresh={setRefresh}
+              patient={patient}/>
+          </div>
         </div>
       </div>
-    </div>
-  </>
-  )
+    </>
+    )
 }
 const PaymentForm = props => {
   // Receive {patient, selected, sucursal_pk, setRefresh}
-  const [type, setType] = useState(1);  // Efectivo && Credito
   const [clienttype, setClientType] = useState(1);  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
   const [knownclient, setNC] = useState(true);  // Paciente es Cliente
@@ -108,10 +276,10 @@ const PaymentForm = props => {
         ? handleErrorResponse('permission')
         : Promise.reject()
       ),
-      error => handleErrorResponse('server')
+      () => handleErrorResponse('server')
     ).then(
       response_obj => {setClient(response_obj.length!=0?response_obj[0]:false)},
-      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
+      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
     );
   }
   const setValues = (values) => {
@@ -287,18 +455,11 @@ const PaymentForm = props => {
     getOrCreateNewClient(_tmp1)
   }
   // Get/Create client from API
-  const getOrCreatePaciente = (_patient_pk) => {
-    simplePostData(`finanzas/cliente/paciente/${_patient_pk}/`, {})
-    .then(
-      response_obj => setClient(response_obj),
-      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-    );
-  }
   const getOrCreateNewClient = (data) => {
     simplePostData(`finanzas/cliente/`, data)
     .then(
       response_obj => savePayment(response_obj),
-      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
+      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
     );
   }
 
@@ -306,21 +467,28 @@ const PaymentForm = props => {
   const savePayment = (_client) => {
     setClient(_client)
 
-    // Set data format
-    let data = {
-      // detallecuentacorriente: 0,  // selected dcc's pk
-      monto: 0,
-      origen_pago: "1",
-    }
     // Send payment
     props.selected.reduce(
-      (promise_chain, item) => promise_chain.then(() => simplePostData(
+      (promise_chain, dcc_pk) => promise_chain.then(() => simplePostData(
         'finanzas/cuentacorriente/pago/create/',
-        {detallecuentacorriente: item, ...data}
+        {detallecuentacorriente: dcc_pk}
       )), Promise.resolve()
     )
-    .then(res => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
-    .finally(res => props.setRefresh(true))
+    .then(() => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
+    .then(() => props.setRefresh(true))
+    .then(() => {
+      if(clienttype==3) return Promise.reject("No FE")
+      return simplePostData('finanzas/comprobante/', {
+        tipo: clienttype,
+        sucursal: props.sucursal_pk,
+        dcc_list: String(props.selected),
+        cliente: client.pk,
+      })
+    })
+    .then(
+      res => window.open(process.env.REACT_APP_PROJECT_API+`finanzas/empresa/${props.sucursal_pk}/pdf/${res.pk}/`, "_blank"),
+      er => console.log("ERROR", er)
+    )
     .catch(er => console.log("ERROR", er))
   }
   const saveNoPayment = () => {
@@ -331,22 +499,14 @@ const PaymentForm = props => {
         {pk: pk}
       )), Promise.resolve()
     )
-    .then(res => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
-    .finally(res => props.setRefresh(true))
+    .then(() => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
+    .finally(() => props.setRefresh(true))
     .catch(er => console.log("ERROR", er))
   }
 
 
   return (
     <div>
-      <div className="btn-group btn-group-toggle" data-toggle="buttons">
-        <label className={"btn btn-outline-info waves-effect waves-themed "+(type===1?'active':'')} onClick={()=>setType(1)}>
-          <input type="radio" name="odontogram_type" defaultChecked /> Efectivo
-        </label>
-        <label className={"btn btn-outline-info waves-effect waves-themed "+(type===2?'active':'')} onClick={()=>setType(2)}>
-          <input type="radio" name="odontogram_type" /> Credito
-        </label>
-      </div>
       <div style={{marginLeft: "20px"}} className="btn-group btn-group-toggle" data-toggle="buttons">
         <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===1?'active':'')} onClick={()=>setClientType(1)}>
           <input type="radio" name="odontogram_type" defaultChecked /> Boleta
@@ -471,15 +631,17 @@ const PatientDebtsTable = props => {
   }
 
   useEffect(() => {
-    getCuentaCorrienteDebts(props.attention_pk)
+    console.log("refresh");
+    getCuentaCorrienteDebts()
   }, []);
+  useEffect(() => {
+    if(!props.refresh) return;
 
-  if(props.refresh){
     // refresh values
     props.select([]);
     props.setRefresh(false);
     getCuentaCorrienteDebts()
-  }
+  } , [props.refresh])
 
   return !dccs
     ? "loading"
@@ -487,8 +649,9 @@ const PatientDebtsTable = props => {
       <table style={{fontSize: "1.2em"}}>
         <thead>
           <tr>
+            <td>Procedimiento</td>
             <td></td>
-            <td></td>
+            <td>Fecha de pago limite</td>
           </tr>
         </thead>
         <tbody>
@@ -501,12 +664,14 @@ const PatientDebtsTable = props => {
               <td className="custom-control custom-checkbox">
                 <input type="checkbox" className="custom-control-input"
                   id={"pay-"+dcc.pk} checked={props.selected.includes(dcc.pk)}
-                  onChange={(e)=>checkbox_addToSelectedOnes(dcc.pk)} />
+                  onChange={()=>checkbox_addToSelectedOnes(dcc.pk)} />
                 <label className="custom-control-label" htmlFor={"pay-"+dcc.pk}>{cFL(dcc.procedimiento)}</label>
               </td>
-              <td style={{paddingLeft: "10px"}}> <code>{dcc.deuda}</code> de <code>{dcc.precio}</code> </td>
+              <td style={{paddingLeft: "10px"}}> <code>{dcc.deuda}</code> </td>
               <td>
-                <span className={"badge badge-warning badge-pill"}>Debe</span>
+                <span className={"badge badge-"
+                  +(dcc.is_over==1?"danger":dcc.is_over==0?"warning":"info")
+                  +" badge-pill"}>{dcc.fecha_limite.split("-").reverse().join("-")}</span>
               </td>
             </tr>
           ))}

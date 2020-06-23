@@ -31,7 +31,34 @@ export function getCacheData(){
   let data = window.localStorage.getItem('prev_page');
   return JSON.parse(data).data;
 }
+// Crypt
+export const encryptData = data => {
+  if(typeof data != "string" && typeof data != "number"){
+    if(process.env.REACT_APP_DEBUG) console.error("ERROR, data is not string in functions.js function encryptData");
+    return ""  // Default to handle error
+  }
+  data = String(data)
 
-function cryptData(){  // Missing declaration && implementation
-  return false;
+  // key's length according to data
+  let key = "$57#$#56321a5grxlr8a";
+  let new_key = key
+  while(new_key.length < data.length) new_key += key
+  key = new_key
+  // encrypt
+  return data.split("")  // Slit to array
+  .map( (x, inx) => x.charCodeAt(0) ^ key.charCodeAt(inx) )  // XOR operation
+  .map(y => String.fromCharCode(y))  // To character
+  .join("")  // Join array
+}
+export const decryptData = code => {
+  // key's length according to code
+  let key = "$57#$#56321a5grxlr8a";
+  let new_key = key
+  while(new_key.length < code.length) new_key += key
+  key = new_key
+  // decrypt
+  return code.split("")  // Slit to array
+  .map( (x, inx) => x.charCodeAt(0) ^ key.charCodeAt(inx) )  // XOR operation
+  .map(y => String.fromCharCode(y))  // To character
+  .join("")  // Join array
 }

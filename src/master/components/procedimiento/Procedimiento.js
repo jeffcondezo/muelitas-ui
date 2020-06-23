@@ -17,6 +17,7 @@ const Procedimiento = props => {
     data.procedimiento = document.getElementById('procedimiento').value;
     data.observaciones = document.getElementById('observaciones').value;
     data.dues = document.getElementById('dues').value;
+    data.pay_today = document.getElementById('pay_today').checked;
     data.payment_period = document.getElementById('payment_period').value;
 
     // API function
@@ -97,14 +98,19 @@ const ProcedimientoForm = props => {
     );
   }
   function handlePeriodChange(el){
-    if(el.value=="0"){
+    if(el.value=="0" || !el.value){
+      document.getElementById("dues").value = "0";
       document.getElementById("payment_period").value = "0";
       document.getElementById("payment_period").disabled = true;
       document.getElementById("payment_period").options[0].disabled = false;
+      document.getElementById("pay_today").checked = false;
+      document.getElementById("pay_today").disabled = true;
     }else{
       if(document.getElementById("payment_period").value=="0") document.getElementById("payment_period").value = "1";
       document.getElementById("payment_period").disabled = false;
       document.getElementById("payment_period").options[0].disabled = true;
+      document.getElementById("pay_today").checked = false;
+      document.getElementById("pay_today").disabled = false;
     }
   }
 
@@ -118,9 +124,12 @@ const ProcedimientoForm = props => {
       console.log(procedure);
       document.getElementById("payment_period").value = procedure.payment_period;
       document.getElementById("payment_period").disabled = procedure.payment_period==0;
+      document.getElementById("pay_today").disabled = true;
     }else{
       document.getElementById("payment_period").value = "0";
       document.getElementById("payment_period").disabled = true;
+      document.getElementById("pay_today").checked = false;
+      document.getElementById("pay_today").disabled = true;
     }
   }, [procedures]);
 
@@ -158,6 +167,13 @@ const ProcedimientoForm = props => {
             <option value="4">4 meses</option>
             <option value="6">6 meses</option>
           </select>
+        </div>
+        <br/>
+        <div className="col-sm">
+          <div className="custom-control custom-checkbox">
+            <input type="checkbox" className="custom-control-input" id="pay_today" />
+            <label className="custom-control-label" htmlFor="pay_today">Primer pago hoy? </label>
+          </div>
         </div>
       </div>
     )

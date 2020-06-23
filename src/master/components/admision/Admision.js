@@ -4,7 +4,7 @@ import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
-  getDataByPK
+  getDataByPK,
 } from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
 import { PageTitle, Icon } from '../bits';
@@ -538,6 +538,7 @@ const PatientDebts = props => {
   )
 } /**/
 const LinksDetail = props => {
+  // WARNING: This component strongly depends on it's props
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -558,7 +559,7 @@ const LinksDetail = props => {
         </div>
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="finance"
-            onClick={() => props.redirectTo("/nav/cobranza", {patient: props.patient})} />
+            onClick={() => props.redirectTo(`/nav/cobranza/${props.patient.pk}/detalle/`, {patient: props.patient})} />
           <span style={{fontSize: "0.9rem"}}>Cobrar</span>
         </div>
       </div>
