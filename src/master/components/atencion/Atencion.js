@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  savePageHistory,
-  getCacheData
-} from '../HandleCache';
-import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
+import React, { useState, useEffect, useRef } from 'react';
+import { Switch, Route, Redirect, useParams } from "react-router-dom";
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
@@ -13,7 +9,6 @@ import { PageTitle, Icon } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_attention";
 
 
 function Atencion(props){
@@ -26,15 +21,13 @@ function Atencion(props){
       <Route exact path="/nav/atencion">
         <AttentionList sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
       </Route>
-      <Route exact path="/nav/atencion/detalle">
-        {!props.data.cita && !getCacheData().cita
-          ? <Redirect to="/nav/atencion" />
-          : <AttentionDetail
-              sucursal_pk={props.sucursal_pk}
-              cita={props.data.cita}
-              redirectTo={props.redirectTo} />
-        }
+      <Route exact path="/nav/atencion/:cita_pk/detalle">
+        <AttentionDetail
+          sucursal_pk={props.sucursal_pk}
+          cita={props.data.cita}
+          redirectTo={props.redirectTo} />
       </Route>
+
       <Route>
         <Redirect to="/nav/atencion" />
       </Route>
@@ -123,7 +116,6 @@ const AttentionList = props => {
       document.head.appendChild(dt_style);
     }
 
-    savePageHistory();  // Save page history
     return () => {
       console.log("UNMOUNTING ATTENTION LIST");
     }
@@ -153,7 +145,8 @@ const AttentionList = props => {
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            props.redirectTo("/nav/atencion/detalle", {cita: rowData});
+            console.log(rowData);
+            props.redirectTo(`/nav/atencion/${rowData.pk}/detalle`, {cita: rowData});
           }
         }
       }, {
@@ -229,29 +222,25 @@ const AttentionList = props => {
 
 const AttentionDetail = (props) => {
   // Receive {cita, sucursal_pk, redirectTo}
-  // Handle prev data flag from cache
-  const [cita, setCita] = useState(props.cita);
+  let __params__ = useParams()
+  const [cita, setCita] = useState(false);
 
   const redirect = (url, data={cita: cita}) => {
     props.redirectTo(url, data);
   }
 
+  const getCita = cita_pk => {
+    getDataByPK('atencion/cita', cita_pk)
+    .then(setCita)
+  }
+
   useEffect(() => {
-    setCita(props.cita)
-  }, [props.cita])
-  useEffect(() => {
-    if(!cita){
-      // Get cita data by cache
-      getDataByPK('atencion/cita', getCacheData().cita )
-      .then(setCita);
-    }else{
-      // Only save cita.pk to cache if there is no data in cache yet
-      // This will avoid loosing original cita by PatientAttentionHistory's links
-      if( !getCacheData().cita ) savePageHistory({cita: cita.pk});
-      else if(cita.pk != getCacheData().cita)  // Only print message if cita has changed
-        handleErrorResponse("custom", "Tip", "Retroceder pagina lo retornará a la cita original", "info");
-    }
-  }, [cita]);
+    // Si no se recibe cita en props, obtenerla del url
+    if(!props.cita) getCita(__params__.cita_pk)
+    else setCita(props.cita)  // Si se recibe cita, set cita from props
+  }, [])
+
+  if(cita && cita.pk != __params__.cita_pk) getCita(__params__.cita_pk)
 
   return !cita
     ? "loading"
@@ -267,7 +256,7 @@ const AttentionDetail = (props) => {
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
-            <Links paciente_data={cita.paciente_data} redirectTo={redirect} />
+            <Links paciente_data={cita.paciente_data} redirectTo={redirect} cita_pk={cita.pk} />
           </div>
           <div className="panel">
             <PatientAttentionHistory
@@ -331,9 +320,9 @@ const PatientAttentionHistory = props => {
   // Receive {cita, redirectTo, sucursal_pk}
   const [attention_list, setAttentionList] = useState(false);
 
-  const getAttentionHistory = (_patient_pk, _sucursal_pk=props.sucursal_pk) => {
+  const getAttentionHistory = (_patient_pk) => {
     // Get last n patient's attentions
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`;
+    let filter = `filtro={"sucursal":"${props.sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`;
     let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
     url = url + '?' + filter;
     // Generate promise
@@ -369,7 +358,9 @@ const PatientAttentionHistory = props => {
     );
   }
   const redirectToAttentionDetail = _cita => {
-    props.redirectTo("/nav/atencion/detalle", {cita: _cita});
+    if(_cita.pk == props.cita.pk) return
+
+    props.redirectTo(`/nav/atencion/${_cita.pk}/detalle`, {cita: _cita});
   }
 
   // Run at first render
@@ -400,7 +391,7 @@ const PatientAttentionHistory = props => {
           Para más información revise el apartado de atenciones de paciente en&nbsp;
           <span style={{cursor: "pointer"}}
             onClick={()=>{
-              props.redirectTo("/nav/admision/detalle", {patient: props.cita.paciente_data})
+              props.redirectTo(`/nav/admision/${props.cita.paciente_data.pk}/detalle`, {patient: props.cita.paciente_data})
             }}>
               <b>Admision</b>
           </span>
@@ -485,7 +476,7 @@ const AttentionProcedures = props => {
     );
   }
   function editProcedure(proc){
-    props.redirectTo("/nav/procedimiento/edit", {procedimiento: proc});
+    props.redirectTo(`/nav/procedimiento/${proc.pk}/editar/`);
   }
 
   useEffect(() => {
@@ -574,19 +565,20 @@ const Links = props => {
       <div className="card-body">
         <div className="card-title">
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="admision" onClick={() => props.redirectTo("/nav/admision/detalle", {patient: props.paciente_data})} /><br/>
+            <Icon type="admision"
+              onClick={() => props.redirectTo(`/nav/admision/${props.paciente_data.pk}/detalle`, {patient: props.paciente_data})} /><br/>
             <span style={{fontSize: "0.9rem"}}>Admision</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="odontogram" onClick={() => props.redirectTo("/nav/odontograma")} /><br/>
+            <Icon type="odontogram" onClick={() => props.redirectTo(`/nav/odontograma/${props.cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="procedure" onClick={() => props.redirectTo("/nav/procedimiento/agregar")} /><br/>
+            <Icon type="procedure" onClick={() => props.redirectTo(`/nav/procedimiento/${props.cita_pk}/agregar/`)} /><br/>
             <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="prescription" onClick={() => props.redirectTo("/nav/prescripcion")} /><br/>
+            <Icon type="prescription" onClick={() => props.redirectTo(`/nav/prescripcion/${props.cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Receta</span>
           </div>
         </div>

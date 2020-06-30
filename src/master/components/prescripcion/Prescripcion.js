@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { handleErrorResponse } from '../../functions';
+import { useParams } from 'react-router-dom';
+import { handleErrorResponse, getDataByPK } from '../../functions';
 import { SelectOptions_Procedimiento } from '../bits';
-import { savePageHistory, getPageHistory } from '../HandleCache';
+import { postCacheData, getCacheData } from '../HandleCache';
 import { PageTitle } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_prescription";
 
 
 const Prescripcion = props => {
-  // Receive {data.cita}
+  // Receive {cita}
+  let __params__ = useParams();
+
+  const [cita, setCita] = useState(false)
   const [medicine_list, setMedicineList] = useState(false);
 
+  const getCita = cita_pk => {
+    getDataByPK('atencion/cita', cita_pk)
+    .then(setCita)
+  }
   const addMedicineToList = _medc => {
     if(!medicine_list){
       setMedicineList([_medc]);
@@ -56,13 +63,13 @@ const Prescripcion = props => {
     );
   }
   const getBack = () => {
-    props.redirectTo("/nav/atencion/detalle", {cita: props.data.cita});
+    props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita});
   }
   const finishCita = () => {
     let data = {};
     data['estado'] = '5';
 
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${props.data.cita.pk}/`;
+    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita.pk}/`;
     // Generate promise
     let result = new Promise((resolve, reject) => {
       // Fetch data to api
@@ -92,18 +99,24 @@ const Prescripcion = props => {
     result.then(
       res => {
         handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success")
-        savePageHistory({cita: props.data.cita.pk})
-        props.redirectTo("/nav/atencion/detalle");
+        // props.redirectTo(`/nav/atencion/${}/detalle`);
+        window.history.back()
       },
       er => handleErrorResponse("custom", "Ups!","Un error ha ocurrido")
     );
   }
 
   useEffect(() => {
-    getPrescriptionMedicine(props.data.cita.atencion);
+    // Si props no recibe cita
+    if(!cita) getCita(__params__.cita_pk)
   }, []);
+  useEffect(() => {
+    if(cita) getPrescriptionMedicine(cita.atencion);
+  }, [cita])
 
-  return(
+  return !cita
+  ? "loading"
+  : (
   <>
     <PageTitle title={"Prescripción"} />
     <div id="alert-info" className="alert bg-info-700" role="alert">
@@ -113,7 +126,7 @@ const Prescripcion = props => {
     <div className="row">
       <div className="col-lg-8">
         <AddMedicine
-          cita={props.data.cita}
+          cita={cita}
           sucursal_pk={props.sucursal_pk}
           addMedicineToList={addMedicineToList} />
       </div>
@@ -129,7 +142,7 @@ const Prescripcion = props => {
 
         </div>
         <div className="position-absolute pos-bottom">
-          {props.data.cita.estado==5
+          {cita.estado==5
             ? <button className="btn btn-primary" onClick={() => getBack()}>
                 Regresar
               </button>

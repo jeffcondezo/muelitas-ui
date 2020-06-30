@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { savePageHistory, getPageHistory, getCacheData } from '../HandleCache';
-import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
+import { postCacheData, getCacheData } from '../HandleCache';
+import {
+  Switch,
+  Route,
+  Redirect,
+  Link,
+  useParams,
+} from "react-router-dom";
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
@@ -11,7 +17,6 @@ import { PageTitle, Icon } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_admision";
 
 
 function Admision(props){
@@ -30,24 +35,19 @@ function Admision(props){
           sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
-      <Route exact path="/nav/admision/detalle">
-        {!props.data.patient && !getCacheData().patient
-          ? <Redirect to="/nav/admision" />
-          : <AdmisionDetail
-              sucursal_pk={props.sucursal_pk}
-              redirectTo={props.redirectTo}
-              patient={props.data.patient} />
-        }
+      <Route exact path="/nav/admision/:patient_pk/detalle">
+        <AdmisionDetail
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo}
+          patient={props.data.patient} />
       </Route>
-      <Route exact path="/nav/admision/editar">
-        {!props.data.patient
-          ? <Redirect to="/nav/admision" />
-          : <EditPatient
-              sucursal_pk={props.sucursal_pk}
-              redirectTo={props.redirectTo}
-              patient={props.data.patient} />
-        }
+      <Route exact path="/nav/admision/:patient_pk/editar">
+        <EditPatient
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo}
+          patient={props.data.patient} />
       </Route>
+
       <Route>
         <Redirect to="/nav/admision" />
       </Route>
@@ -58,9 +58,6 @@ function Admision(props){
 
 // General
 const AdmisionHome = props => {
-  useEffect(() => {
-    savePageHistory();
-  }, []);
 
   return (
     <div className="row">
@@ -137,8 +134,6 @@ const SearchPatient = props => {
       dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
       document.head.appendChild(dt_style);
     }
-
-    savePageHistory();  // Save page history
   }, []);
   // When patients are setted
   useEffect(() => {
@@ -164,7 +159,7 @@ const SearchPatient = props => {
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            props.redirectTo("/nav/admision/detalle", {patient: rowData});
+            props.redirectTo(`/nav/admision/${rowData.pk}/detalle`, {patient: rowData});
           }
         }
       }, {
@@ -292,7 +287,7 @@ const LastAttendedPatients = props => {
             : lastPatients.map((pat, inx) => ( inx>max_items-1?"":
               <div key={"pat-"+pat.pk}>
                 <li className="list-group-item d-flex" id={pat.pk}
-                  onClick={()=>{props.redirectTo("/nav/admision/detalle", {patient: pat})}}
+                  onClick={()=>{props.redirectTo(`/nav/admision/${pat.pk}/detalle`, {patient: pat})}}
                   data-toggle="collapse" data-target={"#pat-desc-"+pat.pk}
                   aria-expanded="true" aria-controls={"pat-desc-"+pat.pk}
                   style={{cursor: "pointer", borderBottom: "0"}}>
@@ -330,17 +325,14 @@ const LinksHome = props => {
 }
 // By patient
 const AdmisionDetail = props => {
-  // Handle prev data flag from cache
-  const [patient, setPatient] = useState(props.patient);
+  let __params__ = useParams();
+  const [patient, setPatient] = useState(props.patient || false);
 
   useEffect(() => {
     if(!patient){
-      // Get patient data by cache
-      getDataByPK('atencion/paciente', getCacheData().patient )
+      // Get patient data by url
+      getDataByPK('atencion/paciente', __params__.patient_pk )
       .then( data => setPatient(data) );
-    }else{
-      // Regular behavior
-      savePageHistory({patient: patient.pk});
     }
   }, [patient]);
 
@@ -549,17 +541,17 @@ const LinksDetail = props => {
       <div className="card-body">
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="edit-patient"
-            onClick={() => props.redirectTo("/nav/admision/editar", {patient: props.patient})} />
+            onClick={() => props.redirectTo(`/nav/admision/${props.patient.pk}/editar`, {patient: props.patient})} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="clinic-history"
-            onClick={() => props.redirectTo("/nav/historiaclinica", {patient_pk: props.patient.pk})} />
+            onClick={() => props.redirectTo(`/nav/historiaclinica/${props.patient.pk}/`, {patient_pk: props.patient.pk})} />
           <span style={{fontSize: "0.9rem"}}>Historia</span>
         </div>
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="finance"
-            onClick={() => props.redirectTo(`/nav/cobranza/${props.patient.pk}/detalle/`, {patient: props.patient})} />
+            onClick={() => props.redirectTo(`/nav/cobranza/${props.patient.pk}/detalle`, {patient: props.patient})} />
           <span style={{fontSize: "0.9rem"}}>Cobrar</span>
         </div>
       </div>
@@ -568,10 +560,10 @@ const LinksDetail = props => {
 }
 // Extra
 const EditPatient = props => {
+  let __params__ = useParams();
   // Receive {patient, redirectTo, sucursal_pk}
-  if(!props.patient) console.error("FATAL ERROR, patient PROPERTY NOT SPECIFIED");
 
-  const [patient, updatePatientData] = useState(props.patient||{});
+  const [patient, updatePatientData] = useState(props.patient||false);
 
   const saveEdit = (_data, _patient_pk) => {
     let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${_patient_pk}/`;
@@ -603,15 +595,25 @@ const EditPatient = props => {
     );
   }
   const getBack = () => {
-    props.redirectTo(getPageHistory().prev_pathname, {patient: patient});
+    window.history.back()
   }
 
-  return <PatientForm
-          patient={patient}
-          first_button_text={"Guardar"}
-          handleSubmit={saveEdit}
-          second_button_text={"Cancelar"}
-          secondButtonHandler={getBack} />
+  useEffect(() => {
+    if(!patient){
+      // Get patient by id
+      getDataByPK('atencion/paciente', __params__.patient_pk)
+      .then(updatePatientData)
+    }
+  }, []);
+
+  return !patient
+    ? "loading"
+    : <PatientForm
+        patient={patient}
+        first_button_text={"Guardar"}
+        handleSubmit={saveEdit}
+        second_button_text={"Cancelar"}
+        secondButtonHandler={getBack} />
 }
 const RegisterPatient = props => {
   // Receive {sucursal_pk, redirectTo}
@@ -638,8 +640,9 @@ const RegisterPatient = props => {
     });
     result.then(
       response_obj => {
+        console.log(response_obj);
         // Redirect to AdmisionDetail
-        props.redirectTo('/nav/admision/detalle', {patient: response_obj});
+        props.redirectTo(`/nav/admision/${response_obj.pk}/detalle`, {patient: response_obj});
       },
       error => {
         console.log("WRONG!", error);
@@ -647,7 +650,7 @@ const RegisterPatient = props => {
     );
   }
   const getBack = () => {
-    props.redirectTo(getPageHistory().prev_pathname);
+    window.history.back()
   }
 
   return <PatientForm

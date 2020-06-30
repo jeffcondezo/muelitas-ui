@@ -12,7 +12,7 @@ import {
   simplePostData,
   getDataByPK,
 } from '../../functions';
-import { savePageHistory, getPageHistory } from '../HandleCache';
+import { postCacheData, getCacheData } from '../HandleCache';
 import { PageTitle } from '../bits';
 
 const Cobranza = props => {
@@ -79,8 +79,6 @@ const DebtXPatientTable = props => {
       dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
       document.head.appendChild(dt_style);
     }
-
-    savePageHistory();  // Save page history
   }, []);
   // When resource variable is setted
   useEffect(() => {
@@ -174,7 +172,6 @@ const DebtXPatientTable = props => {
 const CobranzaDetail = props => {
   let __params__ = useParams();
   // Receive {patient, sucursal_pk, redirectTo}
-  // This page will not be saved in cache nor data nor history
   const [selected_attention_detail, setSelectedAD] = useState([]);
   const [refresh, setRefresh] = useState(false);
   const [patient, setPatient] = useState(props.patient);
@@ -251,7 +248,7 @@ const PaymentForm = props => {
   }, [knownclient]);
 
   // Extras
-  const getBack = () => props.redirectTo(getPageHistory().prev_pathname);
+  const getBack = () => window.history.back()
   const inputChange_DNI = (val) => {
     if(val.trim().length==8) getClient('dni', val)
     else setNC(false);

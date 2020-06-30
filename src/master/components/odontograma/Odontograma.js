@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef , useCallback } from 'react';
-import {
-  UNSAFE_cache_postState,
-  UNSAFE_cache_getState,
-  savePageHistory,
-} from '../HandleCache';
+import { useParams } from 'react-router-dom'
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import { getDataByPK } from '../../functions';
+
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const cacheAction = false;
-const __cacheName__ = "_odontogram";
 
 // General properties
 let teeth;
@@ -1615,7 +1611,9 @@ let inc_paths = [];
 let pvw_ctx;
 
 function Odontograma(props){
-  let cita = props.data&&props.data.cita ? props.data.cita : null;
+  let __params__ = useParams()
+
+  let [cita, setCita] = useState(false)
   /* We want to keep these values even when any state change, so we declare 'em as Ref
     We initialize its value and reference it's 'current' attribute (which is the actual value)
     declaring to useRef().current directly only works on objects
@@ -1628,6 +1626,12 @@ function Odontograma(props){
   let [incident_list, setIncidentList] = useState([]);
   // DOM variables
   let odontogram_type = useRef('A');
+
+  // Generic rest function
+  const getCita = cita_pk => {
+    getDataByPK('atencion/cita', cita_pk)
+    .then(setCita)
+  }
 
   /* We use useCallback to avoid re declaration of methods (has no return)
     makes a better performance
@@ -1653,12 +1657,6 @@ function Odontograma(props){
       currentTooth.path = null;
       currentTooth.preserve = false;
       odontogram_type.current = type;  // DOM odontogram type indicator
-
-      if(cacheAction) // Save to cache
-      UNSAFE_cache_postState(__cacheName__, {
-        ...UNSAFE_cache_getState(__cacheName__),
-        odontogram_type: odontogram_type.current,
-      });
 
       // General
       let _left = (
@@ -1983,50 +1981,6 @@ function Odontograma(props){
 
   // Only run after first render
   useEffect(() => {
-    /* Check if there is component state data stored in cache
-    * This is a great security risk if data is not encrypted
-    */
-
-    // Reset global odontogram variable
-    console.log("------------ FIRST RENDER");
-    odontogram = {id: -1, type: ""};
-    console.log(odontogram);
-    // Get from cache
-    let __state__ = cacheAction ? UNSAFE_cache_getState(__cacheName__) : false;
-    if(__state__){  // If there is state data in cache
-      if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
-      // Check if all state's parameters exists in cache before setting 'em
-      if(!__state__.cita || !__state__.odontogram || !__state__.odontogram_type){  // Lack of state's parameter in cache
-        if(__debug__==="true") console.log(`%c ERROR: data in cache not enought`, 'background: #433; color: red');
-
-        /* If props.cita is not defiend then this page is being accessed without redirection
-        * in that case we have no data to fill this page so redirect to home
-        * otherwise (if props.cita is defined) continue with regular behavior
-        */
-        if(!cita){
-          localStorage.removeItem(__cacheName__);  // Delete remaining cache data
-          props.redirectTo('/nav/home/');  // Return to home
-          return;  // Stop execution awaiting for redirection
-        }
-      }else{  // Set data from cache
-        if(__debug__==="true") console.log(`%c SET DATA FROM CACHE`, 'background: #433; color: green');
-        cita = __state__.cita;
-        odontogram = __state__.odontogram;  // Current odontogram from DB
-        odontogram_type.current = __state__.odontogram_type;  // Current odontogram drawn
-      }
-    }else{
-      // If there is not cache data neither props.cita
-      if(!cita){
-        localStorage.removeItem(__cacheName__);  // Delete remaining cache data
-        props.redirectTo('/nav/home/');  // Return to home
-        return;  // Stop execution awaiting for redirection
-      }
-    }
-    // Start saving cita
-    if(cacheAction && cita) UNSAFE_cache_postState(__cacheName__, {...__state__, cita: cita});
-    if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
-    if(cacheAction) savePageHistory();  // Save page history
-
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
@@ -2034,7 +1988,10 @@ function Odontograma(props){
     odontogram_el.onmousemove = (e)=>{mouseInCanvas(e)}
     odontogram_el.onclick = (e)=>{toothPartClickHandle(e)}
     genTeeth(odontogram_type.current);
-    initOdontogram();
+
+    // If cita is not in props
+    if(!cita) getCita(__params__.cita_pk)
+    else initOdontogram()
   }, [genTeeth]);
   // Run after teeth has changed
   useEffect(() => {
@@ -2066,6 +2023,10 @@ function Odontograma(props){
       initPreview();
     }
   }, [incident]);
+  // Cita
+  useEffect(() => {
+    if(cita) initOdontogram()
+  }, [cita])
 
   /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
     that way it keeps updated with the newest state variables
@@ -2106,11 +2067,6 @@ function Odontograma(props){
         odontogram.id = response.id;
         odontogram.type = response.tipo==1?"A":"K";
 
-        if(cacheAction) // Save to cache
-        UNSAFE_cache_postState(__cacheName__, {
-          ...UNSAFE_cache_getState(__cacheName__),
-          odontogram: odontogram,
-        });
 
         getIncidences();
       },
@@ -2443,10 +2399,10 @@ function Odontograma(props){
         </div>
       </div>
       <h5>Paciente: <i>{
-        props.data.cita
-        ? cFL(props.data.cita.paciente_data.nombre_principal)+" "+
-          props.data.cita.paciente_data.ape_paterno.toUpperCase()+" "+
-          props.data.cita.paciente_data.ape_materno.toUpperCase()
+        cita
+        ? cFL(cita.paciente_data.nombre_principal)+" "+
+          cita.paciente_data.ape_paterno.toUpperCase()+" "+
+          cita.paciente_data.ape_materno.toUpperCase()
         : ""
       }</i></h5>
 

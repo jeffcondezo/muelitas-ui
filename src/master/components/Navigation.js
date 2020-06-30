@@ -7,12 +7,7 @@ import {
   withRouter,  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
-import {
-  UNSAFE_cache_postState,
-  UNSAFE_cache_getState,
-  savePageHistory,
-  getPageHistory,
-} from './HandleCache';
+import { postCacheData, getCacheData } from './HandleCache';
 
 // Components to import
 import Admision from './admision/Admision';
@@ -26,35 +21,21 @@ import Cobranza from './finanzas/Cobranza';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_nav";
 
 
 function Navigation(props){
-  const [, updateState] = useState({});
-  /* Set new state to empty object value
-  'cuz when React compares the last state with the new empty object value
-  it'll be different 'cuz objects are always different
-  btw we're using forceUpdate function 'cuz our elements are dinamically generated
-  and its changes are not tracked by react so their changes won't fire a render
-  that's why we've used forceUpdate function
-  */
-  const forceUpdate = () => updateState({});
-
   const profile_pic = "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg";
-  /* We want to keep these values even when any state change, so we declare 'em as Ref
-    We initialize its value and reference it's 'current' attribute (which is the actual value)
-    declaring to useRef().current directly only works on objects
-  */
-  let user = useRef(props.user?props.user:null).current;
+  // User variable, it's gonna be changing dinamically so we declare it with 'const', if it's not in props initialize it as false
+  const user = props.user || false
   const sucursales = useRef([]);  // User's sucursal
-  const [current_sucursal_pk, setCurrentSucursal] = useState(-1);  // Current enviroment sucursal
+  const [current_sucursal_pk, setCurrentSucursal] = useState(false);  // Current enviroment sucursal
   const redirect = useRef(false);  // Only to store values, changes do not render
 
   if(__debug__==="true") console.log(`%c --------- MOUNTING ${props.history.location.pathname} ---------`, 'background: black; color: red');
   if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect.current);
 
-  function setPersonalInfo(){
-    let result = new Promise((resolve, reject) => {
+  function setSucursal(){
+    new Promise((resolve, reject) => {
       let _filter = `filtro={"usuario":"${user.pk}"}`;
       let url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
       url = url + '?' + _filter;
@@ -70,16 +51,20 @@ function Navigation(props){
       }, error => {
         console.log("ERROR", error);
       });
-    });
-    result.then(response_obj => {
-      let _obj = response_obj[0];
-      // Save data
-      sucursales.current = _obj.sucursales;
-      setCurrentSucursal(_obj.sucursales[0].pk);
-    },
-    error => {
-      console.log(error);
-    });
+    })
+    .then(
+      response_obj => {
+        // Handle sucursal response
+        let _obj = response_obj[0];
+        // Save data
+        sucursales.current = _obj.sucursales;
+        // Set current sucursal
+        setCurrentSucursal(_obj.sucursales[0].pk);
+      },
+      error => {
+        console.log(error);
+      }
+    );
   }
   const changeSucursal = (pk) => {
     console.log("changeSucursal", pk);
@@ -92,7 +77,6 @@ function Navigation(props){
     props.history.push(url);
   }
 
-  // Only run after first render
   useEffect(() => {
     // Add resources
     if(!document.getElementById('main_script')){
@@ -109,66 +93,22 @@ function Navigation(props){
       main_script2.src = "/js/app.bundle.js";
       document.body.appendChild(main_script2);
     }
-
-    /* Check if there is data stored in cache
-    * This is a great security risk if data is not encrypted
-    */
-    let __dataInCache__ = getPageHistory();
-    if(__dataInCache__){  // If there is data in cache
-      if(__debug__==="true") console.log("__dataInCache__", __dataInCache__);
-      /* Page data handling
-      * During usage of the system window.history.length will raise up its value
-      * And when we close the tab that counter will reset, but our __dataInCache__ will not
-      * So the next time the user enter into the page
-      * window.history.length will be less than __dataInCache__.prev_length
-      * that will cause the system to get the data from DB and set __dataInCache__ again
-      * the next renders and reloads in the system will use that stored data
-      */
-      // Check if page was reloaded
-      if(props.history.length>=__dataInCache__.prev_length){  // Page was reloaded
-        if(__debug__==="true") console.log(`%c RELOADED`, 'background: #433; color: gray');
-
-        // Check if there is component state data in cache
-        let __state__ = UNSAFE_cache_getState(__cacheName__);
-        if(__state__){  // If there is state data in cache
-          if(__debug__==="true") console.log(`%c CACHE STATE:`, 'background: #433; color: green', __state__);
-          // Check if all state's parameters exists in cache before setting 'em
-          if(!__state__.user || !__state__.sucursales || !__state__.current_sucursal_pk){
-            /* Lack of state's parameter in cache
-            * This may be caused by a reload action executed before all state properties changes and get saved up in cache
-            */
-            setPersonalInfo();  // Get personal info from service due lack of state's propertie in cache
-            savePageHistory();  // Save page history
-            return;  // Cancel operation due lack of data in cache
-          }
-          // Set data from cache
-          user = __state__.user;
-          sucursales.current = __state__.sucursales;
-          setCurrentSucursal(__state__.current_sucursal_pk);
-
-          // Has page changed in redirect?
-          if(props.history.location.pathname===__dataInCache__.prev_pathname) return;
-          // Redirect to previous page
-          props.history.push(__dataInCache__.prev_pathname);
-          return;
-        }
-      }
-    }
-    if(__debug__==="true") console.log(`%c REGULAR BEHAVIOR:`, 'background: #433; color: gray');
-    setPersonalInfo();  // Regular set data
-    savePageHistory();  // Save page history
   }, []);
-  // Execute when current_sucursal_pk changes
   useEffect(() => {
+    // Only when user comes with props get sucursal
+    if(user) setSucursal()
+  }, [props.user])
+  useEffect(() => {
+    // Execute when current_sucursal_pk changes
     if(current_sucursal_pk===-1) return;
-    UNSAFE_cache_postState(__cacheName__, {
-      current_sucursal_pk: current_sucursal_pk,
-      sucursales: sucursales.current,
-      user: user,
-    });
+
+    // Change current sucursal in cache
+    postCacheData({current_sucursal_pk: current_sucursal_pk})
   }, [current_sucursal_pk]);
 
-  return (
+  return !current_sucursal_pk
+  ? "loading"
+  : (
     <div>
       <div className="page-wrapper">
         <div className="page-inner">
@@ -232,35 +172,23 @@ function SelectComponent(props){
         </Route>
 
         {/* Components accessed only by redirect */}
-        <Route exact path="/nav/odontograma">
-          {!_redirect_obj
-            ? <Redirect to="/nav/home" />
-            : <Odontograma data={_redirect_obj} redirectTo={props.redirectTo} />
-          }
+        <Route exact path="/nav/odontograma/:cita_pk/">
+          <Odontograma redirectTo={props.redirectTo} />
         </Route>
-        <Route path="/nav/procedimiento">
-          {!_redirect_obj
-            ? <Redirect to="/nav/home" />
-            : <Procedimiento
-                sucursal_pk={props.current_sucursal_pk}
-                data={_redirect_obj} redirectTo={props.redirectTo} />
-          }
+        <Route path="/nav/procedimiento/:pk/:action">
+          <Procedimiento
+            sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
         </Route>
-        <Route exact path="/nav/prescripcion">
-          {!_redirect_obj
-            ? <Redirect to="/nav/home" />
-            : <Prescripcion
-                sucursal_pk={props.current_sucursal_pk}
-                data={_redirect_obj} redirectTo={props.redirectTo} />
-          }
+        <Route exact path="/nav/prescripcion/:cita_pk/">
+          <Prescripcion
+            sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
         </Route>
-        <Route exact path="/nav/historiaclinica">
-          {!_redirect_obj
-            ? <Redirect to="/nav/home" />
-            : <HistoriaClinica
-                sucursal_pk={props.current_sucursal_pk}
-                data={_redirect_obj} redirectTo={props.redirectTo} />
-          }
+        <Route exact path="/nav/historiaclinica/:patient_pk/">
+          <HistoriaClinica
+            sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
         </Route>
 
         {/* Default link */}

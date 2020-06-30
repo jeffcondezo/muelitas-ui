@@ -46,6 +46,7 @@ function Login(props){
       response_obj => {  // In case it's ok
         // Add token to cookie
         localStorage.setItem('access_token', response_obj.token)
+        localStorage.setItem('logged', true)
         /*
         We will use access_token cookie afterwards in our requests
         with fetch we'd add in headers

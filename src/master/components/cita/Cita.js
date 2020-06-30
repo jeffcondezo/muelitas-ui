@@ -5,15 +5,10 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
-import { savePageHistory } from '../HandleCache';
 import { Icon, SelectOptions_Procedimiento } from '../bits';
-import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import { handleErrorResponse } from '../../functions';
 
 
-/* We use extended class of React.Component instead of function components
-* because we'll need to use componentWillReceiveProps function
-* We do not save this component state to cache 'cuz this module needs to be up-to-date everytime
-*/
 class Cita extends React.Component {
   constructor(props){
     super();
@@ -31,8 +26,6 @@ class Cita extends React.Component {
       "#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"
     ];
     this.redirectTo = props.redirectTo;
-
-    savePageHistory();  // Save page history
   }
   UNSAFE_componentWillReceiveProps(nextProps){
     // console.log(this.state.global.current_sucursal_pk, nextProps.current_sucursal_pk);
@@ -569,21 +562,21 @@ class Cita extends React.Component {
     });
   }
   addAttention = (cita) => {
-    let url = "/nav/atencion/detalle";
+    let url = `/nav/atencion/${cita.pk}/detalle`;
     let data = {
       cita: cita,
     };
     this.redirectTo(url, data);
   }
   addOdontograma = (cita) => {
-    let url = "/nav/odontograma";
+    let url = `/nav/odontograma/${cita.pk}`;
     let data = {
       cita: cita,
     };
     this.redirectTo(url, data);
   }
   addProcedure = (cita) => {
-    let url = "/nav/procedimiento";
+    let url = `/nav/procedimiento/${cita.pk}/agregar/`;
     let data = {
       cita: cita,
     };

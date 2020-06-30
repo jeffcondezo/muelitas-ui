@@ -13,8 +13,8 @@ import Navigation from './components/Navigation';
 
 
 function Master(){
-  const [logged, setLogged] = useState(false);  // User is loged in?
-  const [user, setUser] = useState({});  // Logged user data
+  const [logged, setLogged] = useState(localStorage.logged||false);  // User is loged in?
+  const [user, setUser] = useState(false);  // Logged user data
   const [error_log, setErrorLog] = useState(false);  // Error log from child components
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING MASTER ---------`, 'background: black; color: red');
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', logged, user);
@@ -47,18 +47,14 @@ function Master(){
         }
         // If token is alright set user data
         setUser(JSON.parse(response));
-        setLogged(true);
+        if(!logged) setLogged(true);
       }
     );
   }, []);
 
   // Run first render
   useEffect(() => {
-    // Check if user is already loged
-    if(!logged && localStorage.hasOwnProperty('access_token'))
-      if(localStorage.hasOwnProperty("access_token")){  // Token cookie already exists?
-        checkLogIn();
-      }
+    checkLogIn()
   }, []);
 
   return (

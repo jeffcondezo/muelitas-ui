@@ -1,17 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Switch, Route, Redirect, Link, useHistory } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { handleErrorResponse, getDataByPK, simplePostData } from '../../functions';
 import { PageTitle, SelectOptions_Procedimiento } from '../bits';
-import { getPageHistory } from '../HandleCache';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const __cacheName__ = "_procedure";
 
 
 const Procedimiento = props => {
-  // Receive {data.procedimiento?}
+  let __params__ = useParams()
+  const [da, setDA] = useState(false);
+  const [cita, setCita] = useState(false);
 
+  const getData = () => {
+    if(__params__.action=="editar") getDA(__params__.pk)
+    else if(__params__.action=="agregar") getCita(__params__.pk)
+    else window.history.back()
+  }
+  const getDA = da_pk => {
+    getDataByPK('atencion/detalle', da_pk)
+    .then(setDA)
+  }
+  const getCita = cita_pk => {
+    getDataByPK('atencion/cita', cita_pk)
+    .then(setCita)
+  }
   function handleSubmit(){
     let data = {}
     data.procedimiento = document.getElementById('procedimiento').value;
@@ -22,36 +35,41 @@ const Procedimiento = props => {
 
     // API function
     (() => {
-      if(props.data.cita){
+      if(cita){
         // New Procedimiento
-        data.atencion = props.data.cita.atencion
+        data.atencion = cita.atencion
         return simplePostData(`atencion/detalle/`, data, "POST")
-      }else if(props.data.procedimiento){
+      }else if(da){
         // Update Procedimiento
-        return simplePostData(`atencion/detalle/${props.data.procedimiento.pk}/`, data, "PATCH")
+        return simplePostData(`atencion/detalle/${da.pk}/`, data, "PATCH")
       }
       return Promise.reject();
     })().then(
       res => {
-        console.log(res);
         // Redirect to attention
-        props.redirectTo('/nav/atencion/detalle', {cita: props.cita});
+        props.redirectTo(`/nav/atencion/${props.cita.pk}/detalle`, {cita: props.cita});
       },
       er => console.log("ERROR", er)
     )
   }
   const getBack = () => {
-    props.redirectTo(getPageHistory().prev_pathname, {cita: props.cita});
+    window.history.back()
   }
 
-  return (
+  useEffect(() => {
+    getData()
+  }, [])
+
+  return !da && !cita
+  ? "loading"
+  : (
   <>
     <PageTitle title={"Procedimiento"} />
-    <ProcedimientoForm procedimiento={props.data.procedimiento} sucursal_pk={props.sucursal_pk} />
+    <ProcedimientoForm procedimiento={da} sucursal_pk={props.sucursal_pk} />
     <br/>
     <div className="d-flex">
       <button className="btn btn-light" onClick={() => handleSubmit()}>
-        {props.data.procedimiento?"Guardar":"Agregar"}
+        {da?"Guardar":"Agregar"}
       </button>
 
       <button className="btn btn-primary ml-auto" onClick={() => getBack()}>

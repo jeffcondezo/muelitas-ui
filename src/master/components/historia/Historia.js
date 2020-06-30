@@ -1,23 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
-import { savePageHistory, getPageHistory, getCacheData } from '../HandleCache';
 import { Icon, PageTitle } from '../bits';
 import { PatientDataList } from '../admision/Admision';
 
 
 const HistoriaClinica = props => {
-  // Receive {data.patient_pk, sucursal_pk, redirectTo}
-  const [patient_pk, setPatientPK] = useState(props.data.patient_pk);
-  const [selected_cita, selectCita] = useState(false);
+  let __params__ = useParams()
 
-  useEffect(() => {
-    if( !patient_pk ){
-      let tmp = getCacheData().patient_pk
-      if(!tmp) props.redirectTo('/nav/admision')
-      setPatientPK(tmp)
-    }
-    savePageHistory({patient_pk: patient_pk});
-  }, [patient_pk])
+  // Receive {sucursal_pk, redirectTo}
+  const [patient_pk, setPatientPK] = useState(__params__.patient_pk);
+
 
   return (
     <>
@@ -25,7 +18,7 @@ const HistoriaClinica = props => {
 
       <h5 style={{paddingBottom: "15px"}}>Fecha de generación de documento: {new Date().toDateInputValue()}</h5>
       {/*<HistoriaPatientData patient_pk={patient_pk} />*/}
-      <HistoriaCitaList redirectTo={props.redirectTo} patient_pk={patient_pk} selectCita={selectCita} />
+      <HistoriaCitaList redirectTo={props.redirectTo} patient_pk={patient_pk} />
     </>
   )
 }
@@ -233,7 +226,7 @@ const HistoriaCitaList = props => {
                       }
                     </td>
                     <td>
-                      <Icon type="attention" onClick={() => props.redirectTo('/nav/atencion/detalle', {cita: cita})} />
+                      <Icon type="attention" onClick={() => props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})} />
                     </td>
                   </tr>
                 ))}
