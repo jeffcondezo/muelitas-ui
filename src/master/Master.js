@@ -19,38 +19,36 @@ function Master(){
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING MASTER ---------`, 'background: black; color: red');
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', logged, user);
 
-  const checkLogIn = useCallback(() => {
+  const checkLogIn = () => {
     // Send token to check if it's alright
     let url = process.env.REACT_APP_PROJECT_API+`maestro/tokenexist/`;
     // Generate promise
-    let result = new Promise((resolve, reject) => {
-      let key = new FormData();
-      key.append("key", localStorage["access_token"]);
+    let key = new FormData();
+    key.append("key", localStorage["access_token"]);
 
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'POST',
-        body: key  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.text())
-        }
-      });
-    });
-    result.then(
-      response => {  // In case it's ok
-        if(response==="delete"){  // If token is wrong
-          localStorage.removeItem("access_token");  // Delete token
-          return;
-        }
-        // If token is alright set user data
-        setUser(JSON.parse(response));
-        if(!logged) setLogged(true);
+    // Fetch data to api
+    fetch(url, {
+      method: 'POST',
+      body: key  // Data
+    }).then(response => {
+      return response.ok
+      ? Promise.resolve(response.json())
+      : Promise.reject(response.json())
+    }, res => {
+      setErrorLog(res.message)
+    }).then(response => {
+      // In case it's ok
+      if(!response) return
+      if(response==="delete"){
+        // If token is wrong
+        localStorage.removeItem("access_token");  // Delete token
+        return;
       }
-    );
-  }, []);
+      // If token is alright set user data
+      setUser(response);
+      if(!logged) setLogged(true);
+    });
+  }
 
   // Run first render
   useEffect(() => {
@@ -110,9 +108,8 @@ function Home(props){
   )
 }
 function Error(props){
-  let _tmp = useHistory();
   function exit(){
-    _tmp.goBack();
+    window.history.back()
   }
 
   return (
@@ -130,8 +127,11 @@ function Error(props){
         Estamos trabajando para solucionar este inconveniente. Por favor espere unos momentos e intentelo de nuevo.
         <br/>
       </h4>
-      <div style={{textAlign: "center"}}>
-        <button onClick={exit}>Regresar</button>
+      <div className="demo" style={{textAlign: "center"}}>
+        <button className="btn btn-outline-dark" onClick={exit}>Regresar</button>
+        <button className="btn btn-outline-dark" onClick={exit}>
+          <Link to="/home">Menu</Link>
+        </button>
       </div>
     </div>
   )

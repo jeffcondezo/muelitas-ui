@@ -45,9 +45,9 @@ const Procedimiento = props => {
       }
       return Promise.reject();
     })().then(
-      res => {
+      () => {
         // Redirect to attention
-        props.redirectTo(`/nav/atencion/${props.cita.pk}/detalle`, {cita: props.cita});
+        props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita});
       },
       er => console.log("ERROR", er)
     )

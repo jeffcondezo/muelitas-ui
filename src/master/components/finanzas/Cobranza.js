@@ -3,7 +3,6 @@ import {
   Switch,
   Route,
   Redirect,
-  Link,
   useParams,  // Get parameter from url
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import {
@@ -12,12 +11,12 @@ import {
   simplePostData,
   getDataByPK,
 } from '../../functions';
-import { postCacheData, getCacheData } from '../HandleCache';
 import { PageTitle } from '../bits';
 
 const Cobranza = props => {
   // Receive {data.patient, sucursal_pk, redirectTo}
-  return <Switch>
+  return (
+    <Switch>
       <Route exact path='/nav/cobranza/list/'>
         <CobranzaList
           sucursal_pk={props.sucursal_pk}
@@ -35,10 +34,15 @@ const Cobranza = props => {
         <Redirect to="/nav/cobranza/list/" />
       </Route>
     </Switch>
+  )
 }
 
 const CobranzaList = props => {
-  return (<DebtXPatientTable sucursal_pk={props.sucursal_pk} />)
+  return (
+    <DebtXPatientTable
+      redirectTo={props.redirectTo}
+      sucursal_pk={props.sucursal_pk} />
+  )
 }
 const DebtXPatientTable = props => {
   // Receive {sucursal_pk}
@@ -50,14 +54,11 @@ const DebtXPatientTable = props => {
     // Generate promise
     fetch(url, {headers: {Authorization: localStorage.getItem('access_token')}})
     .then(response => {
-        if(response.ok){
-          Promise.resolve(response.json())
-        }else{
-          Promise.reject(response.statusText)
-        }
+      return response.ok
+      ? Promise.resolve(response.json())
+      : Promise.reject(response.statusText)
     }, () => handleErrorResponse('server')
-    )
-    .then(setPxD);
+    ).then(setPxD);
   }
 
   useEffect(() => {
@@ -82,7 +83,6 @@ const DebtXPatientTable = props => {
   }, []);
   // When resource variable is setted
   useEffect(() => {
-    console.log(patientxdebt);
     if(!patientxdebt) return;  // Abort if it's false
 
     // Destroy previous DT if exists
@@ -92,36 +92,55 @@ const DebtXPatientTable = props => {
       data: patientxdebt,
       columns: [
         {title: "Nombre", data: null},
-        {title: "Apellidos", data: null},
-        {title: "DNI", data: 'dni'},
+        {title: "Deuda", data: null},
+        {title: "Proximo pago", data: null},
+        {title: "Estado", data: null},
         {title: "", data: null},
       ],
       columnDefs: [{
-        // Button
-        targets: -1,
-        orderable: false,
-        width: "1px",
-        defaultContent: "<button class='select-patient btn btn-light btn-pills waves-effect'>Seleccionar</button>",
-        createdCell: (cell, data, rowData) => {
-          // Add click listener to button (children[0])
-          cell.children[0].onclick = () => {
-            props.redirectTo("/nav/admision/detalle", {patient: rowData});
-          }
-        }
-      }, {
-        // Nombre
+        // Nombre completo
         targets: 0,
         render: (data, type, row) => (
-          cFL(row.nombre_principal)+
-          (row.nombre_secundario?" "+cFL(row.nombre_secundario):"")
+          cFL(row.paciente.nombre_principal)+
+          (row.paciente.nombre_secundario?" "+cFL(row.paciente.nombre_secundario):"")+" "+
+          cFL(row.paciente.ape_paterno)+" "+
+          cFL(row.paciente.ape_materno)
         ),
       }, {
-        // Apellidos
+        // Deuda
         targets: 1,
+        defaultContent: "<code style='font-size: 1em'>0</code>",
+        createdCell: (cell, data) => {
+          cell.children[0].innerText = "S/. "+data.total_deuda;
+        },
+      }, {
+        // Proximo pago (fecha)
+        targets: 2,
+        defaultContent: "<code style='font-size: 1em'>0</code>",
         render: (data, type, row) => (
-          cFL(row.ape_paterno)+" "+
-          cFL(row.ape_materno)
-        ),
+          data.pago_fecha.split("-").reverse().join("-")
+        )
+      }, {
+        // Fecha pago
+        targets: -2,
+        orderable: false,
+        defaultContent: "<span class='badge'></span>",
+        createdCell: (cell, data) => {
+          let classname = "badge-"+(data.pago_estado<0?"danger":data.pago_estado>0?"info":"warning")
+          let text = data.pago_estado<0?"Vencido":data.pago_estado>0?"Proximo":"Hoy"
+          cell.children[0].classList.add(classname)
+          cell.children[0].innerText = text
+        }
+      }, {
+        // Cobrar
+        targets: -1,
+        orderable: false,
+        defaultContent: "<button class='select-patient btn btn-light btn-pills waves-effect'>Cobrar</button>",
+        createdCell: (cell, data) => {
+          cell.children[0].onclick = () => {
+            props.redirectTo(`/nav/cobranza/${data.paciente.pk}/detalle`, {patient: data.paciente});
+          }
+        }
       }],
       pageLength: 8,  // Default page length
       lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
@@ -130,7 +149,7 @@ const DebtXPatientTable = props => {
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",
         sZeroRecords:    "No se encontraron resultados",
-        sEmptyTable:     "No hay atenciones registradas para la fecha seleccionada",
+        sEmptyTable:     "No hay deudas",
         sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
@@ -162,9 +181,13 @@ const DebtXPatientTable = props => {
   return !patientxdebt
     ? "loading"
     : (
+      <>
+      <PageTitle title={"Lista de deudas"} />
+
       <div className="datatable-container col-12">
         <table id="patientxdebt-table" style={{width: "100%"}}></table>
       </div>
+      </>
     );
 }
 
