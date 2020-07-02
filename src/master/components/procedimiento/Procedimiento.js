@@ -45,10 +45,7 @@ const Procedimiento = props => {
       }
       return Promise.reject();
     })().then(
-      () => {
-        // Redirect to attention
-        props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita});
-      },
+      () => getBack(),
       er => console.log("ERROR", er)
     )
   }
@@ -139,7 +136,6 @@ const ProcedimientoForm = props => {
     if(!procedures) return;
 
     if(procedure){
-      console.log(procedure);
       document.getElementById("payment_period").value = procedure.payment_period;
       document.getElementById("payment_period").disabled = procedure.payment_period==0;
       document.getElementById("pay_today").disabled = true;

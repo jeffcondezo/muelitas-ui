@@ -178,17 +178,19 @@ const DebtXPatientTable = props => {
     setDatatable(_tmp);  // Save DT in state
   }, [patientxdebt]);
 
-  return !patientxdebt
+  return (
+    <>
+    <PageTitle title={"Lista de deudas"} />
+    {!patientxdebt
     ? "loading"
     : (
-      <>
-      <PageTitle title={"Lista de deudas"} />
-
       <div className="datatable-container col-12">
         <table id="patientxdebt-table" style={{width: "100%"}}></table>
       </div>
-      </>
-    );
+    )
+    }
+    </>
+  )
 }
 
 
@@ -669,7 +671,7 @@ const PatientDebtsTable = props => {
       <table style={{fontSize: "1.2em"}}>
         <thead>
           <tr>
-            <td>Procedimiento</td>
+            <td>Detalle</td>
             <td></td>
             <td>Fecha de pago limite</td>
           </tr>
@@ -685,7 +687,7 @@ const PatientDebtsTable = props => {
                 <input type="checkbox" className="custom-control-input"
                   id={"pay-"+dcc.pk} checked={props.selected.includes(dcc.pk)}
                   onChange={()=>checkbox_addToSelectedOnes(dcc.pk)} />
-                <label className="custom-control-label" htmlFor={"pay-"+dcc.pk}>{cFL(dcc.procedimiento)}</label>
+                <label className="custom-control-label" htmlFor={"pay-"+dcc.pk}>{cFL(dcc.detalle)}</label>
               </td>
               <td style={{paddingLeft: "10px"}}> <code>{dcc.deuda}</code> </td>
               <td>

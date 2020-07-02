@@ -108,10 +108,6 @@ function Home(props){
   )
 }
 function Error(props){
-  function exit(){
-    window.history.back()
-  }
-
   return (
     <div className="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
       <h1 className="page-error color-fusion-500">
@@ -127,12 +123,6 @@ function Error(props){
         Estamos trabajando para solucionar este inconveniente. Por favor espere unos momentos e intentelo de nuevo.
         <br/>
       </h4>
-      <div className="demo" style={{textAlign: "center"}}>
-        <button className="btn btn-outline-dark" onClick={exit}>Regresar</button>
-        <button className="btn btn-outline-dark" onClick={exit}>
-          <Link to="/home">Menu</Link>
-        </button>
-      </div>
     </div>
   )
 }
