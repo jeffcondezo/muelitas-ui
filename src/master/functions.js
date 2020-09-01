@@ -1,6 +1,6 @@
 export function handleErrorResponse(type, ...data){
   let _id = false;
-  let scape_time = 2700;  // Milliseconds
+  let scape_time = 5000;  // Milliseconds
   if(type=='server'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-server')){

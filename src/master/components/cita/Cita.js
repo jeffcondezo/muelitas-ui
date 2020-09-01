@@ -46,6 +46,7 @@ class Cita extends React.Component {
   }
   // This.props functions
   getPersonal(){
+    // let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
     let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
     let url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
     url = url + '?' + filter;
@@ -292,7 +293,17 @@ class Cita extends React.Component {
       document.getElementById("pac_nom_sec").disabled = false;
       document.getElementById("pac_ape_pat").disabled = false;
       document.getElementById("pac_ape_mat").disabled = false;
+      document.getElementById("defaultInline1Radio").disabled = false;
+      document.getElementById("defaultInline2Radio").disabled = false;
       return;  // if dni is not 8 length
+    }else{
+      document.getElementById("pac_nom_pri").value = "";
+      document.getElementById("pac_nom_sec").value = "";
+      document.getElementById("pac_ape_pat").value = "";
+      document.getElementById("pac_ape_mat").value = "";
+      document.getElementById("pac_celular").value = "";
+      document.getElementById("pac_permiso_sms").value = "1";
+      document.getElementById("defaultInline1Radio").checked = true;
     }
 
     let filter = `filtro={"dni":"${dni}"}`;
@@ -328,6 +339,8 @@ class Cita extends React.Component {
           document.getElementById("pac_nom_sec").disabled = false;
           document.getElementById("pac_ape_pat").disabled = false;
           document.getElementById("pac_ape_mat").disabled = false;
+          document.getElementById("defaultInline1Radio").disabled = false;
+          document.getElementById("defaultInline2Radio").disabled = false;
           return;
         }
         // Set paciente data and disable inputs
@@ -341,6 +354,22 @@ class Cita extends React.Component {
         document.getElementById("pac_ape_pat").value = response_obj[0].ape_paterno;
         document.getElementById("pac_ape_mat").disabled = true;
         document.getElementById("pac_ape_mat").value = response_obj[0].ape_materno;
+        document.getElementById("pac_celular").value = response_obj[0].celular;
+        if(response_obj[0].sexo == '1'){
+          document.getElementById("defaultInline1Radio").checked = true;
+          document.getElementById("defaultInline1Radio").disabled = true;
+          document.getElementById("defaultInline2Radio").disabled = true;
+        }else{
+          document.getElementById("defaultInline2Radio").checked = true;
+          document.getElementById("defaultInline1Radio").disabled = true;
+          document.getElementById("defaultInline2Radio").disabled = true;
+        }
+        if(response_obj[0].permiso_sms){
+          document.getElementById("pac_permiso_sms").value = "1";
+        }else{
+          document.getElementById("pac_permiso_sms").value = "0";
+
+        }
       }
     );
   }
@@ -396,11 +425,18 @@ class Cita extends React.Component {
       return;  // Skip function
     }
     let _hora = document.getElementById("hour").value;
+    console.log(_hora);
     if(_hora<8 || _hora>21){
       this.errorForm("La hora está fuera del horario de trabajo");  // Show form error
       return;  // Skip function
     }
-
+    let _sexo = "";
+    if(document.querySelector('input[name="sexo"]:checked') !== null){
+        _sexo = document.querySelector('input[name="sexo"]:checked').value;
+    }else{
+      this.errorForm("Indique el sexo del paciente");  // Show form error
+      return;  // Skip function
+    }
     // Get PERSONAL
     let personal_ = window.$("#personal").select2('data');
     if(personal_.length===0){
@@ -439,7 +475,7 @@ class Cita extends React.Component {
         return;
       }
       // Check the main values
-      let reg_expr = (/^[a-zA-Z][a-zA-Z ]+[a-zA-Z]$/);
+      let reg_expr = (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ][a-zA-ZáéíóúÁÉÍÓÚñÑ ]+[a-zA-ZáéíóúÁÉÍÓÚñÑ]$/);
       if(
         !reg_expr.test(document.getElementById("pac_nom_pri").value) ||
         !reg_expr.test(document.getElementById("pac_ape_pat").value) ||
@@ -452,17 +488,19 @@ class Cita extends React.Component {
       // Get paciente data
       _paciente = {}
       _paciente.dni = _dni;
-      _paciente.sexo = "1";
+      _paciente.sexo = _sexo;
       _paciente.nombre_principal = document.getElementById("pac_nom_pri").value;
       _paciente.nombre_secundario = document.getElementById("pac_nom_sec").value;
       _paciente.ape_paterno = document.getElementById("pac_ape_pat").value;
       _paciente.ape_materno = document.getElementById("pac_ape_mat").value;
-      // _paciente.sexo = document.querySelector("#pac_genre").value;
-      // _paciente.celular = document.querySelector("#pac_celular").value;
+      _paciente.celular = document.querySelector("#pac_celular").value;
+      _paciente.permiso_sms = document.querySelector("#pac_permiso_sms").value;
     }
 
     // Get META
     let _minutos = document.getElementById("minute").value;
+    let _celular = document.querySelector("#pac_celular").value;
+    let _permiso_sms = document.querySelector("#pac_permiso_sms").value;
     let _sucursal = this.state.global.current_sucursal_pk;
     let _origen_cita = "3";  // Origen Web #############
     let _estado = "1";  // Cita Pendiente
@@ -497,6 +535,8 @@ class Cita extends React.Component {
     data['hora_fin'] = _hora_fin;
     data['origen_cita'] = _origen_cita;
     data['estado'] = _estado;
+    data['celular'] = _celular;
+    data['permiso_sms'] = _permiso_sms;
     // data['indicaciones'] = _indicaciones;
     data['programado'] = _programado;
     // Handle paciente
@@ -532,11 +572,6 @@ class Cita extends React.Component {
     });
     result.then(
       response_obj => {  // In case it's ok
-        // Handle CRUCE_DE_CITAS error
-        if(response_obj.hasOwnProperty("length") && response_obj[0]==="CRUCE_DE_CITAS"){
-          this.handleBadRequest("CRUCE_DE_CITAS");
-          return;
-        }
 
         handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info");
         document.getElementById("cita-close").click()  // Cerrar formulario cita
@@ -546,7 +581,13 @@ class Cita extends React.Component {
         console.log("ERROR:", error);
         // The next function is a solution to a UB (at least idk what does cause it)
         error.then((er) => {
-          handleErrorResponse("custom", "Error", er.non_field_errors.join(", "), "danger")
+          if(er.hasOwnProperty("length") && er[0]==="CRUCE_DE_CITAS"){
+            //this.handleBadRequest("CRUCE_DE_CITAS");
+            handleErrorResponse("custom", "ERROR: ", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "danger")
+            return;
+          }else{
+          handleErrorResponse("custom", "ERROR: ", er.non_field_errors.join(", "), "danger")
+          }
         })
         document.getElementById("cita-close").click()  // Cerrar formulario cita
       }
@@ -559,6 +600,7 @@ class Cita extends React.Component {
     clone.selected_cita = data;
     this.setState(clone, ()=>{
       window.$('#modal_ver_cita').modal('show');
+      console.log('xxxx2');
     });
   }
   addAttention = (cita) => {
@@ -616,6 +658,7 @@ class Cita extends React.Component {
     result.then(
       response_obj => {  // In case it's ok
         window.$('#modal_ver_cita').modal('hide');
+        console.log('xxxxxxx3');
         alert("Cita anulada",status);
         this.getCitas()  // Re render fullcalendar
       }
@@ -693,6 +736,27 @@ class Cita extends React.Component {
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <div class="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
+                    <div class="custom-control custom-radio custom-control-inline">
+                        <input type="radio" value="1" class="custom-control-input" id="defaultInline1Radio" name="sexo" />
+                        <label class="custom-control-label" style={{fontSize:'1rem'}} for="defaultInline1Radio">Masculino</label>
+                    </div>
+                    <div class="custom-control custom-radio custom-control-inline">
+                        <input type="radio" value="2" class="custom-control-input" id="defaultInline2Radio" name="sexo" />
+                        <label class="custom-control-label" style={{fontSize:'1rem'}} for="defaultInline2Radio">Femenino</label>
+                    </div>
+                  </div>
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <input type="text" id="pac_celular" name="pac_celular" className="form-control form-control-lg" placeholder="Celular" />
+              </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <select id="pac_permiso_sms" className="form-control form-control-lg">
+                <option value="1" defaultValue>Permitir envío de SMS</option>
+                <option value="0">NO Permitir envío de SMS</option>
+              </select>
               </div>
               {/* Fin Paciente */}
               <SelectProcedimiento state={this.state} />
@@ -875,6 +939,7 @@ function InfoCita(props){
   const [annulCita, setAnnulCita] = useState({toCheck: false, show: false});
   useEffect(()=>{  // To call after render
     if(annulCita.show===true){  // Show annulCita modal
+      console.log('xxxx1');
       window.$('#modal_ver_cita').data('bs.modal')._config.backdrop = true;
       window.$('#modal_ver_cita').data('bs.modal')._config.keyboard = true;
       window.$('#modal_ver_cita').modal('show');
@@ -893,6 +958,7 @@ function InfoCita(props){
       window.$('#modal_anular_cita').data('bs.modal')._config.keyboard = false;
       window.$('#modal_anular_cita').modal('hide');
       window.$('#modal_anular_cita').modal('show');
+
     }
   });
 
@@ -918,6 +984,7 @@ function InfoCita(props){
       clone.callback = func;
       clone.cita_pk = cita_pk;
       clone.state = state;
+      console.log(clone);
       setAnnulCita(clone);
     }
     return (
@@ -965,7 +1032,7 @@ function InfoCita(props){
               </div>
               {/* Estado cita */}
               <div className="btn-group">
-                <button className="btn btn-primary waves-effect waves-themed" data-dismiss="modal"
+                <button className="btn btn-primary waves-effect waves-themed"
                   onClick={()=>assureAnnul(props.annulCita, props.cita.pk, 3)}>Anular cita</button>
                 <button type="button" className="btn btn-primary dropdown-toggle dropdown-toggle-split waves-effect waves-themed" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 </button>
