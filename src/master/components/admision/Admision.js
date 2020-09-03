@@ -554,6 +554,11 @@ const LinksDetail = props => {
             onClick={() => props.redirectTo(`/nav/cobranza/${props.patient.pk}/detalle`, {patient: props.patient})} />
           <span style={{fontSize: "0.9rem"}}>Cobrar</span>
         </div>
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="plandetrabajo"
+            onClick={() => props.redirectTo(`/nav/plandetrabajo/${props.patient.pk}/detalle`, {patient: props.patient})} />
+          <span style={{fontSize: "0.9rem"}}>Plan de trabajo</span>
+        </div>
       </div>
     </div>
   );

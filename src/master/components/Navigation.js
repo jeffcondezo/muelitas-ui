@@ -18,6 +18,7 @@ import Procedimiento from './procedimiento/Procedimiento';
 import Prescripcion from './prescripcion/Prescripcion';
 import HistoriaClinica from './historia/Historia';
 import Cobranza from './finanzas/Cobranza';
+import PlanDeTrabajo from './plandetrabajo/PlanDeTrabajo';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -187,6 +188,11 @@ function SelectComponent(props){
         </Route>
         <Route exact path="/nav/historiaclinica/:patient_pk/">
           <HistoriaClinica
+            sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
+        </Route>
+        <Route path="/nav/plandetrabajo/:patient_pk/">
+          <PlanDeTrabajo
             sucursal_pk={props.current_sucursal_pk}
             redirectTo={props.redirectTo} />
         </Route>
