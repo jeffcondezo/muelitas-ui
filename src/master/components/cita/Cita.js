@@ -425,7 +425,6 @@ class Cita extends React.Component {
       return;  // Skip function
     }
     let _hora = document.getElementById("hour").value;
-    console.log(_hora);
     if(_hora<8 || _hora>21){
       this.errorForm("La hora está fuera del horario de trabajo");  // Show form error
       return;  // Skip function
@@ -535,7 +534,7 @@ class Cita extends React.Component {
     data['hora_fin'] = _hora_fin;
     data['origen_cita'] = _origen_cita;
     data['estado'] = _estado;
-    data['celular'] = _celular;
+    if(_celular != "") data['celular'] = _celular;
     data['permiso_sms'] = _permiso_sms;
     // data['indicaciones'] = _indicaciones;
     data['programado'] = _programado;
@@ -571,8 +570,7 @@ class Cita extends React.Component {
       }, () => handleErrorResponse('server'));  // Print server error
     });
     result.then(
-      response_obj => {  // In case it's ok
-
+      () => {  // In case it's ok
         handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info");
         document.getElementById("cita-close").click()  // Cerrar formulario cita
         this.getCitas()  // Re render fullcalendar
@@ -600,7 +598,6 @@ class Cita extends React.Component {
     clone.selected_cita = data;
     this.setState(clone, ()=>{
       window.$('#modal_ver_cita').modal('show');
-      console.log('xxxx2');
     });
   }
   addAttention = (cita) => {
@@ -738,14 +735,14 @@ class Cita extends React.Component {
                 <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <div class="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
-                    <div class="custom-control custom-radio custom-control-inline">
-                        <input type="radio" value="1" class="custom-control-input" id="defaultInline1Radio" name="sexo" />
-                        <label class="custom-control-label" style={{fontSize:'1rem'}} for="defaultInline1Radio">Masculino</label>
+                <div className="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
+                    <div className="custom-control custom-radio custom-control-inline">
+                        <input type="radio" value="1" className="custom-control-input" id="defaultInline1Radio" name="sexo" />
+                        <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="defaultInline1Radio">Masculino</label>
                     </div>
-                    <div class="custom-control custom-radio custom-control-inline">
-                        <input type="radio" value="2" class="custom-control-input" id="defaultInline2Radio" name="sexo" />
-                        <label class="custom-control-label" style={{fontSize:'1rem'}} for="defaultInline2Radio">Femenino</label>
+                    <div className="custom-control custom-radio custom-control-inline">
+                        <input type="radio" value="2" className="custom-control-input" id="defaultInline2Radio" name="sexo" />
+                        <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="defaultInline2Radio">Femenino</label>
                     </div>
                   </div>
               </div>

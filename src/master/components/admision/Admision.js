@@ -556,7 +556,7 @@ const LinksDetail = props => {
         </div>
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="plandetrabajo"
-            onClick={() => props.redirectTo(`/nav/plandetrabajo/${props.patient.pk}/detalle`, {patient: props.patient})} />
+            onClick={() => props.redirectTo(`/nav/plandetrabajo/${props.patient.pk}/`, {patient: props.patient})} />
           <span style={{fontSize: "0.9rem"}}>Plan de trabajo</span>
         </div>
       </div>
@@ -617,7 +617,7 @@ const EditPatient = props => {
         patient={patient}
         first_button_text={"Guardar"}
         handleSubmit={saveEdit}
-        second_button_text={"Cancelar"}
+        second_button_text={"Regresar"}
         secondButtonHandler={getBack} />
 }
 const RegisterPatient = props => {

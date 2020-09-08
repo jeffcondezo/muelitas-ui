@@ -117,7 +117,7 @@ const AttentionList = props => {
     }
 
     return () => {
-      console.log("UNMOUNTING ATTENTION LIST");
+      // console.log("UNMOUNTING ATTENTION LIST");
     }
   }, []);
   // When latest_attentions are setted
@@ -145,7 +145,6 @@ const AttentionList = props => {
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            console.log(rowData);
             props.redirectTo(`/nav/atencion/${rowData.pk}/detalle`, {cita: rowData});
           }
         }
@@ -570,7 +569,7 @@ const Links = props => {
             <span style={{fontSize: "0.9rem"}}>Admision</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="odontogram" onClick={() => props.redirectTo(`/nav/odontograma/${props.cita.pk}/`)} /><br/>
+            <Icon type="odontogram" onClick={() => props.redirectTo(`/nav/odontograma/${props.cita_pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
@@ -578,7 +577,7 @@ const Links = props => {
             <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
           </div>
           <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="prescription" onClick={() => props.redirectTo(`/nav/prescripcion/${props.cita.pk}/`)} /><br/>
+            <Icon type="prescription" onClick={() => props.redirectTo(`/nav/prescripcion/${props.cita_pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Receta</span>
           </div>
         </div>

@@ -176,7 +176,7 @@ function SelectComponent(props){
         <Route exact path="/nav/odontograma/:cita_pk/">
           <Odontograma redirectTo={props.redirectTo} />
         </Route>
-        <Route path="/nav/procedimiento/:pk/:action">
+        <Route path="/nav/procedimiento/:pk/:action/">
           <Procedimiento
             sucursal_pk={props.current_sucursal_pk}
             redirectTo={props.redirectTo} />

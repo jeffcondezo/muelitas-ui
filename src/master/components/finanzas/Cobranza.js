@@ -216,7 +216,7 @@ const CobranzaDetail = props => {
       <PageTitle title={"Cobrar"} />
 
       <div className="row">
-        <div className="col-lg-7">
+        <div className="col-lg-6">
           <PaymentForm
             redirectTo={props.redirectTo}
             setRefresh={setRefresh}
@@ -225,7 +225,7 @@ const CobranzaDetail = props => {
             sucursal_pk={props.sucursal_pk}
             patient={patient} />
         </div>
-        <div className="col-lg-5">
+        <div className="col-lg-6">
           <div style={{marginTop: "30px", marginLeft: "20px"}}>
             <PatientDebtsTable
               selected={selected_attention_detail}
@@ -249,6 +249,7 @@ const PaymentForm = props => {
     if(clienttype==1){
       document.getElementById("client-dni").value = props.patient.dni;
       setValues(props.patient);
+      setNC(true);  // Client is known 'cuz we're setting the props.patient client
     }else{
       setValues(false);
       if(document.getElementById('client-ruc'))
@@ -267,6 +268,7 @@ const PaymentForm = props => {
     setValues(client);  // Set values
   }, [client]);
   useEffect(() => {
+    console.log(knownclient);
     if(knownclient) return;
 
     setValues(false);
@@ -317,6 +319,8 @@ const PaymentForm = props => {
     }else{
       if(document.getElementById('client-razon-social'))
         document.getElementById('client-razon-social').value = values&&values.razon_social?values.razon_social:"";
+      if(document.getElementById('client-phone'))
+        document.getElementById('client-phone').value = values&&values.celular?values.celular:"";
     }
   }
   // Form submit function
@@ -338,6 +342,7 @@ const PaymentForm = props => {
   }
   // Save form as client
   const handleSubmit_ClientEmpresa = () => {
+    console.log("Empresa");
     // Validate
     let _tmp;
     _tmp = document.getElementById("client-ruc");
@@ -504,7 +509,7 @@ const PaymentForm = props => {
         tipo: clienttype,
         sucursal: props.sucursal_pk,
         dcc_list: String(props.selected),
-        cliente: client.pk,
+        cliente: _client.pk,  // Use parameter instead of client object 'cuz the state change may not be done before reaching this point
       })
     })
     .then(

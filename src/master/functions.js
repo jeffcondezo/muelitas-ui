@@ -1,3 +1,4 @@
+// Generics
 export function handleErrorResponse(type, ...data){
   let _id = false;
   let scape_time = 5000;  // Milliseconds
@@ -71,7 +72,7 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
       : word.slice(1, word.length)
     );
 }
-export function getDataByPK(end_point, _pk){
+export async function getDataByPK(end_point, _pk){
   // Get patient data by id
   return fetch(
     process.env.REACT_APP_PROJECT_API+end_point+`/${_pk}/`,
@@ -86,23 +87,28 @@ export function getDataByPK(end_point, _pk){
       ? response.json()
       : Promise.reject(response.text());
     },
-    error => handleErrorResponse('server')
+    () => handleErrorResponse('server')
   ).then(
     response_obj => response_obj,
-    error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
+    () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
   );
 }
-export function simplePostData(end_point, data, method='POST'){
+export async function simplePostData(end_point, data, method='POST'){
+  method = method.toUpperCase()
   return fetch(
     process.env.REACT_APP_PROJECT_API+end_point,
-    {
-      method: method,
-      headers: {
-        Authorization: localStorage.getItem('access_token'),  // Token
-        'Content-Type': 'application/json'  // JSON type
+    Object.assign(
+      {
+        method: method,
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          'Content-Type': 'application/json'  // JSON type
+        },
       },
-      body: JSON.stringify(data)  // Data
-    }
+      (method=="GET" || method=="HEAD")  // If method is GET or HEAD the request should have no body propertie
+      ? {}
+      : {body: JSON.stringify(data)}  // Data
+    )
   ).then(
     response => (
       response.ok
@@ -113,6 +119,15 @@ export function simplePostData(end_point, data, method='POST'){
       ? handleErrorResponse('server')
       : Promise.reject()
     ),
-    error => handleErrorResponse('server')
+    () => handleErrorResponse('server')
   );
+}
+
+// Specific
+export function getPatientFullName(patient){
+  return (
+    capitalizeFirstLetter(patient.nombre_principal)+
+    (patient.nombre_secundario?" "+capitalizeFirstLetter(patient.nombre_secundario):"")+" "+
+    capitalizeFirstLetter(patient.ape_paterno, false)+" "+capitalizeFirstLetter(patient.ape_materno, false)
+  )
 }
