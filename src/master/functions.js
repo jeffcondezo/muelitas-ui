@@ -38,9 +38,9 @@ export function handleErrorResponse(type, ...data){
     if(data.length<2) return;
 
     // Custom customization
-    if(data[3]){
+    if(data[2]){
       div_alert_custom.className
-      = div_alert_custom.classList.value.replace("bg-warning", "bg-"+data[3]);
+      = div_alert_custom.classList.value.replace("bg-warning", "bg-"+data[2]);
     }else if(div_alert_custom.className.indexOf("warning")==-1){
       div_alert_custom.className
       = div_alert_custom.classList.add("bg-warning-700");

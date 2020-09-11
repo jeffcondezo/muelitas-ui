@@ -401,18 +401,6 @@ export const ListSavedMedicine = props => {
     );
   }
 
-  useEffect(() => {
-    /*
-    if(window.$) window.$('#slimscroll').slimScroll({
-      height: "305",
-      size: "4px",
-      color: "rgba(0,0,0,0.6)",
-      distance: "4px",
-      railcolor: "#fafafa",
-    });
-    */
-  }, []);
-
   // Generate elements from medicine_list
   if(!props.medicine_list || !props.medicine_list.length || props.medicine_list.length==0){
     return (<div className="card-body"><span style={{fontSize: ".9rem"}}>No se han agregado medicamentos</span></div>);
