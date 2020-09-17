@@ -1639,7 +1639,7 @@ function Odontograma(props){
       https://reactjs.org/docs/hooks-reference.html#usecallback
       https://stackoverflow.com/a/57294726/12322283
     Also we declare empty dependencies..
-    'cuz this functions do not need to be declared after some variable change
+    'cuz this functions do not need to be re declared after some variable change
     We make some of these functions to depent of incident
     'cuz we use that variable in those functions or in functions that depends on 'em
   */

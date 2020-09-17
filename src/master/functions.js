@@ -122,6 +122,29 @@ export async function simplePostData(end_point, data, method='POST'){
     () => handleErrorResponse('server')
   );
 }
+export async function simpleDelete(end_point){
+  return fetch(
+    process.env.REACT_APP_PROJECT_API+end_point,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: localStorage.getItem('access_token'),  // Token
+        'Content-Type': 'application/json'  // JSON type
+      },
+    }
+  ).then(
+    response => (
+      response.ok
+      ? response
+      : response.status==403
+      ? handleErrorResponse('permission')
+      : response.status==500
+      ? handleErrorResponse('server')
+      : Promise.reject()
+    ),
+    () => handleErrorResponse('server')
+  );
+}
 
 // Specific
 export function getPatientFullName(patient){
