@@ -10,12 +10,18 @@ import {
   simplePostData,
   simpleDelete,
   getPatientFullName,
-  capitalizeFirstLetter as cFL
+  capitalizeFirstLetter as cFL,
+  isArray,
 } from '../../functions'
-import { PageTitle, SelectOptions_Procedimiento, Icon } from '../bits';
+import {
+  PageTitle,
+  SelectOptions_Procedimiento,
+  ModalCancel,
+  Icon
+} from '../bits';
 
 const PDTContext = createContext({
-  current_pdt_pk: null
+  current_pdt_pk: null,
 })
 const PDTCreateCxt = createContext({
   pdt: false,
@@ -44,9 +50,14 @@ const PlanDeTrabajo = ({sucursal_pk, redirectTo}) => {
 }
 
 const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
+  const pdt_context = useContext(PDTContext)
   let {patient_pk} = useParams()
+  // PDT List info
   const [patient, setPatient] = useState(false)
   const [ar_proc_selected, setSelectPDT] = useState([])
+  // Multi component state handling
+  const [pdtDeleted, setPDTDeleted] = useState(false)
+  const [thereIsPDT, setThereIsPDT] = useState(false)
   const selected_list = useRef([])
 
   const addOrRemoveFromList = useCallback(pk => {
@@ -59,6 +70,15 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
     // Set new array
     setSelectPDT(ar_copy)
   }, [ar_proc_selected])
+  const deletePDT = () => {
+    if(pdt_context.current_pdt_pk == null){
+      console.error("current_pdt_pk from PDTContext is null");
+      return;
+    }
+    // Delete
+    simpleDelete(`atencion/plantrabajo/${Number(pdt_context.current_pdt_pk)}/`)
+    .then(() => setPDTDeleted(true))
+  }
 
   useEffect(() => {
     getDataByPK('atencion/paciente', patient_pk)
@@ -68,7 +88,6 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
     selected_list.current = ar_proc_selected
   }, [ar_proc_selected])
 
-  console.log(ar_proc_selected);
   return (
     <div>
       <h2>Paciente: {patient ? getPatientFullName(patient) : "loading.."}</h2>
@@ -83,25 +102,51 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
               sucursal_pk={sucursal_pk}
               redirectTo={redirectTo}
               patient_pk={patient_pk}
+              pdtDeleted={pdtDeleted}
+              setPDTDeleted={setPDTDeleted}
+              thereIsPDT={thereIsPDT}
+              setThereIsPDT={setThereIsPDT}
               selectProc={addOrRemoveFromList} />
           </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="panel">
-            <PDTActions
-              redirectTo={redirectTo}
-              selected={ar_proc_selected}
-              patient_pk={patient_pk} />
+          <div className="row">
+            <div className="col-2">
+              <button className="btn btn-primary" style={{fontSize: "0.9rem"}} onClick={() => redirectTo(`/nav/plandetrabajo/${patient_pk}/crear`)}>Nuevo</button>
+            </div>
+            {thereIsPDT
+              ? (
+                <div className="col-2">
+                <button className="btn btn-danger" style={{fontSize: "0.9rem"}} data-toggle="modal" data-target="#modal_eliminar_pdt">Eliminar</button>
+                </div>
+              ) : ""
+            }
           </div>
-          <div className="panel">
-            <DPDTActions />
-          </div>
         </div>
+        {thereIsPDT
+          ? (
+            <div className="col-lg-4">
+              <div className="panel">
+                <PDTActions
+                  redirectTo={redirectTo}
+                  selected={ar_proc_selected}
+                  patient_pk={patient_pk} />
+              </div>
+              <div className="panel">
+                <DPDTActions />
+              </div>
+            </div>
+          ) : ""
+        }
       </div>
+      <ModalCancel
+        _id={"modal_eliminar_pdt"}
+        _title={"Eliminar Plan de trabajo"}
+        _action_text={"Eliminar"}
+        _action_func={deletePDT}
+        _body_text={"Esta seguro que quiere eliminar este Plan de trabajo"} />
     </div>
   )
 }
-const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, selectProc}) => {
+const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT}) => {
   const pdt_context = useContext(PDTContext)
   const [pdts, setPdts] = useState(false)  // Planes de trabajo
   const [dpdts, setDpdts] = useState(false)  // Detalles de Plan de trabajo
@@ -114,7 +159,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, selectProc}) =>
   const getDptByPdt = (pdt_pk) => {
     simplePostData(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`, {}, "GET")
     .then(setDpdts)
-    .then(() => pdt_context.current_pdt_pk = pdt_pk)
+    .then(() => pdt_context.current_pdt_pk = Number(pdt_pk))
   }
 
   // Add DataTable rel docs
@@ -144,8 +189,15 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, selectProc}) =>
   }, []);
   // When pdts are setted
   useEffect(() => {
-    if(!pdts || String(pdts)=="") return;
+    if(!pdts) return;
+    if(isArray(pdts) && pdts.length == 0){
+      console.log("THERE IS NO PDTS");
+      // There is no pdt
+      setThereIsPDT(false)
+      return;
+    }
 
+    if(!thereIsPDT) setThereIsPDT(true)  // Fix state
     getDptByPdt(pdts[0].pk)
   }, [pdts]);
   // When dpdts are setted
@@ -240,13 +292,29 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, selectProc}) =>
     _select.value = pdt_context.current_pdt_pk
     _input.replaceWith(_select);  // Replace previous input.text with new select element
   }, [datatable])
+  useEffect(() => {
+    if(pdtDeleted){
+      getPdts()
+      setPDTDeleted(false)
+    }
+  }, [pdtDeleted])
 
+  console.log(pdts);
   return !pdts
     ? "loading"
     : (
       <div className="datatable-container col-12">
-        <h3>Seleccione un plan de trabajo</h3>
-        <table id="show-dpdt" style={{width: "100%"}}></table>
+        <h3>
+          {thereIsPDT
+            ? "Seleccione un plan de trabajo"
+            : "El paciente no tiene ningún plan de trabajo programado"
+          }
+        </h3>
+        {thereIsPDT
+          ? (
+            <table id="show-dpdt" style={{width: "100%"}}></table>
+          ) : ""
+        }
       </div>
     );
 }
@@ -270,22 +338,8 @@ const PDTActions = ({redirectTo, selected, patient_pk}) => {
           display: "inline-block",
           textAlign: "center"
         }}>
-          <Icon type="add" onClick={() => redirectTo(`/nav/plandetrabajo/${patient_pk}/crear`)} />
-          <span style={{fontSize: "0.9rem"}}>Nuevo</span>
-        </div>
-        <div className="col-4" style={{
-          display: "inline-block",
-          textAlign: "center"
-        }}>
           <Icon type="edit" onClick={() => redirectTo(`/nav/plandetrabajo/${patient_pk}/editar/${pdt_context.current_pdt_pk}/`)} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
-        </div>
-        <div className="col-4" style={{
-          display: "inline-block",
-          textAlign: "center"
-        }}>
-          <Icon type="trash" onClick={() => console.log("ELIMINAR")} />
-          <span style={{fontSize: "0.9rem"}}>Eliminar</span>
         </div>
       </div>
     </div>

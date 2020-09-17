@@ -72,6 +72,9 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
       : word.slice(1, word.length)
     );
 }
+export function isArray(_ar){
+  return typeof _ar == "object" & _ar.hasOwnProperty("length")
+}
 export async function getDataByPK(end_point, _pk){
   // Get patient data by id
   return fetch(

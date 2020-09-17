@@ -190,3 +190,38 @@ export const SelectOptions_Procedimiento = props => {
 
   return procedimiento;
 }
+export const ModalCancel = ({_title, _id, _action_text, _cancel_text, _body_text, _action_func, _cancel_func}) => {
+  const actionFunc = () => {
+    if(_action_func) _action_func()
+    else console.error("action function not defined in ModalCancel");
+  }
+  const cancelFunc = () => {
+    if(_cancel_func) _cancel_func()
+  }
+
+  return (
+    <div className="modal modal-alert" id={_id} tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
+      <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{_title || "Anular cita"}</h5>
+            <button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={cancelFunc}>
+              <span aria-hidden="true"><i className="fal fa-times"></i></span>
+            </button>
+          </div>
+          <div className="modal-body">
+            {_body_text}
+          </div>
+          <div className="modal-footer">
+            <button type="button" data-dismiss="modal"
+              className="btn btn-secondary waves-effect waves-themed"
+              onClick={cancelFunc}>{_cancel_text || "Cancelar"}</button>
+            <button type="button" data-dismiss="modal"
+              className="btn btn-primary waves-effect waves-themed"
+              onClick={()=>actionFunc()}>{_action_text || "Anular"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
