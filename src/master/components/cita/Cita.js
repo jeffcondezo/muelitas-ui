@@ -6,7 +6,11 @@ import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 import { Icon, SelectOptions_Procedimiento } from '../bits';
-import { handleErrorResponse } from '../../functions';
+import {
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL,
+  simplePostData,
+} from '../../functions';
 
 
 class Cita extends React.Component {
@@ -26,6 +30,7 @@ class Cita extends React.Component {
       "#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"
     ];
     this.redirectTo = props.redirectTo;
+    this.redirect_data = props.data
   }
   UNSAFE_componentWillReceiveProps(nextProps){
     // console.log(this.state.global.current_sucursal_pk, nextProps.current_sucursal_pk);
@@ -284,26 +289,27 @@ class Cita extends React.Component {
   * When a function is fired for an DOM event, we should declare 'em with arrow function
   * so we can access 'this' class propertie
   */
-  getPaciente = e => {
-    let dni = e.target.value;  // Get dni
+  getPaciente = dni => {
+    /* BUG: functions not executing when result is not stored
+    ["pac_nom_pri", "pac_nom_sec"].map(i => someFunction(i))
+    * the function is not being executed 'cuz its value is not being stored
+    * i'm only suposing that, but storing the value will cause it to be executed
+    * so we are declaring a wildcard variable called '_tmp' to store those useless values
+    */
+    var _tmp = "nothing"  // This is a wildcard with no use further than store values
+    // if dni is not 8 length
     if(dni.length<8){
       // Reset paciente data
       document.getElementById("pac_pk").value = "";
-      document.getElementById("pac_nom_pri").disabled = false;
-      document.getElementById("pac_nom_sec").disabled = false;
-      document.getElementById("pac_ape_pat").disabled = false;
-      document.getElementById("pac_ape_mat").disabled = false;
-      document.getElementById("defaultInline1Radio").disabled = false;
-      document.getElementById("defaultInline2Radio").disabled = false;
-      return;  // if dni is not 8 length
+      // Disable form fields
+      _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
+      .map(i => document.getElementById(i).disabled = false)
+      return;
     }else{
-      document.getElementById("pac_nom_pri").value = "";
-      document.getElementById("pac_nom_sec").value = "";
-      document.getElementById("pac_ape_pat").value = "";
-      document.getElementById("pac_ape_mat").value = "";
-      document.getElementById("pac_celular").value = "";
+      _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular"]
+      .map(i => document.getElementById(i).value = "")
       document.getElementById("pac_permiso_sms").value = "1";
-      document.getElementById("defaultInline1Radio").checked = true;
+      document.getElementById("pac_sex_m").checked = true;
     }
 
     let filter = `filtro={"dni":"${dni}"}`;
@@ -334,42 +340,26 @@ class Cita extends React.Component {
     });
     result.then(
       response_obj => {  // In case it's ok
-        if(response_obj.length!==1){
-          document.getElementById("pac_nom_pri").disabled = false;
-          document.getElementById("pac_nom_sec").disabled = false;
-          document.getElementById("pac_ape_pat").disabled = false;
-          document.getElementById("pac_ape_mat").disabled = false;
-          document.getElementById("defaultInline1Radio").disabled = false;
-          document.getElementById("defaultInline2Radio").disabled = false;
+        if(response_obj.length<1){
+          _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
+          .map(i => document.getElementById(i).disabled = false)
           return;
         }
-        // Set paciente data and disable inputs
-        document.getElementById("pac_pk").disabled = true;
+
+        // Set paciente data
         document.getElementById("pac_pk").value = response_obj[0].pk;
-        document.getElementById("pac_nom_pri").disabled = true;
+        document.getElementById("pac_dni").value = response_obj[0].dni;
         document.getElementById("pac_nom_pri").value = response_obj[0].nombre_principal;
-        document.getElementById("pac_nom_sec").disabled = true;
         document.getElementById("pac_nom_sec").value = response_obj[0].nombre_secundario;
-        document.getElementById("pac_ape_pat").disabled = true;
         document.getElementById("pac_ape_pat").value = response_obj[0].ape_paterno;
-        document.getElementById("pac_ape_mat").disabled = true;
         document.getElementById("pac_ape_mat").value = response_obj[0].ape_materno;
         document.getElementById("pac_celular").value = response_obj[0].celular;
-        if(response_obj[0].sexo == '1'){
-          document.getElementById("defaultInline1Radio").checked = true;
-          document.getElementById("defaultInline1Radio").disabled = true;
-          document.getElementById("defaultInline2Radio").disabled = true;
-        }else{
-          document.getElementById("defaultInline2Radio").checked = true;
-          document.getElementById("defaultInline1Radio").disabled = true;
-          document.getElementById("defaultInline2Radio").disabled = true;
-        }
-        if(response_obj[0].permiso_sms){
-          document.getElementById("pac_permiso_sms").value = "1";
-        }else{
-          document.getElementById("pac_permiso_sms").value = "0";
-
-        }
+        document.getElementById("pac_sex_m").value = response_obj[0].sexo == '1' ? "1" : "0"
+        document.getElementById("pac_sex_f").value = response_obj[0].sexo == '1' ? "0" : "1"
+        document.getElementById("pac_permiso_sms").value = response_obj[0].permiso_sms ? "1" : "0"
+        // Disable inputs
+        _tmp = ["pac_pk", "pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular", "pac_sex_m", "pac_sex_f"]
+        .map(i => document.getElementById(i)).map(i => i.disabled = true)
       }
     );
   }
@@ -386,7 +376,9 @@ class Cita extends React.Component {
         document.getElementById('alert-login').style.display = "none"
     }, 2700)
   }
-  cancelCitaForm(){  // Reset values
+  cancelCitaForm = () => {  // Reset values
+    if(this.redirect_data) return
+
     // Other values
     document.getElementById("pac_pk").value = "";
     document.getElementById("pac_dni").value = "";
@@ -397,15 +389,14 @@ class Cita extends React.Component {
     document.getElementById("programado").value = '1';
     window.$("#personal").val([]).trigger("change");  // Set personal to empty
     // Paciente
-    document.getElementById("pac_nom_pri").disabled = false;
     document.getElementById("pac_nom_pri").value = "";
-    document.getElementById("pac_nom_sec").disabled = false;
     document.getElementById("pac_nom_sec").value = "";
-    document.getElementById("pac_ape_pat").disabled = false;
     document.getElementById("pac_ape_pat").value = "";
-    document.getElementById("pac_ape_mat").disabled = false;
     document.getElementById("pac_ape_mat").value = "";
     document.getElementById("pac_ape_mat").value = "";
+    // Enable inputs
+    ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat"]
+    .map(i => document.getElementById(i).disabled = false)
   }
   saveCita = () => {
     // VALIDATIONS FIRST
@@ -570,10 +561,15 @@ class Cita extends React.Component {
       }, () => handleErrorResponse('server'));  // Print server error
     });
     result.then(
-      () => {  // In case it's ok
+      res => {
+        // If there was data from redirect
+        if(this.redirect_data) this.redirectDataFinal(res)
+
+        // In case it's ok
         handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info");
         document.getElementById("cita-close").click()  // Cerrar formulario cita
         this.getCitas()  // Re render fullcalendar
+
       },
       error => {
         console.log("ERROR:", error);
@@ -584,7 +580,7 @@ class Cita extends React.Component {
             handleErrorResponse("custom", "ERROR: ", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "danger")
             return;
           }else{
-          handleErrorResponse("custom", "ERROR: ", er.non_field_errors.join(", "), "danger")
+            handleErrorResponse("custom", "ERROR: ", er.non_field_errors.join(", "), "danger")
           }
         })
         document.getElementById("cita-close").click()  // Cerrar formulario cita
@@ -674,6 +670,28 @@ class Cita extends React.Component {
     clone.calendar_filter = personal_array;
     this.setState(clone, this.getCitas);
   }
+  fillDataFromRedirect = () => {
+    // Set patient data
+    this.getPaciente(this.redirect_data.patient_dni)
+    // Open modal
+    document.querySelector('button#toggleModal').click()
+  }
+  redirectDataFinal = cita => {
+    if(!this.redirect_data?.selected) return
+    // Compare procs sended and procs received
+    let sended_ar = window.$("#programado").select2('data').map(i => Number(i.id))
+
+    this.redirect_data.selected.map(obj => {
+      if(sended_ar.indexOf(obj.proc_pk) == -1) return
+
+      // If proc was sended add cita as dpdt's reference
+      simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`, {})
+    })
+
+
+    // Delete redirect_data
+    this.redirect_data = false
+  }
 
   render(){
     return(
@@ -717,7 +735,7 @@ class Cita extends React.Component {
                 <label className="form-label" htmlFor="paciente">Dni: </label>
                 <input type="text" id="pac_dni" name="paciente" required
                   className="form-control form-control-lg" maxLength="8"
-                  placeholder="Dni del paciente" onChange={this.getPaciente} />
+                  placeholder="Dni del paciente" onChange={e => this.getPaciente(e.target.value)} />
               </div>
               {/* Paciente */}
               <label className="form-label col-md-12">Paciente: </label>
@@ -735,18 +753,6 @@ class Cita extends React.Component {
                 <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <div className="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
-                    <div className="custom-control custom-radio custom-control-inline">
-                        <input type="radio" value="1" className="custom-control-input" id="defaultInline1Radio" name="sexo" />
-                        <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="defaultInline1Radio">Masculino</label>
-                    </div>
-                    <div className="custom-control custom-radio custom-control-inline">
-                        <input type="radio" value="2" className="custom-control-input" id="defaultInline2Radio" name="sexo" />
-                        <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="defaultInline2Radio">Femenino</label>
-                    </div>
-                  </div>
-              </div>
-              <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <input type="text" id="pac_celular" name="pac_celular" className="form-control form-control-lg" placeholder="Celular" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
@@ -755,8 +761,20 @@ class Cita extends React.Component {
                 <option value="0">NO Permitir envío de SMS</option>
               </select>
               </div>
+              <div className="form-group col-md-6" style={{display:'inline-block'}}>
+                <div className="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
+                  <div className="custom-control custom-radio custom-control-inline">
+                    <input type="radio" value="1" className="custom-control-input" id="pac_sex_m" name="sexo" defaultChecked />
+                    <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="pac_sex_m">Masculino</label>
+                  </div>
+                  <div className="custom-control custom-radio custom-control-inline">
+                    <input type="radio" value="2" className="custom-control-input" id="pac_sex_f" name="sexo" />
+                    <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="pac_sex_f">Femenino</label>
+                  </div>
+                </div>
+              </div>
               {/* Fin Paciente */}
-              <SelectProcedimiento state={this.state} />
+              <SelectProcedimiento procedimiento={this.state.procedimiento} selected={this.redirect_data?.selected} />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="date">Fecha: </label>
                 <input type="date" id="date" name="date" className="form-control form-control-lg" defaultValue={(new Date().toDateInputValue())} required />
@@ -860,6 +878,10 @@ class Cita extends React.Component {
         window.$("#personal").select2({
           dropdownParent: window.$("#personal").parent()
         });
+        // Set select2 for programado
+        window.$("#programado").select2({
+          dropdownParent: window.$("#programado").parent()
+        });
       };
       select2_script.src = "/js/formplugins/select2/select2.bundle.js";
       document.body.appendChild(select2_script);
@@ -868,8 +890,14 @@ class Cita extends React.Component {
       window.$("#personal").select2({
         dropdownParent: window.$("#personal").parent()
       });
+      // Set select2 for programado
+      window.$("#programado").select2({
+        dropdownParent: window.$("#programado").parent()
+      });
     }
 
+    // Fill data from redirect_data
+    if(this.redirect_data) this.fillDataFromRedirect()
   }
 }
 
@@ -908,7 +936,7 @@ function SelectPersonal(props){
     for(let p of props.state.personal){  // Iterate over all sucursales this user has
       personal.push(
         <option key={p.pk} value={p.pk}>
-          {p.nombre_principal+" "+p.ape_paterno+" - "+p.especialidad_descripcion}
+          {cFL(p.nombre_principal)+" "+cFL(p.ape_paterno)}
         </option>
       );
     }
@@ -922,12 +950,19 @@ function SelectPersonal(props){
     </div>
   )
 }
-function SelectProcedimiento(props){
+function SelectProcedimiento({procedimiento, selected}){
+  useEffect(() => {
+    if(!procedimiento || !selected) return
+
+    // Select values
+    window.$("#programado").val(selected.map(i => i.proc_pk)).trigger('change')
+  }, [selected, procedimiento])
+
   return (
     <div className="form-group col-md-12">
       <label className="form-label" htmlFor="programado">Programado: </label>
-      <select id="programado" className="custom-select form-control custom-select-lg">
-        <SelectOptions_Procedimiento procedimientos={props.state.procedimiento} />
+      <select id="programado" className="custom-select form-control custom-select-lg" multiple>
+        <SelectOptions_Procedimiento procedimientos={procedimiento} />
       </select>
     </div>
   )

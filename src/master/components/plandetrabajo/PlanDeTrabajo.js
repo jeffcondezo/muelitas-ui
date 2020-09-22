@@ -58,18 +58,24 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
   // Multi component state handling
   const [pdtDeleted, setPDTDeleted] = useState(false)
   const [thereIsPDT, setThereIsPDT] = useState(false)
+  /* 'selected_list' is used as a reference variable
+  * it keeps the previous value of 'ar_proc_selected'
+  * ar_proc_selected's update is not tracked by addOrRemoveFromList function (even with useCallback)
+  * this value is only a reference, the actual value is ar_proc_selected
+  */
   const selected_list = useRef([])
 
-  const addOrRemoveFromList = useCallback(pk => {
+  const addOrRemoveFromList = _obj => {
     // BUG: ar_proc_selected's value is not tracking the value update from using setSelectPDT
     // FIX: use a useRef to update the value
     let ar_copy = selected_list.current.map(i => i)  // Copy array with no memory reference
-    let _inx = ar_copy.indexOf(pk)
-    if(_inx == -1) ar_copy.push(pk)
+    // Search if _obj is already in the array if so find its index
+    let _inx = ar_copy.findIndex(i => i.dpdt == _obj.dpdt)
+    if(_inx == -1) ar_copy.push(_obj)
     else ar_copy.splice(_inx, 1)
     // Set new array
     setSelectPDT(ar_copy)
-  }, [ar_proc_selected])
+  }
   const deletePDT = () => {
     if(pdt_context.current_pdt_pk == null){
       console.error("current_pdt_pk from PDTContext is null");
@@ -115,7 +121,7 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
             {thereIsPDT
               ? (
                 <div className="col-2">
-                <button className="btn btn-danger" style={{fontSize: "0.9rem"}} data-toggle="modal" data-target="#modal_eliminar_pdt">Eliminar</button>
+                  <button className="btn btn-danger" style={{fontSize: "0.9rem"}} data-toggle="modal" data-target="#modal_eliminar_pdt">Eliminar</button>
                 </div>
               ) : ""
             }
@@ -131,7 +137,10 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
                   patient_pk={patient_pk} />
               </div>
               <div className="panel">
-                <DPDTActions />
+                <DPDTActions
+                  patient_dni={patient.dni}
+                  selected={ar_proc_selected}
+                  redirectTo={redirectTo} />
               </div>
             </div>
           ) : ""
@@ -191,7 +200,6 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
   useEffect(() => {
     if(!pdts) return;
     if(isArray(pdts) && pdts.length == 0){
-      console.log("THERE IS NO PDTS");
       // There is no pdt
       setThereIsPDT(false)
       return;
@@ -213,12 +221,12 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
         {title: "Procedimiento", data: "procedimiento_nombre"},
         {title: "Estado", data: 'estado'},
         {title: "Orden", data: 'orden'},
-        {title: "", data: 'estado'},
+        {title: "", data: 'cita_relacionada'},
       ],
       columnDefs: [
         {
-        targets: 0,
-        render: data => cFL(data),
+          targets: 0,
+          render: data => cFL(data),
         }, {
           // Estado
           targets: 1,
@@ -228,12 +236,13 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
         targets: -1,
         orderable: false,
         // width: "1px",
-        render: data => data=='1'?"<input type='checkbox' />":"",
+        render: data => data==null?"<input type='checkbox' />":"",
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
-          if(cell.children[0]){
-            cell.children[0].onchange = () => {
-              selectProc(rowData.pk)
+          var tmp = cell.children[0]
+          if(tmp){
+            tmp.onchange = () => {
+              selectProc({dpdt: rowData.pk, proc_pk: rowData.procedimiento})
             }
           }
         }
@@ -299,7 +308,6 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     }
   }, [pdtDeleted])
 
-  console.log(pdts);
   return !pdts
     ? "loading"
     : (
@@ -345,9 +353,18 @@ const PDTActions = ({redirectTo, selected, patient_pk}) => {
     </div>
   )
 }
-const DPDTActions = ({redirectTo, selected, patient_pk}) => {
-  const pdt_context = useContext(PDTContext);
-  // console.log(selected);
+const DPDTActions = ({redirectTo, selected, patient_dni}) => {
+  const redirectToCita = () => {
+    if(selected.length == 0){
+      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento")
+      return
+    }
+
+    redirectTo('/nav/cita/', {
+      patient_dni: patient_dni,
+      selected: selected
+    })
+  }
 
   return (
     <div className="card col-12" style={{
@@ -366,7 +383,7 @@ const DPDTActions = ({redirectTo, selected, patient_pk}) => {
           display: "inline-block",
           textAlign: "center"
         }}>
-          <Icon type="add" onClick={() => redirectTo(`/nav/cita/?proc=[${String([1,2,3])}]`)} />
+          <Icon type="add" onClick={redirectToCita} />
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
       </div>

@@ -75,6 +75,28 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
 export function isArray(_ar){
   return typeof _ar == "object" & _ar.hasOwnProperty("length")
 }
+export function getUrlSearchAsObj(json=true){
+  let search_text = window.location.search
+  if(search_text.length <= 1) return false  // Verify there are params
+
+  // Delete the first '?'
+  search_text = search_text.split("")
+  search_text.shift()
+  search_text = search_text.join("")
+
+  // Get each param
+  let obj = {}
+  // a=123&b=asd
+  search_text.split("&").map(i => {
+    // a=123
+    let break_pos = i.indexOf("=")
+    obj[i.slice(0, break_pos)] = json
+      ? JSON.parse(i.slice(break_pos+1, i.length+1))
+      : i.slice(break_pos+1, i.length+1)
+  })
+
+  return obj
+}
 export async function getDataByPK(end_point, _pk){
   // Get patient data by id
   return fetch(

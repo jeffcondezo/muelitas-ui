@@ -152,6 +152,7 @@ function SelectComponent(props){
         <Route path="/nav/cita">
           <Cita
             current_sucursal_pk={props.current_sucursal_pk}
+            data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/atencion">
