@@ -8,6 +8,7 @@ import {
   handleErrorResponse,
   getDataByPK,
   simplePostData,
+  simpleGet,
   simpleDelete,
   getPatientFullName,
   capitalizeFirstLetter as cFL,
@@ -162,11 +163,11 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
   const [datatable, setDatatable] = useState(false)
 
   const getPdts = () => {
-    simplePostData(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}"}`, {}, "GET")
+    simpleGet(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}"}`)
     .then(setPdts)
   }
   const getDptByPdt = (pdt_pk) => {
-    simplePostData(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`, {}, "GET")
+    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
     .then(setDpdts)
     .then(() => pdt_context.current_pdt_pk = Number(pdt_pk))
   }
@@ -409,7 +410,7 @@ const CreatePDT = ({sucursal_pk}) => {
     .then(() => handleErrorResponse('custom', "Exito", "Guardado correctamente", 'info'))
   }
   const getDptByPdt = (pdt_pk) => {
-    simplePostData(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`, {}, "GET")
+    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
     .then(setProcList)
   }
   const refreshProcList = () => {
@@ -470,7 +471,7 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
   const [procedures, setProcedures] = useState(false)
 
   const getProcedures = _sucursal_pk => {
-    simplePostData(`maestro/procedimiento/precio/?filtro={"sucursal":"${_sucursal_pk}"}`, {}, "GET")
+    simpleGet(`maestro/procedimiento/precio/?filtro={"sucursal":"${_sucursal_pk}"}`)
     .then(setProcedures)
   }
   const handleSubmitProc = () => {

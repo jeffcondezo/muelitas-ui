@@ -118,22 +118,43 @@ export async function getDataByPK(end_point, _pk){
     () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
   );
 }
-export async function simplePostData(end_point, data, method='POST'){
-  method = method.toUpperCase()
+export async function simpleGet(end_point){
   return fetch(
     process.env.REACT_APP_PROJECT_API+end_point,
-    Object.assign(
-      {
-        method: method,
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
+    {
+      headers: {
+        Authorization: localStorage.getItem('access_token'),  // Token
       },
-      (method=="GET" || method=="HEAD")  // If method is GET or HEAD the request should have no body propertie
-      ? {}
-      : {body: JSON.stringify(data)}  // Data
-    )
+    }
+  ).then(
+    response => (
+      response.ok
+      ? response.json()
+      : response.status==403
+      ? handleErrorResponse('permission')
+      : response.status==500
+      ? handleErrorResponse('server')
+      : Promise.reject()
+    ),
+    () => handleErrorResponse('server')
+  );
+}
+export async function simplePostData(end_point, data, method="POST"){
+  method = method.toUpperCase()
+  if(method != "POST" && method != "PUT"){
+    console.error("simplePostData only supports methods POST and PUT");
+  }
+
+  return fetch(
+    process.env.REACT_APP_PROJECT_API+end_point,
+    {
+      method: method,
+      headers: {
+        Authorization: localStorage.getItem('access_token'),  // Token
+        'Content-Type': 'application/json'  // JSON type
+      },
+      body: JSON.stringify(data)  // Data
+    },
   ).then(
     response => (
       response.ok
@@ -170,7 +191,6 @@ export async function simpleDelete(end_point){
     () => handleErrorResponse('server')
   );
 }
-
 // Specific
 export function getPatientFullName(patient){
   return (

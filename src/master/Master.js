@@ -101,10 +101,10 @@ When generating url with params we should use double quotes ("),
 /*** COMPONENTS ***/
 function Home(props){
   return (
-    <>
-    <h1>Home</h1>
-    <Link to={props.logged ? '/nav' : '/login'}>{props.logged ? 'Ingresar al sistema' : 'Iniciar sesión'}</Link>
-    </>
+    <div>
+      <h1>Home</h1>
+      <Link to={props.logged ? '/nav' : '/login'}>{props.logged ? 'Ingresar al sistema' : 'Iniciar sesión'}</Link>
+    </div>
   )
 }
 function Error(props){

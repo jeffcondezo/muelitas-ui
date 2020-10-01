@@ -147,7 +147,7 @@ function SelectComponent(props){
     <main id="js-page-content" role="main" className="page-content">
       <Switch>
         <Route exact path="/nav/home">
-          <h1> HOME </h1>
+          <SPAHome />
         </Route>
         <Route path="/nav/cita">
           <Cita
@@ -1741,6 +1741,12 @@ function Settings(){
             </div>
         </div>
     </div>
+  )
+}
+
+function SPAHome(){
+  return (
+    <h1>HOME</h1>
   )
 }
 

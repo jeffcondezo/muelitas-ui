@@ -3,9 +3,12 @@ import { Switch, Route, Redirect, useParams } from "react-router-dom";
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
-  getDataByPK
+  getDataByPK,
+  simplePostData,
+  simpleGet,
 } from '../../functions';
 import { PageTitle, Icon } from '../bits';
+import { FileIcon, defaultStyles } from 'react-file-icon'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -263,6 +266,9 @@ const AttentionDetail = (props) => {
               cita={cita}
               redirectTo={props.redirectTo} />
           </div>
+          <div className="panel">
+            <PatientAttentionFiles atencion={cita.atencion} />
+          </div>
         </div>
       </div>
     );
@@ -397,6 +403,85 @@ const PatientAttentionHistory = props => {
         </div>
       </div>
     );
+}
+const PatientAttentionFiles = ({atencion}) => {
+  const [files, setFiles] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(false)
+
+  const getAtencionFiles = () => {
+    simpleGet(`atencion/${atencion}/files/`)
+    .then(setFiles)
+  }
+  const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
+  const uploadFile = () => {
+    let input_file = window.document.getElementById('input-file')
+    if(input_file.files.length == 0){
+      return
+    }
+
+    let file = input_file.files[0]
+    let data = new FormData()
+    data.append("file", file)
+    return fetch(
+      process.env.REACT_APP_PROJECT_API+`atencion/${atencion}/files/`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: localStorage.getItem('access_token'),  // Token
+          // 'Content-Type': 'application/octet-stream'  // JSON type
+        },
+        body: data,
+      },
+    ).then(
+      response => (
+        response.ok
+        ? response.json()
+        : response.status==403
+        ? handleErrorResponse('permission')
+        : response.status==500
+        ? handleErrorResponse('server')
+        : Promise.reject()
+      ),
+      () => handleErrorResponse('server')
+    )
+    .then(getAtencionFiles)
+  }
+  const deleteFile = file_id => {
+    simplePostData(`atencion/${atencion}/files/delete/`, {file_id: file_id})
+    .then(getAtencionFiles)
+  }
+
+
+  // Run at first render
+  useEffect(() => {
+    getAtencionFiles()
+  }, []);
+
+  return !files
+    ? (<div className="card"><div className="card-body">loading</div></div>)
+    : (
+      <div className="card col-12" style={{padding: "0px"}}>
+        <div className="card-header">
+          <div className="card-title">
+            Archivos
+          </div>
+        </div>
+        <div className="card-body">
+          {/* files */}
+          {files.length>0 ? files.map(f => (
+            <div key={"file_list_"+f.id} style={{
+              margin: "15px 0",
+            }}>
+              <GDriveFile file={f} deleteFile={deleteFile} />
+            </div>
+          )) : "No hay archivos añadidos"}
+        </div>
+        <div className="card-footer">
+          <input type="file" id="input-file" onChange={inputFileChange} />
+          <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
+        </div>
+      </div>
+    )
 }
 const AttentionProcedures = props => {
   const [procedures, setProcedures] = useState(false);
@@ -584,6 +669,62 @@ const Links = props => {
       </div>
     </div>
   );
+}
+const GDriveFile = ({file, deleteFile}) => {
+  let last_dot_index = file.name.split("").lastIndexOf(".")
+  let ext = file.name.slice(last_dot_index+1, file.name.length)
+  let name = file.name.slice(0, last_dot_index)
+
+  const css = {
+    icon: {
+      display: "inline-flex",
+      flex: "1 1 0%",
+      alignItems: "middle",
+      justifyContent: "center",
+    },
+    name: {
+      fontSize: "1.3em",
+      flex: "9 1 0%",
+      width: "0px"
+    },
+  }
+
+  return (
+    <div style={{
+      textAlign: "left",
+      display: "flex",
+    }}>
+      <b style={css.name}>{name}</b>
+      <div style={css.icon}>
+        <a href={file.webViewLink} target="_blank" style={{
+          display: "inline-block",
+          width: "32px",
+        }}>
+          <FileIcon extension={ext} color="#F8F5E1" {...defaultStyles[ext]} />
+        </a>
+      </div>
+      <div style={css.icon}>
+        <a href={file.webContentLink} target="_blank" style={{
+          display: "inline-block",
+          width: "40px",
+          textAlign: "center",
+        }} className="fa-2x">
+          <i className="fal fa-download"></i>
+        </a>
+      </div>
+      <div style={css.icon}>
+        <div style={{
+            textAlign: "center",
+            fontSize: "2em",
+            cursor: "pointer",
+          }}
+          onClick={()=>deleteFile(file.id)}
+        >
+          <i className="fal fa-trash-alt"></i>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default Atencion;
