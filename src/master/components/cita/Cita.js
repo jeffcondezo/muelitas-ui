@@ -376,7 +376,8 @@ class Cita extends React.Component {
         document.getElementById('alert-login').style.display = "none"
     }, 2700)
   }
-  cancelCitaForm = () => {  // Reset values
+  cancelCitaForm = () => {
+    // Reset values
     if(this.redirect_data) return
 
     // Other values
@@ -386,7 +387,7 @@ class Cita extends React.Component {
     document.getElementById("hour").value = "08";
     document.getElementById("minute").value = "00";
     document.getElementById("duracion").value = "15";
-    document.getElementById("programado").value = '1';
+    window.$("#programado").val(null).trigger('change')
     window.$("#personal").val([]).trigger("change");  // Set personal to empty
     // Paciente
     document.getElementById("pac_nom_pri").value = "";
@@ -495,7 +496,8 @@ class Cita extends React.Component {
     let _origen_cita = "3";  // Origen Web #############
     let _estado = "1";  // Cita Pendiente
     // let _indicaciones = "";
-    let _programado = document.getElementById("programado").selectedOptions[0].text;
+    let _programado = window.$("#programado").select2('data').map(i => i.text).join(", ")
+
     // Add personal to 'programado'
     if(_personal.length>1) _programado += `\nAtendido por ${_personal_atencion}`;
     let _duracion = document.getElementById("duracion").value;

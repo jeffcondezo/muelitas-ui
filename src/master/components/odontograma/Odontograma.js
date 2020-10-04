@@ -908,14 +908,14 @@ class Tooth {
     else if(!direction) _teeth = teeth.lower_teeth;
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
-      if(tooth.key===v.start_tooth_key){
+      if(tooth.key==v.start_tooth_key){
         start_index = inx;
         return true;
       }
       return false;
     });
     if(!_inx){
-      alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
+      console.error("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
       return;
     }
     let y = this.y - 25;
@@ -1017,7 +1017,6 @@ class Tooth {
       return false;
     });
     if(!_inx){
-      console.log(direction, _teeth, v.start_tooth_key, _inx);
       alert("SOMETHING WENT WRONG, START_TOOTH_KEY VALUE WASN'T FOUND")
       return;
     }
@@ -1909,7 +1908,7 @@ function Odontograma(props){
       clearTooth();
       return;
     }
-    if(ct.tooth && currentTooth.tooth.key===ct.tooth.key){  // Same tooth
+    if(ct.tooth && currentTooth.tooth.key==ct.tooth.key){  // Same tooth
       if(select_type!==4){  // Not select tooth, instead save tooth part
         currentTooth.preserve = true;
         let taked_off = inc_paths.reduce((ar, path)=>{if(path.key!==currentTooth.path.key) ar.push(path); return ar;}, []);
@@ -2057,7 +2056,6 @@ function Odontograma(props){
     result.then(
       response_obj => {  // In case it's ok
         if(response_obj.length===0) return;
-        console.log(response_obj);
         let response = response_obj[0];
         // Change odontogram type
         resetAll(response.tipo==1?"A":"K");
@@ -2167,7 +2165,6 @@ function Odontograma(props){
       // Promise actions
       result.then(
         response_obj => {  // In case it's ok
-          console.log("OKEY", response_obj);
           handleErrorResponse('custom', "Exito", "Odontograma actualizado exitosamente")
         },
         error => {  // In case of error
@@ -2177,7 +2174,6 @@ function Odontograma(props){
     }
   }
   function getIncidences(){
-    console.log(odontogram);
     if(odontogram.id===-1) return;  // If it's a new odontogram, exit
     // Get incidents
     let filter = `filtro={"odontograma":"${odontogram.id}"}`;
@@ -2271,7 +2267,6 @@ function Odontograma(props){
       setIncident(false);
     }
     genTeeth(odontogram_type.current);
-    console.log(type, odontogram);
     if(type==odontogram.type) getIncidences();
     if(!type) setIncidentList([]);
   }
@@ -2621,7 +2616,7 @@ function IncidentForm(props){
         let _other_tooth;  // Other tooth object
         let _inx;  // Other tooth index
         let _other_right = _teeth.some((tooth, inx) => {
-          if(tooth.key===inc_paths[0].key){
+          if(tooth.key==inc_paths[0].key){
             _other_tooth = tooth;
             _inx = inx;
             return true;

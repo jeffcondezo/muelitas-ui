@@ -227,7 +227,7 @@ const AddMedicine = props => {
     ).then(
       response_obj => props.addMedicineToList(response_obj),
       error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-    );
+    ).then(() => clearForm());
   }
   function handleSubmit(){
     // Values validation
@@ -283,6 +283,13 @@ const AddMedicine = props => {
     }
     // Set value
     document.getElementById('start-time').value = suggested_hour+":00";
+  }
+  const clearForm = () => {
+    document.getElementById('amount').value = ""
+    document.getElementById('indications').value = ""
+    document.getElementById('contraindications').value = ""
+    document.getElementById('period').value = "4"
+    handlePeriodChange()
   }
 
   // Run at first execution
