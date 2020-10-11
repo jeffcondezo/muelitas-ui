@@ -193,7 +193,7 @@ const DebtXPatientTable = props => {
   )
 }
 
-
+let production_nofe_default = true
 const CobranzaDetail = props => {
   let __params__ = useParams();
   // Receive {patient, sucursal_pk, redirectTo}
@@ -241,7 +241,7 @@ const CobranzaDetail = props => {
 }
 const PaymentForm = props => {
   // Receive {patient, selected, sucursal_pk, setRefresh}
-  const [clienttype, setClientType] = useState(1);  // Natural && Empresa && Sin FE
+  const [clienttype, setClientType] = useState(production_nofe_default?3:1);  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
   const [knownclient, setNC] = useState(true);  // Paciente es Cliente
 
@@ -535,12 +535,18 @@ const PaymentForm = props => {
   return (
     <div>
       <div style={{marginLeft: "20px"}} className="btn-group btn-group-toggle" data-toggle="buttons">
-        <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===1?'active':'')} onClick={()=>setClientType(1)}>
-          <input type="radio" name="odontogram_type" defaultChecked /> Boleta
-        </label>
-        <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===2?'active':'')} onClick={()=>setClientType(2)}>
-          <input type="radio" name="odontogram_type" /> Factura
-        </label>
+        {production_nofe_default?""
+          : (
+          <>
+            <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===1?'active':'')} onClick={()=>setClientType(1)}>
+              <input type="radio" name="odontogram_type" defaultChecked /> Boleta
+            </label>
+            <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===2?'active':'')} onClick={()=>setClientType(2)}>
+              <input type="radio" name="odontogram_type" /> Factura
+            </label>
+          </>
+          )
+        }
         <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===3?'active':'')} onClick={()=>setClientType(3)}>
           <input type="radio" name="odontogram_type" /> Sin FE
         </label>

@@ -7,7 +7,7 @@ import {
   simplePostData,
   simpleGet,
 } from '../../functions';
-import { PageTitle, Icon } from '../bits';
+import { PageTitle, Icon, ModalLoading } from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
 
 // Constant
@@ -405,9 +405,11 @@ const PatientAttentionHistory = props => {
     );
 }
 const PatientAttentionFiles = ({atencion}) => {
+  const gadrive_modal_id = "gadrive_loading"
   const [files, setFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState(false)
 
+  // Google drive API functions
   const getAtencionFiles = () => {
     simpleGet(`atencion/${atencion}/files/`)
     .then(setFiles)
@@ -422,6 +424,10 @@ const PatientAttentionFiles = ({atencion}) => {
     let file = input_file.files[0]
     let data = new FormData()
     data.append("file", file)
+
+    /* Show modal */
+    showLoadingModal()
+
     return fetch(
       process.env.REACT_APP_PROJECT_API+`atencion/${atencion}/files/`,
       {
@@ -445,11 +451,14 @@ const PatientAttentionFiles = ({atencion}) => {
       () => handleErrorResponse('server')
     )
     .then(getAtencionFiles)
+    .then(hideLoadingModal)
   }
   const deleteFile = file_id => {
     simplePostData(`atencion/${atencion}/files/delete/`, {file_id: file_id})
     .then(getAtencionFiles)
   }
+  const showLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("show")
+  const hideLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("hide")
 
 
   // Run at first render
@@ -480,6 +489,11 @@ const PatientAttentionFiles = ({atencion}) => {
           <input type="file" id="input-file" onChange={inputFileChange} />
           <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
         </div>
+
+        <ModalLoading
+          _id={gadrive_modal_id}
+          _title={"Subiendo archivo"}
+          _body_text={"Por favor espere unos segundos mientras el archivos se guarda"} />
       </div>
     )
 }

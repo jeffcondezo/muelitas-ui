@@ -329,13 +329,13 @@ function Aside(props){
 function PageContent(props){
   return (
     <div className="page-content-wrapper">
-        {/*
-          <PageHeader
+        <PageHeader
           user={props.user}
           profile_pic={props.profile_pic}
           sucursales={props.sucursales}
           current_sucursal_pk={props.current_sucursal_pk}
           changeSucursal={props.changeSucursal} />
+          {/*
           */}
         <SelectComponent
           history={props.history}
@@ -458,7 +458,7 @@ function PageContent(props){
 function PageHeader(props){
   return (
     <header className="page-header" role="banner">
-
+      {/*
         <div className="page-logo">
           <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
             <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
@@ -467,17 +467,20 @@ function PageHeader(props){
             <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
           </a>
         </div>
+        */}
 
         <div className="hidden-md-down dropdown-icon-menu position-relative">
             <a href="#" className="header-btn btn js-waves-off" data-action="toggle" data-class="nav-function-hidden" title="Hide Navigation">
                 <i className="ni ni-menu"></i>
             </a>
-            <ul>
+            <ul style={{height: "5.3rem"}}>
+            {/*
                 <li>
                     <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-minify" title="Minify Navigation">
                         <i className="ni ni-minify-nav"></i>
                     </a>
                 </li>
+                */}
                 <li>
                     <a href="#" className="btn js-waves-off" data-action="toggle" data-class="nav-function-fixed" title="Lock Navigation">
                         <i className="ni ni-lock-nav"></i>
@@ -485,12 +488,13 @@ function PageHeader(props){
                 </li>
             </ul>
         </div>
-
         <div className="hidden-lg-up">
           <a href="#" className="header-btn btn press-scale-down" data-action="toggle" data-class="mobile-nav-on">
             <i className="ni ni-menu"></i>
           </a>
         </div>
+
+        {/*
         <div className="search">
           <form className="app-forms hidden-xs-down" role="search" action="page_search.html" autoComplete="off">
             <input type="text" id="search-field" placeholder="Search for anything" className="form-control" tabIndex="1"/>
@@ -1042,6 +1046,7 @@ function PageHeader(props){
               current_sucursal_pk={props.current_sucursal_pk}
               changeSucursal={props.changeSucursal} />
         </div>
+        */}
     </header>
   )
 }

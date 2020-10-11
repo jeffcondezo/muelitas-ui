@@ -21,7 +21,7 @@ const preview_select_margin = 2;
 // General settings
 const settings = {
   strokeColor: "black",
-  hovercolor: "yellow",
+  hovercolor: "red",
   toothhovercolor: "#0002",
   tooth_spacing: 7*scale,
   width: 30*scale,
@@ -1911,6 +1911,7 @@ function Odontograma(props){
     if(ct.tooth && currentTooth.tooth.key==ct.tooth.key){  // Same tooth
       if(select_type!==4){  // Not select tooth, instead save tooth part
         currentTooth.preserve = true;
+        if(!currentTooth.path) return
         let taked_off = inc_paths.reduce((ar, path)=>{if(path.key!==currentTooth.path.key) ar.push(path); return ar;}, []);
         // Take out path object if it's already in array
         if(inc_paths.length === taked_off.length){  // If nothing was removed then currentPath wasn't in array so we added it
@@ -1967,7 +1968,7 @@ function Odontograma(props){
     if(select_type===3){
       ctx.lineWidth = 3;
       ctx.strokeStyle = settings.hovercolor;
-      inc_paths.forEach((path) => {
+      if(inc_paths.hasOwnProperty("length")) inc_paths.forEach((path) => {
         ctx.stroke(path.path)
       });
     }else{
@@ -2227,8 +2228,9 @@ function Odontograma(props){
       tooth.incidents.push(inc_obj);  // Add to global teeth data
 
       new_inc_list.push({
+        diente_inicio: Number(inc.start_tooth_key),
         diente: tooth.key,
-        type: parseInt(inc.type),
+        type: Number(inc.type),
         inx: tooth.incidents.length-1
       });
 
@@ -2644,8 +2646,9 @@ function IncidentForm(props){
     props.setTeeth(teeth);  // Save modified teeth
     // Add to incident list
     props.inc_list.push({
+      diente_inicio: Number(_tooth.incidents[_tooth.incidents.length-1].value.start_tooth_key),
       diente: _tooth.key,
-      type: inc_code,
+      type: Number(inc_code),
       inx: _tooth.incidents.length-1
     });
     props.set_inc_list(props.inc_list);
@@ -2786,6 +2789,7 @@ function IncidentList(props){
 
   let elements = [];
   props.inc_list.forEach((inc, inx) => {
+    console.log("inc", inc);
     elements.push(
       <div key={"inc_list_"+inx} style={{cursor: "pointer"}}>
           <button onClick={()=>deleteIncidence(inx)}
@@ -2793,7 +2797,7 @@ function IncidentList(props){
             style={{marginRight: "7px"}}>
             <i className="fal fa-times"></i>
           </button>
-          <span>Diente: </span><b>{inc.diente}</b><span> &nbsp;{inc_functions[inc.type-1]}</span>
+          <span>Diente: </span><b>{inc.diente_inicio?`${inc.diente_inicio} - ${inc.diente}`:inc.diente}</b><span> &nbsp;{inc_functions[inc.type-1]}</span>
       </div>
     );
   });

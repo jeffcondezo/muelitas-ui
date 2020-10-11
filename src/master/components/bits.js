@@ -51,7 +51,7 @@ export const Icon = props => {
     ); break;
     case "finance": el.push(  // Finanzas
       <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Atencion" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        title="Cobrar" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="money-check-alt" className="svg-inline--fa fa-money-check-alt fa-w-20" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" style={{width: "90%"}}>
@@ -225,3 +225,17 @@ export const ModalCancel = ({_title, _id, _action_text, _cancel_text, _body_text
     </div>
   )
 }
+export const ModalLoading = ({_title, _id, _body_text}) => (
+  <div className="modal fade" id={_id} tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div className="modal-dialog" role="document">
+      <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{_title || "Default text"}</h5>
+          </div>
+          <div className="modal-body">
+            {_body_text}
+          </div>
+      </div>
+    </div>
+  </div>
+)
