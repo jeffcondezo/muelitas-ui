@@ -530,7 +530,7 @@ class Cita extends React.Component {
     if(_celular != "") data['celular'] = _celular;
     data['permiso_sms'] = _permiso_sms;
     // data['indicaciones'] = _indicaciones;
-    data['programado'] = _programado;
+    if(_programado.length != 0) data['programado'] = _programado;
     // Handle paciente
     if(typeof(_paciente)==='number')
       data['paciente'] = _paciente;
@@ -539,7 +539,7 @@ class Cita extends React.Component {
 
     let url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
     // Generate promise
-    let result = new Promise((resolve, reject) => {
+    new Promise((resolve, reject) => {
       // Fetch data to api
       let request = fetch(url, {
         method: 'POST',
@@ -561,8 +561,8 @@ class Cita extends React.Component {
           }
         }
       }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
+    })
+    .then(
       res => {
         // If there was data from redirect
         if(this.redirect_data) this.redirectDataFinal(res)
@@ -571,23 +571,22 @@ class Cita extends React.Component {
         handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info");
         document.getElementById("cita-close").click()  // Cerrar formulario cita
         this.getCitas()  // Re render fullcalendar
-
       },
       error => {
-        console.log("ERROR:", error);
         // The next function is a solution to a UB (at least idk what does cause it)
         error.then((er) => {
+          console.log(er)
           if(er.hasOwnProperty("length") && er[0]==="CRUCE_DE_CITAS"){
             //this.handleBadRequest("CRUCE_DE_CITAS");
             handleErrorResponse("custom", "ERROR: ", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "danger")
             return;
           }else{
-            handleErrorResponse("custom", "ERROR: ", er.non_field_errors.join(", "), "danger")
+            handleErrorResponse("custom", "", "Ha ocurrido un error", "danger")
           }
         })
         document.getElementById("cita-close").click()  // Cerrar formulario cita
       }
-    );
+    )
   }
   // Cita detail modal functions
   getEventInfo = (info) => {
