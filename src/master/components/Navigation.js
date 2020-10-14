@@ -7,6 +7,7 @@ import {
   withRouter,  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
+import { deleteUserLogIn, capitalizeFirstLetter } from '../functions'
 import { postCacheData, getCacheData } from './HandleCache';
 
 // Components to import
@@ -128,7 +129,9 @@ function Navigation(props){
             redirectTo={redirectTo} />
         </div>
       </div>
-      <FloatShortcut />
+      {/*
+        <FloatShortcut />
+        */}
       <Messenger />
       <Settings />
     </div>
@@ -271,20 +274,20 @@ function Aside(props){
           <img
             src={props.current_sucursal_pk!==-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
             className="profile-image rounded-circle"
-            alt={props.current_sucursal_pk!==-1 ? props.user.username : "Dr. Codex Lantern"}
+            alt={props.current_sucursal_pk!==-1 ? props.user.first_name : "Dr. Codex Lantern"}
           />
           <div className="info-card-text">
             <a href="#" className="d-flex align-items-center text-white">
               <span className="text-truncate text-truncate-sm d-inline-block">
                 {props.user.personal?
-                  props.user.personal.nombre_principal+" "+props.user.personal.ape_paterno :
-                  props.user.username
+                  capitalizeFirstLetter(props.user.personal.nombre_principal)+" "+capitalizeFirstLetter(props.user.personal.ape_paterno) :
+                  "Invitado"
                 }
               </span>
             </a>
             <span className="d-inline-block text-truncate text-truncate-sm"
               title={props.user.personal ? props.user.personal.especialidad : "Administrador"}>
-              {props.user.personal ? props.user.personal.especialidad : "Administrador"}
+              {props.user.personal ? capitalizeFirstLetter(props.user.personal.especialidad) : "Administrador"}
             </span>
           </div>
           <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
@@ -335,8 +338,6 @@ function PageContent(props){
           sucursales={props.sucursales}
           current_sucursal_pk={props.current_sucursal_pk}
           changeSucursal={props.changeSucursal} />
-          {/*
-          */}
         <SelectComponent
           history={props.history}
           redirect={props.redirect}
@@ -503,7 +504,15 @@ function PageHeader(props){
             </a>
           </form>
         </div>
+        */}
         <div className="ml-auto d-flex">
+          <UserSettings
+            user={props.user}
+            profile_pic={props.profile_pic}
+            sucursales={props.sucursales}
+            current_sucursal_pk={props.current_sucursal_pk}
+            changeSucursal={props.changeSucursal} />
+            {/*
             <div className="hidden-sm-up">
               <a href="#" className="header-icon" data-action="toggle" data-class="mobile-search-on" data-focus="search-field" title="Search">
                 <i className="fal fa-search"></i>
@@ -1038,19 +1047,18 @@ function PageHeader(props){
                     </div>
                 </div>
             </div>
-
-            <UserSettings
-              user={props.user}
-              profile_pic={props.profile_pic}
-              sucursales={props.sucursales}
-              current_sucursal_pk={props.current_sucursal_pk}
-              changeSucursal={props.changeSucursal} />
+            */}
         </div>
-        */}
     </header>
   )
 }
 function UserSettings(props){
+  const userLogOut = () => {
+    deleteUserLogIn()  // Delete token from localstorage
+    window.location.reload()  // Reload page
+  }
+
+  console.log(props);
   return (
     <div>
         <a href="#" data-toggle="dropdown"
@@ -1063,11 +1071,12 @@ function UserSettings(props){
             alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
           />
           <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
-            { props.current_sucursal_pk!=-1 && props.user.username}
+            { props.current_sucursal_pk!=-1 && capitalizeFirstLetter(props.user.personal.nombre_principal)}
           </span>
           <i className="ni ni-chevron-down hidden-xs-down"></i>
         </a>
         <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
+            {/*
             <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
               <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
                 <span className="mr-2">
@@ -1103,13 +1112,14 @@ function UserSettings(props){
                 <span data-i18n="drpdwn.print">Print</span>
                 <i className="float-right text-muted fw-n">Ctrl + P</i>
             </a>
+            */}
             {/* CHOOSE SUCURSAL */}
             <ChooseSucursal
               sucursales={props.sucursales}
               current_sucursal_pk={props.current_sucursal_pk}
               changeSucursal={props.changeSucursal} />
             {/* FIN CHOOSE SUCURSAL*/}
-            <a className="dropdown-item fw-500 pt-3 pb-3" href="page_login_alt.html">
+            <a className="dropdown-item fw-500 pt-3 pb-3" onClick={userLogOut}>
               <span data-i18n="drpdwn.page-logout">Logout</span>
               <span className="float-right fw-n"></span>
             </a>

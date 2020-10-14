@@ -199,3 +199,9 @@ export function getPatientFullName(patient){
     capitalizeFirstLetter(patient.ape_paterno, false)+" "+capitalizeFirstLetter(patient.ape_materno, false)
   )
 }
+// System handling
+export function deleteUserLogIn(){
+  // Remove access token from localstorage
+  localStorage.removeItem("access_token")
+  localStorage.setItem("logged", false)  // Set logged as false from localstorage
+}

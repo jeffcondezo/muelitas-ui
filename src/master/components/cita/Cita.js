@@ -754,7 +754,7 @@ class Cita extends React.Component {
                 <input type="text" id="pac_ape_mat" name="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
-                <input type="text" id="pac_celular" name="pac_celular" className="form-control form-control-lg" placeholder="Celular" />
+                <input type="text" id="pac_celular" name="pac_celular" className="form-control form-control-lg" maxLength="9" placeholder="Celular" />
               </div>
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
               <select id="pac_permiso_sms" className="form-control form-control-lg">
