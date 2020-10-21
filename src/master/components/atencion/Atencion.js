@@ -387,7 +387,8 @@ const PatientAttentionHistory = props => {
           {attention_list.length>0 ? attention_list.map((i) => {return(
             <div key={"inc_list_"+i.pk}
               style={{cursor: "pointer"}}
-              onClick={()=>redirectToAttentionDetail(i)}>
+              //onClick={()=>redirectToAttentionDetail(i)}
+              >
                 <span>{i.fecha} <b>{i.programado}</b></span>
             </div>
           )}) : "No se encontraron otras atenciones"}

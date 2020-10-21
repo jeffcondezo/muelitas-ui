@@ -134,7 +134,7 @@ export async function simpleGet(end_point){
       ? handleErrorResponse('permission')
       : response.status==500
       ? handleErrorResponse('server')
-      : Promise.reject()
+      : Promise.reject(response)  // Update: return response (special cases where status, code and text are needed)
     ),
     () => handleErrorResponse('server')
   );
