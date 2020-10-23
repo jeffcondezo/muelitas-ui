@@ -239,3 +239,20 @@ export const ModalLoading = ({_title, _id, _body_text}) => (
     </div>
   </div>
 )
+export const RegularModalCentered = ({_title, _id, _body_component}) => (
+  <div className="modal modal-fullscreen fade" id={_id} tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
+    <div className="modal-dialog modal-lg" role="document">
+      <div className="modal-content" style={{height: "100%"}}>
+          <div className="modal-header">
+            <h2 className="modal-title">{_title || "Default text"}</h2>
+          </div>
+          <button type="button" className="close p-sm-2 p-md-4 text-white fs-xxl position-absolute pos-right mr-sm-2 mt-sm-1 z-index-space" data-dismiss="modal">
+            <span aria-hidden="true"><i className="fal fa-times" style={{color: "black"}}></i></span>
+          </button>
+          <div className="modal-body">
+            <_body_component />
+          </div>
+      </div>
+    </div>
+  </div>
+)

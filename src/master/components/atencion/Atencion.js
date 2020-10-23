@@ -534,7 +534,7 @@ const AttentionProcedures = props => {
     );
   }
 
-  function modelConfirmDelete(_pk){
+  function modalConfirmDelete(_pk){
     window.$('#modal_delete_procedure').modal('show');
     delete_proc_pk.current = _pk;
   }
@@ -610,7 +610,7 @@ const AttentionProcedures = props => {
                     </button>
                     <button className="btn"
                       style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                      onClick={()=>modelConfirmDelete(proc.pk)}>
+                      onClick={()=>modalConfirmDelete(proc.pk)}>
                         <i className="fal fa-trash-alt"></i>
                     </button>
                 </li>

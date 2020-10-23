@@ -72,7 +72,7 @@ function Master(){
       <Switch>  {/* SWITCH: area to be changed by Link */}
         <Route exact path="/">
           {logged ?
-            <Redirect to="/nav/home" /> :
+            <Redirect to="/nav/" /> :
             <Redirect to="/login" />
             // <Home logged={logged} />
           }

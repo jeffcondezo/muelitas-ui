@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef , useCallback } from 'react';
 import { useParams } from 'react-router-dom'
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { getDataByPK, simpleGet } from '../../functions';
+import { RegularModalCentered } from '../bits';
 
 
 // Constant
@@ -13,7 +14,7 @@ let teeth_a=[], teeth_k=[];
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
-let odontogram = {id: -1, type: false}
+let odontogram = {pk: -1, type: false}
 // Objects properties
 const scale = 0.9;
 const preview_scale = 2.5;
@@ -97,7 +98,8 @@ let build_data = {
 let odontogram_squares = {square_top: null, square_bottom: null};
 // Classes
 class Tooth {
-  constructor(x, y, key, orientation, body, incidents){
+  constructor(ctx, x, y, key, orientation, body, incidents){
+    this.ctx = ctx;
     this.key = key;
     this.orientation = orientation;
     this.x = x;
@@ -366,14 +368,14 @@ class Tooth {
     let data_height = settings.data_height;
     let data_space = settings.data_space;
     // Tooth key
-    ctx.strokeStyle = settings.strokeColor;
-    if(this.orientation==='U') ctx.strokeText(this.key, x-6+width/2, y-data_space+18);
-    else if(this.orientation==='D') ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-10);
+    this.ctx.strokeStyle = settings.strokeColor;
+    if(this.orientation==='U') this.ctx.strokeText(this.key, x-6+width/2, y-data_space+18);
+    else if(this.orientation==='D') this.ctx.strokeText(this.key, x-6+width/2, y-(data_space+data_height)+height+data_space-10);
   }
   strokeBold(e){
-    ctx.beginPath(); ctx.lineWidth = 1.5;  // Bold line width
-    ctx.stroke(e);
-    ctx.beginPath(); ctx.lineWidth = 1;  // Restore line width
+    this.ctx.beginPath(); this.ctx.lineWidth = 1.5;  // Bold line width
+    this.ctx.stroke(e);
+    this.ctx.beginPath(); this.ctx.lineWidth = 1;  // Restore line width
   }
 
   // Incidents from Manual_Odontograma_Electronico
@@ -476,7 +478,7 @@ class Tooth {
       if(_txt) data.push(_txt);  // Add to tooth incident data when method returned
     });
     // Print tooth incident data
-    ctx.lineWidth = 1;
+    this.ctx.lineWidth = 1;
     data.forEach((d, inx) => {
       let x = this.x + 4;
       let y = this.y + 12*(inx+1);
@@ -484,32 +486,32 @@ class Tooth {
       let data_height = settings.data_height;
       let data_space = settings.data_space;
       y = this.orientation==='U' ? y-(data_space+data_height) : y-data_height+height;
-      ctx.strokeStyle = d.color;
-      ctx.strokeText(d.log, x, y);
+      this.ctx.strokeStyle = d.color;
+      this.ctx.strokeText(d.log, x, y);
     });
   }
   inc_LCD(c, v){  // 5.3.1  Lesión de caries dental
     // c is array
-    ctx.fillStyle = "red";
+    this.ctx.fillStyle = "red";
     c.forEach((path) => {
-      ctx.fill(path);
+      this.ctx.fill(path);
     });
     return {log: v.log, color: "red"};
   }
   inc_DDE(c, v){  // 5.3.2  Defectos de desarrollo de esmalte
-    ctx.fillStyle = "red";
+    this.ctx.fillStyle = "red";
     c.forEach((path) => {
-      ctx.fill(path);
+      this.ctx.fill(path);
     });
     return {log: v.log, color: "black"};
   }
   inc_Sellante(c, v){  // 5.3.3  Sellantes
     let color = v.state ? "blue" : "red";
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 3;
     // c is array
     c.forEach((path) => {
-      ctx.stroke(path)
+      this.ctx.stroke(path)
     });
     return {log: "S", color: color};
   }
@@ -544,12 +546,12 @@ class Tooth {
     let xf = this.x + vxf;
     let yf = y + vyf;
 
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(xo, yo);
-    ctx.lineTo(xf, yf);
-    ctx.stroke();
+    this.ctx.strokeStyle = "red";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(xo, yo);
+    this.ctx.lineTo(xf, yf);
+    this.ctx.stroke();
   }
   inc_FFP(c, v){  // 5.3.5  Fosas y fisuras profundas
     return {log: "FFP", color: "blue"};
@@ -563,14 +565,14 @@ class Tooth {
       y += settings.height - (settings.data_height+settings.data_space);
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(this.x, y);
-    ctx.lineTo(this.x+width, y+height);
-    ctx.moveTo(this.x+width, y);
-    ctx.lineTo(this.x, y+height);
-    ctx.stroke();
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x, y);
+    this.ctx.lineTo(this.x+width, y+height);
+    this.ctx.moveTo(this.x+width, y);
+    this.ctx.lineTo(this.x, y+height);
+    this.ctx.stroke();
   }
   inc_PDErupcion(c, v){  // 5.3.7  Pieza dentaria en erupción
     let height = settings.height
@@ -593,43 +595,43 @@ class Tooth {
     let eruptionY_4 = 4/5;
 
     // Draw a blue x mark
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(x+width*eruptionX_0, y+height*eruptionY_0);
-    ctx.lineTo(x+width*eruptionX_1, y+height*eruptionY_1);
-    ctx.lineTo(x+width*eruptionX_2, y+height*eruptionY_2);
-    ctx.lineTo(x+width*eruptionX_3, y+height*eruptionY_3);
-    ctx.lineTo(x+width*eruptionX_4, y+height*eruptionY_4);
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x+width*eruptionX_0, y+height*eruptionY_0);
+    this.ctx.lineTo(x+width*eruptionX_1, y+height*eruptionY_1);
+    this.ctx.lineTo(x+width*eruptionX_2, y+height*eruptionY_2);
+    this.ctx.lineTo(x+width*eruptionX_3, y+height*eruptionY_3);
+    this.ctx.lineTo(x+width*eruptionX_4, y+height*eruptionY_4);
     // Arrow
-    ctx.moveTo(x+width*eruptionX_4, y+height*eruptionY_4);
-    ctx.lineTo(
+    this.ctx.moveTo(x+width*eruptionX_4, y+height*eruptionY_4);
+    this.ctx.lineTo(
       x+width*eruptionX_4-5,
       y+height*eruptionY_4-10*Math.sign(height)
     );
-    ctx.moveTo(x+width*eruptionX_4-2, y+height*eruptionY_4+2);
-    ctx.lineTo(
+    this.ctx.moveTo(x+width*eruptionX_4-2, y+height*eruptionY_4+2);
+    this.ctx.lineTo(
       x+width*eruptionX_4+13,
       y+height*eruptionY_4-5*Math.sign(height)
     );
 
-    ctx.stroke();
+    this.ctx.stroke();
   }
   inc_RestDef(c, v){  // 5.3.8  Restauración definitiva
     let color = v.state ? "blue" : "red";
-    ctx.fillStyle = color;
+    this.ctx.fillStyle = color;
     // c is array
     c.forEach((path) => {
-      ctx.fill(path)
+      this.ctx.fill(path)
     });
     return {log: v.log, color: color};
   }
   inc_RestTemp(c, v){  // 5.3.9  Restauración temporal
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "red";
+    this.ctx.lineWidth = 3;
     // c is array
     c.forEach((path) => {
-      ctx.stroke(path)
+      this.ctx.stroke(path)
     });
   }
   inc_EdentuloTotal(c, v){  // 5.3.10  Edéntulo Total
@@ -648,12 +650,12 @@ class Tooth {
       y -= settings.data_space+settings.root_height+settings.data_height;
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(_teeth[0].x, y+(settings.height+settings.root_height)/2);
-    ctx.lineTo(_teeth[last_index].x+last_width, y+(settings.height+settings.root_height)/2);
-    ctx.stroke();
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
+    this.ctx.moveTo(_teeth[0].x, y+(settings.height+settings.root_height)/2);
+    this.ctx.lineTo(_teeth[last_index].x+last_width, y+(settings.height+settings.root_height)/2);
+    this.ctx.stroke();
   }
   inc_PDSupernumeraria(c, v){  // 5.3.11  Pieza dentaria supernumeraria
     let x = this.x + (v.orientation==='R' ? settings.width : 0);
@@ -662,13 +664,13 @@ class Tooth {
       y += settings.height - (settings.data_height+settings.data_space);
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, 2*Math.PI);
-    ctx.stroke();
-    ctx.lineWidth = 1;
-    ctx.strokeText("S", x-3, y+3);
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, 8, 0, 2*Math.PI);
+    this.ctx.stroke();
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeText("S", x-3, y+3);
   }
   inc_PDExtruida(c, v){  // 5.3.12  Pieza dentaria extruida
     let y = this.y + settings.height+30;
@@ -679,17 +681,17 @@ class Tooth {
       y -= settings.height*2+settings.data_space+settings.data_height;
     }
 
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "blue";
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y-height);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x-8, y-height/2);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x+8, y-height/2);
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "blue";
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x, y-height);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x-8, y-height/2);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x+8, y-height/2);
 
-    ctx.stroke();
+    this.ctx.stroke();
   }
   inc_PDIntruida(c, v){  // 5.3.13  Pieza dentaria intruida
     let y = this.y + settings.height+5;
@@ -700,17 +702,17 @@ class Tooth {
       y -= settings.height+settings.data_space+settings.data_height+10;
     }
 
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "blue";
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y+height);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x-8, y+height/2);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x+8, y+height/2);
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "blue";
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x, y+height);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x-8, y+height/2);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x+8, y+height/2);
 
-    ctx.stroke();
+    this.ctx.stroke();
   }
   inc_Diastema(c, v){  // 5.3.14  Diastema
     let diastema_space = 2;
@@ -724,16 +726,16 @@ class Tooth {
       y -= settings.root_height+settings.data_space+settings.data_height;
     }
 
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "blue";
-    ctx.beginPath();
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "blue";
+    this.ctx.beginPath();
     if(v.orientation==='R'){
       right += this.body===2 ? width*.3 : 0;
-      ctx.arc(right, y, radius, -40*Math.PI/180, 40*Math.PI/180);
+      this.ctx.arc(right, y, radius, -40*Math.PI/180, 40*Math.PI/180);
     }else{
-      ctx.arc(left, y, radius, 140*Math.PI/180, 220*Math.PI/180);
+      this.ctx.arc(left, y, radius, 140*Math.PI/180, 220*Math.PI/180);
     }
-    ctx.stroke();
+    this.ctx.stroke();
   }
   inc_Giroversion(c, v){  // 5.3.15  Giroversión
     let cy = this.y;
@@ -752,15 +754,15 @@ class Tooth {
       cy += settings.root_height;
     }
 
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "blue";
-    ctx.beginPath();
-    ctx.arc(this.x+width, cy, 40, angel_o*Math.PI/180, angel_f*Math.PI/180);
-    ctx.moveTo(x, y-2);
-    ctx.lineTo(x-6*_sign, y+7);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x-6*_sign, y-7);
-    ctx.stroke();
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "blue";
+    this.ctx.beginPath();
+    this.ctx.arc(this.x+width, cy, 40, angel_o*Math.PI/180, angel_f*Math.PI/180);
+    this.ctx.moveTo(x, y-2);
+    this.ctx.lineTo(x-6*_sign, y+7);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x-6*_sign, y-7);
+    this.ctx.stroke();
   }
   inc_PosDent(c, v){  // 5.3.16  Posición dentaria
     return {log: v.log, color: "blue"};
@@ -776,14 +778,14 @@ class Tooth {
       y += 22;
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x+width/2, y-20);
-    ctx.lineTo(x+width, y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x+width/2, y-20);
+    this.ctx.lineTo(x+width, y);
+    this.ctx.lineTo(x, y);
+    this.ctx.stroke();
   }
   inc_PDEctopica(c, v){  // 5.3.18  Pieza dentaria ectópica
     return {log: "E", color: "blue"};
@@ -811,12 +813,12 @@ class Tooth {
       sign2 = 1;
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(x, y, 10, sign1*Math.PI/2, sign2*Math.PI/2);
-    ctx.ellipse(x, y, width*3/4, 10, 0, sign2*Math.PI/2, sign1*Math.PI/2)
-    ctx.stroke();
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, 10, sign1*Math.PI/2, sign2*Math.PI/2);
+    this.ctx.ellipse(x, y, width*3/4, 10, 0, sign2*Math.PI/2, sign1*Math.PI/2)
+    this.ctx.stroke();
   }
   inc_Geminacion(c, v){  // 5.3.22  Geminación
     let data_space = settings.data_space;
@@ -829,21 +831,21 @@ class Tooth {
       y += 21;
     }
 
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(x, y, 10, 0, 2*Math.PI);
-    ctx.stroke();
+    this.ctx.strokeStyle = "blue";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, 10, 0, 2*Math.PI);
+    this.ctx.stroke();
   }
   inc_Impactacion(c, v){  // 5.3.23  Impactación
     return {log: "I", color: "blue"};
   }
   inc_SupDesg(c, v){  // 5.3.24  Superficie desgastada
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "red";
+    this.ctx.lineWidth = 3;
     // c is array
     c.forEach((path) => {
-      ctx.stroke(path)
+      this.ctx.stroke(path)
     });
     return {log: "DES", color: "red"};
   }
@@ -855,17 +857,17 @@ class Tooth {
     return {log: "M"+v.log, color: "red"};
   }
   inc_CoronaTemp(c, v){  // 5.3.27  Corona temporal
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "red";
-    ctx.stroke(this.tooth);
-    ctx.lineWidth = 1;
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = "red";
+    this.ctx.stroke(this.tooth);
+    this.ctx.lineWidth = 1;
     return {log: "CT", color: "red"};
   }
   inc_Corona(c, v){  // 5.3.28  Corona
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.stroke(this.tooth);
-    ctx.lineWidth = 1;
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.stroke(this.tooth);
+    this.ctx.lineWidth = 1;
 
     return {log: v.log, color: "blue"};
   }
@@ -880,21 +882,21 @@ class Tooth {
       sign = -1;
     }
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
     // Draw vertical line
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(this.x+width/2, y);
-    ctx.lineTo(this.x+width/2, y+height/2+sign*settings.root_height/2);
-    ctx.stroke();
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x+width/2, y);
+    this.ctx.lineTo(this.x+width/2, y+height/2+sign*settings.root_height/2);
+    this.ctx.stroke();
     // Draw square
-    ctx.lineWidth = 3;
+    this.ctx.lineWidth = 3;
     if(this.body===2){
-      ctx.stroke(this.tooth_center);
+      this.ctx.stroke(this.tooth_center);
     }else{
       let long = 12
-      ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
-      ctx.stroke();
+      this.ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
+      this.ctx.stroke();
     }
   }
   inc_ImplanteDental(c, v){  // 5.3.30  Implante dental
@@ -922,21 +924,21 @@ class Tooth {
     let y = this.y - 25;
     let height = 15;  // Size of the square face
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
     let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Rectangle
-    ctx.rect(_teeth[start_index].x, y-height/2, height, height)
-    ctx.moveTo(_teeth[start_index].x+height, y);
-    ctx.lineTo(this.x+width-height, y);
+    this.ctx.rect(_teeth[start_index].x, y-height/2, height, height)
+    this.ctx.moveTo(_teeth[start_index].x+height, y);
+    this.ctx.lineTo(this.x+width-height, y);
     // Rectangle
-    ctx.rect(this.x+width-height, y-height/2, height, height)
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.lineWidth = 2;
-    ctx.strokeText("+", _teeth[start_index].x+height/3, y+height/4);
-    ctx.strokeText("+", this.x+width-height*11/16, y+height/4)
+    this.ctx.rect(this.x+width-height, y-height/2, height, height)
+    this.ctx.stroke();
+    this.ctx.beginPath();
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeText("+", _teeth[start_index].x+height/3, y+height/4);
+    this.ctx.strokeText("+", this.x+width-height*11/16, y+height/4)
   }
   inc_AOR(c, v){  // 5.3.32  Aparato ortodóntico removible
     /* This function must be called by the last tooth of teeths
@@ -953,17 +955,17 @@ class Tooth {
       y -= 20;
     }
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(_teeth[0].x, y);
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
+    this.ctx.moveTo(_teeth[0].x, y);
     _teeth.forEach((_tooth) => {
       let width = settings.width*(_tooth.body===2 ? 1.3 : 1);
-      ctx.lineTo(_tooth.x, y);
-      ctx.lineTo(_tooth.x+width/2, y-height);
-      ctx.lineTo(_tooth.x+width+settings.tooth_spacing/2, y);
+      this.ctx.lineTo(_tooth.x, y);
+      this.ctx.lineTo(_tooth.x+width/2, y-height);
+      this.ctx.lineTo(_tooth.x+width+settings.tooth_spacing/2, y);
     });
-    ctx.stroke();
+    this.ctx.stroke();
   }
   inc_PF(c, v){  // 5.3.33  Prótesis fija
     /* This function must be called by the last tooth of teeths
@@ -991,17 +993,17 @@ class Tooth {
       height *= -1;
     }
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
     // Left corner
-    ctx.moveTo(_teeth[start_index].x, y+height);
+    this.ctx.moveTo(_teeth[start_index].x, y+height);
     let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
-    ctx.lineTo(_teeth[start_index].x, y);
+    this.ctx.lineTo(_teeth[start_index].x, y);
     // Right corner
-    ctx.lineTo(this.x+width, y);
-    ctx.lineTo(this.x+width, y+height);
-    ctx.stroke();
+    this.ctx.lineTo(this.x+width, y);
+    this.ctx.lineTo(this.x+width, y+height);
+    this.ctx.stroke();
   }
   inc_PR(c, v){  // 5.3.34  Prótesis removible
     /* This function must be called by the last tooth of the affected teeth */
@@ -1027,17 +1029,17 @@ class Tooth {
       height *= -1;
     }
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
     let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Outter line
-    ctx.moveTo(_teeth[start_index].x, y);
-    ctx.lineTo(this.x+width, y);
+    this.ctx.moveTo(_teeth[start_index].x, y);
+    this.ctx.lineTo(this.x+width, y);
     // Inner line
-    ctx.moveTo(_teeth[start_index].x, y+height);
-    ctx.lineTo(this.x+width, y+height);
-    ctx.stroke();
+    this.ctx.moveTo(_teeth[start_index].x, y+height);
+    this.ctx.lineTo(this.x+width, y+height);
+    this.ctx.stroke();
   }
   inc_PT(c, v){  // 5.3.35  Prótesis total
     /* This function must be called by the last tooth of the affected teeth */
@@ -1052,19 +1054,19 @@ class Tooth {
       height *= -1;
     }
 
-    ctx.strokeStyle = v.state ? "blue" : "red";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    this.ctx.strokeStyle = v.state ? "blue" : "red";
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
     let width = settings.width*(_teeth[start_index].body===2 ? 1.3 : 1);
     // Outter line
-    ctx.moveTo(_teeth[start_index].x, y);
-    ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y);
-    ctx.lineTo(this.x+width+settings.tooth_spacing/2, y);
+    this.ctx.moveTo(_teeth[start_index].x, y);
+    this.ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y);
+    this.ctx.lineTo(this.x+width+settings.tooth_spacing/2, y);
     // Inner line
-    ctx.moveTo(_teeth[start_index].x, y+height);
-    ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y+height);
-    ctx.lineTo(this.x+width+settings.tooth_spacing/2, y+height);
-    ctx.stroke();
+    this.ctx.moveTo(_teeth[start_index].x, y+height);
+    this.ctx.lineTo(_teeth[start_index].x+width+settings.tooth_spacing/2, y+height);
+    this.ctx.lineTo(this.x+width+settings.tooth_spacing/2, y+height);
+    this.ctx.stroke();
   }
   inc_TP(c, v){  // 5.3.36  Tratamiento pulpar
     let y = this.y;
@@ -1077,24 +1079,24 @@ class Tooth {
       sign = -1;
     }
 
-    ctx.strokeStyle = "blue";
+    this.ctx.strokeStyle = "blue";
     // Draw vertical line
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(this.x+width/2, y);
-    ctx.lineTo(this.x+width/2, y+height/2+sign*settings.root_height/2);
-    ctx.stroke();
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x+width/2, y);
+    this.ctx.lineTo(this.x+width/2, y+height/2+sign*settings.root_height/2);
+    this.ctx.stroke();
     // Draw square
-    ctx.fillStyle = "blue";
-    ctx.beginPath();
+    this.ctx.fillStyle = "blue";
+    this.ctx.beginPath();
     if(this.body===2){
-      if(v.log===3) ctx.fill(this.tooth_center);
-      else ctx.stroke(this.tooth_center);
+      if(v.log===3) this.ctx.fill(this.tooth_center);
+      else this.ctx.stroke(this.tooth_center);
     }else{
       let long = 12
-      ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
-      if(v.log===3) ctx.fill();
-      else ctx.stroke();
+      this.ctx.rect(this.x+width/2-long/2, y+height/2+sign*settings.root_height/2-long/2, long, long);
+      if(v.log===3) this.ctx.fill();
+      else this.ctx.stroke();
     }
 
     return {log: v.log, color: v.state?"blue":"red"};
@@ -1116,9 +1118,9 @@ class Tooth {
       cy += rad_y*(this.body===2 ? 17/24 : 39/48);  // Fix cy by angle
       angel_o += 180;
       angel_f += 180;
-      ctx.strokeStyle = "blue";
+      this.ctx.strokeStyle = "blue";
     }else if(this.orientation==='U'){
-      ctx.strokeStyle = "green";
+      this.ctx.strokeStyle = "green";
       cy += settings.root_height;
       cy -= rad_y*(this.body===2 ? 33/48 : 39/48);  // Fix cy by angle
       _sign_y *= -1;
@@ -1132,24 +1134,24 @@ class Tooth {
       x -= settings.width/(this.body===2?2:3) + 1;
     }
 
-    ctx.lineWidth = 3;
-    // ctx.strokeStyle = "blue";
-    ctx.beginPath();
-    ctx.ellipse(cx+width, cy, rad_x, rad_y, 0, angel_o*Math.PI/180, angel_f*Math.PI/180);
-    if(v.orientation==='R') ctx.moveTo(x+2, y+_sign_y*2);
-    if(v.orientation==='L') ctx.moveTo(x-2, y+_sign_y*2);
-    if(this.body===2) ctx.lineTo(x-10*_sign, y-_sign_y*6);
-    else ctx.lineTo(x-6*_sign, y-_sign_y*3);
-    ctx.moveTo(x, y+_sign_y*2);
-    if(this.body===2) ctx.lineTo(x+6*_sign, y-_sign_y*8);
-    else ctx.lineTo(x+4*_sign, y-_sign_y*6);
-    ctx.stroke();
+    this.ctx.lineWidth = 3;
+    // this.ctx.strokeStyle = "blue";
+    this.ctx.beginPath();
+    this.ctx.ellipse(cx+width, cy, rad_x, rad_y, 0, angel_o*Math.PI/180, angel_f*Math.PI/180);
+    if(v.orientation==='R') this.ctx.moveTo(x+2, y+_sign_y*2);
+    if(v.orientation==='L') this.ctx.moveTo(x-2, y+_sign_y*2);
+    if(this.body===2) this.ctx.lineTo(x-10*_sign, y-_sign_y*6);
+    else this.ctx.lineTo(x-6*_sign, y-_sign_y*3);
+    this.ctx.moveTo(x, y+_sign_y*2);
+    if(this.body===2) this.ctx.lineTo(x+6*_sign, y-_sign_y*8);
+    else this.ctx.lineTo(x+4*_sign, y-_sign_y*6);
+    this.ctx.stroke();
   }
 }
 class Molar extends Tooth {
-  constructor(x, y, key, orientation, root, incidents){
+  constructor(ctx, x, y, key, orientation, root, incidents){
     // body: 2
-    super(x, y, key, orientation, 2, incidents);
+    super(ctx, x, y, key, orientation, 2, incidents);
     this._root = root;
     this.genRoot();
   }
@@ -1232,11 +1234,11 @@ class Molar extends Tooth {
   }
   drawRoot(){
     this.root.forEach((i) => {
-      ctx.stroke(i);
+      this.ctx.stroke(i);
     });
   }
   draw(color=settings.strokeColor, data=true){
-    ctx.strokeStyle = color;
+    this.ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1247,15 +1249,15 @@ class Molar extends Tooth {
 
     if(data){
       // Ugly at redraw
-      ctx.stroke(this.data_area);
+      this.ctx.stroke(this.data_area);
       this.drawKey();
     }
   }
 }
 class Premolar extends Tooth {
-  constructor(x, y, key, orientation, root, incidents){
+  constructor(ctx, x, y, key, orientation, root, incidents){
     // body: 2
-    super(x, y, key, orientation, 2, incidents);
+    super(ctx, x, y, key, orientation, 2, incidents);
     this._root = root;
     this.genRoot();
   }
@@ -1270,12 +1272,12 @@ class Premolar extends Tooth {
     }
 
     // horizontal line
-    ctx.beginPath();
-    ctx.moveTo(x+width/4, y+height/2);
-    ctx.lineTo(x+width*3/4, y+height/2);
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.lineWidth = 1;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x+width/4, y+height/2);
+    this.ctx.lineTo(x+width*3/4, y+height/2);
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    this.ctx.lineWidth = 1;
   }
   genRoot(){
     let x = this.x;
@@ -1329,11 +1331,11 @@ class Premolar extends Tooth {
   }
   drawRoot(){
     this.root.forEach((i) => {
-      ctx.stroke(i);
+      this.ctx.stroke(i);
     });
   }
   draw(color=settings.strokeColor, data=true){
-    ctx.strokeStyle = color;
+    this.ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1344,15 +1346,15 @@ class Premolar extends Tooth {
 
     if(data){
       // Ugly at redraw
-      ctx.stroke(this.data_area);
+      this.ctx.stroke(this.data_area);
       this.drawKey();
     }
   }
 }
 class Canine extends Tooth {
-  constructor(x, y, key, orientation, root, incidents){
+  constructor(ctx, x, y, key, orientation, root, incidents){
     // body: 2
-    super(x, y, key, orientation, 2, incidents);
+    super(ctx, x, y, key, orientation, 2, incidents);
     this._root = root;
     this.genRoot();
   }
@@ -1408,11 +1410,11 @@ class Canine extends Tooth {
   }
   drawRoot(){
     this.root.forEach((i) => {
-      ctx.stroke(i);
+      this.ctx.stroke(i);
     });
   }
   draw(color=settings.strokeColor, data=true){
-    ctx.strokeStyle = color;
+    this.ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
@@ -1422,15 +1424,15 @@ class Canine extends Tooth {
 
     if(data){
       // Ugly at redraw
-      ctx.stroke(this.data_area);
+      this.ctx.stroke(this.data_area);
       this.drawKey();
     }
   }
 }
 class Incisor extends Tooth {
-  constructor(x, y, key, orientation, incidents){
+  constructor(ctx, x, y, key, orientation, incidents){
     // body: 1
-    super(x, y, key, orientation, 1, incidents);
+    super(ctx, x, y, key, orientation, 1, incidents);
     this.drawRoot();
   }
   drawRoot(){
@@ -1453,17 +1455,17 @@ class Incisor extends Tooth {
     this.root = [_root];
   }
   draw(color=settings.strokeColor, data=true){
-    ctx.strokeStyle = color;
+    this.ctx.strokeStyle = color;
     this.strokeBold(this.tooth);
     this.strokeBold(this.tooth_top);
     this.strokeBold(this.tooth_bottom);
     this.strokeBold(this.tooth_left);
     this.strokeBold(this.tooth_right);
-    ctx.stroke(this.root[0]);
+    this.ctx.stroke(this.root[0]);
 
     if(data){
       // Ugly at redraw
-      ctx.stroke(this.data_area);
+      this.ctx.stroke(this.data_area);
       this.drawKey();
     }
   }
@@ -1610,6 +1612,7 @@ let inc_paths = [];
 // Preview context
 let pvw_ctx;
 
+// Main component
 function Odontograma(props){
   let __params__ = useParams()
 
@@ -1626,6 +1629,8 @@ function Odontograma(props){
   let [incident_list, setIncidentList] = useState([]);
   // DOM variables
   let odontogram_type = useRef('A');
+  // Odontograma inicial
+  const [init_od, setInitOd] = useState(false)
 
   // Generic rest function
   const getCita = cita_pk => {
@@ -1684,10 +1689,10 @@ function Odontograma(props){
       // Create object with properties
       let a;
       switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+        case 0: a = new Molar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
       upper_teeth.push(a);
@@ -1709,10 +1714,10 @@ function Odontograma(props){
       // Create object with properties
       let a;
       switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+        case 0: a = new Molar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
       lower_teeth.push(a);
@@ -1752,10 +1757,10 @@ function Odontograma(props){
       // Create object with properties
       let a;
       switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+        case 0: a = new Molar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
       upper_teeth.push(a);
@@ -1777,10 +1782,10 @@ function Odontograma(props){
       // Create object with properties
       let a;
       switch(v.type){
-        case 0: a = new Molar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 1: a = new Premolar(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 2: a = new Canine(_x, _top, v.key, v.orientation, v.root, v.incidents); break;
-        case 3: a = new Incisor(_x, _top, v.key, v.orientation, v.incidents); break;
+        case 0: a = new Molar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
       lower_teeth.push(a);
@@ -2087,7 +2092,6 @@ function Odontograma(props){
 
     // If cita is not in props
     if(!cita) getCita(__params__.cita_pk)
-    // else initOdontogram()
   }, [genTeeth]);
   // Run after teeth has changed
   useEffect(() => {
@@ -2129,7 +2133,12 @@ function Odontograma(props){
   // Cita
   useEffect(() => {
     if(__debug__) console.log("useEffect cita");
-    if(cita) initOdontogram()
+    if(!cita) return
+
+    // Initialize odontogram
+    initOdontogram()
+    // Get initial odontogram
+    getInitialOdontogram()
   }, [cita])
 
   /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
@@ -2153,6 +2162,7 @@ function Odontograma(props){
         if(error_response.status == 404){
           odontogram.pk = -1  // Odontogram is brand new
           changeTeethType("A");
+          if(__debug__) console.log("initOdontogram: brand new odontogram");
         }
         else console.error("error", error_response)
       }
@@ -2454,6 +2464,21 @@ function Odontograma(props){
     }
   }
 
+  // Initial odontogram
+  const getInitialOdontogram = () => {
+    simpleGet(`atencion/paciente/${cita.paciente}/odontograma/inicial/`)
+    .then(response => {
+      if(__debug__) console.log("getInitialOdontogram: response", response);
+      // If response is false then there is no initial odontogram
+      if(!response){
+        if(__debug__) console.log("getInitialOdontogram: no initial odontogram");
+        return
+      }
+      // Set response as initial odontogram
+      setInitOd(response)
+    })
+  }
+
   return (
     <>
       {/* ALERTS */}
@@ -2467,15 +2492,33 @@ function Odontograma(props){
             data-prefix="fas" data-icon="tooth" className="svg-inline--fa fa-tooth fa-w-14"
             role="img" viewBox="0 0 448 512" style={{width: "15px", height: "16px", verticalAlign: "baseline", filter: "opacity(.9)"}}>
               <path fill="currentColor" d="M443.98 96.25c-11.01-45.22-47.11-82.06-92.01-93.72-32.19-8.36-63 5.1-89.14 24.33-3.25 2.39-6.96 3.73-10.5 5.48l28.32 18.21c7.42 4.77 9.58 14.67 4.8 22.11-4.46 6.95-14.27 9.86-22.11 4.8L162.83 12.84c-20.7-10.85-43.38-16.4-66.81-10.31-44.9 11.67-81 48.5-92.01 93.72-10.13 41.62-.42 80.81 21.5 110.43 23.36 31.57 32.68 68.66 36.29 107.35 4.4 47.16 10.33 94.16 20.94 140.32l7.8 33.95c3.19 13.87 15.49 23.7 29.67 23.7 13.97 0 26.15-9.55 29.54-23.16l34.47-138.42c4.56-18.32 20.96-31.16 39.76-31.16s35.2 12.85 39.76 31.16l34.47 138.42c3.39 13.61 15.57 23.16 29.54 23.16 14.18 0 26.48-9.83 29.67-23.7l7.8-33.95c10.61-46.15 16.53-93.16 20.94-140.32 3.61-38.7 12.93-75.78 36.29-107.35 21.95-29.61 31.66-68.8 21.53-110.43z"/>
-          </svg> Odontograma
+          </svg> {init_od?"Odontograma de evolucion":"Odontograma inicial"}
         </h1>
-        <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>changeTeethType('A')}>
-            <input type="radio" name="odontogram_type" defaultChecked /> Adulto
-          </label>
-          <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>changeTeethType('K')}>
-            <input type="radio" name="odontogram_type" /> Infante
-          </label>
+        <div className="row">
+          {odontogram.pk==-1
+            ? ""
+            : (
+              <div style={{marginRight: "8px"}}>
+                <button type="button" className="btn btn-secondary waves-effect waves-themed" data-toggle="modal" data-target="#initialodontogram_modal">Ver Inicial</button>
+              </div>
+            )
+          }
+          {odontogram.pk==-1
+            ? ""
+            : (
+              <div style={{marginRight: "8px"}}>
+                <button type="button" className="btn btn-secondary waves-effect waves-themed">Registro de evolucion</button>
+              </div>
+            )
+          }
+          <div className="btn-group btn-group-toggle" data-toggle="buttons">
+            <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>changeTeethType('A')}>
+              <input type="radio" name="odontogram_type" defaultChecked /> Adulto
+            </label>
+            <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>changeTeethType('K')}>
+              <input type="radio" name="odontogram_type" /> Infante
+            </label>
+          </div>
         </div>
       </div>
       <h5>Paciente: <i>{
@@ -2487,7 +2530,7 @@ function Odontograma(props){
       }</i></h5>
 
       <div style={{whiteSpace: "nowrap"}}>
-        <canvas id="odontogram" width="750" height="530" style={{background:"white",verticalAlign:"top"}}></canvas>
+        <canvas id="odontogram" width="750" height="530" style={{background:"white", verticalAlign:"top"}}></canvas>
         <div style={{display: "inline-block"}}>
           {(()=>{
             if(incident)
@@ -2516,10 +2559,14 @@ function Odontograma(props){
             onClick={()=>changeTeethType()}>Reiniciar</button>
         </div>
       </div>
+      {odontogram.pk==-1
+        ? ""
+        : <RegularModalCentered _title={"Odontograma inicial"} _id={"initialodontogram_modal"} _body_component={InitialOdontogramModal} />
+      }
     </>
-  );
+  )
 }
-
+// Related components
 function IncidentForm(props){
   if(props.incident>=incident_type.incidents.length){
     return (<button onClick={()=>props.setIncident(false)}>return</button>);
@@ -2952,9 +2999,311 @@ function IncidentList(props){
     </div>
   )
 }
+function InitialOdontogramModal({}){
+  return <OdontogramaInicial init_od_pk={odontogram.pk}/>
+}
+function OdontogramaInicial({init_od_pk}){
+  /* Prefijo de las variables de este contexto
+  * o_: variable inicial
+  */
+  const [o_ctx, setOCtx] = useState(false)  // Canvas context
+  const [o_teeth, setOTeeth] = useState([])  // Data current teeth
+  const [o_teeth_a, setOTeethA] = useState([])  // Data teeth adult
+  const [o_teeth_k, setOTeethK] = useState([])  // Data teeth kid
+  const [o_od_type, setOOdType] = useState(false)  // Current odontogram type
 
+  // Flujo incidencias
+  const genTeeth = () => {
+      if(__debug__) console.log("od_inicial: genTeeth")
+
+      // Generate Adult Teeth
+      genATeeth()
+      // Generate Kid Teeth
+      genKTeeth()
+  }
+  const genATeeth = () => {
+    if(__debug__) console.log("od_inicial: genATeeth")
+
+    // General
+    let _left = (
+      // Odontogram element width
+      ctx.canvas.width-
+      // Tooth with plus tooth spacing
+      (settings.width+settings.tooth_spacing)*(2+16)
+    )/2  // Half of the total space left
+    let _top = 40
+    let _build_data
+    // Teeth container
+    let upper_teeth = []
+    let lower_teeth = []
+
+    /*** Generate Adult Teeth ***/
+    // Upper teeth
+    let _teeth_a = []
+    upper_teeth = []
+    _top += settings.data_height+settings.data_space
+    _build_data = build_data.build_adult_top
+    _build_data.forEach((v)=>{
+      // Calc coordinates
+      let _x = _left
+      if(upper_teeth.length){
+        let last_tooth = upper_teeth[upper_teeth.length-1]
+        _x = last_tooth.x + settings.tooth_spacing
+        _x += last_tooth.body===2 ? settings.width*1.3 : settings.width
+      }
+
+      // Create object with properties
+      let a
+      switch(v.type){
+        case 0: a = new Molar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+      }
+      upper_teeth.push(a)
+    })
+    _teeth_a.upper_teeth = upper_teeth
+    // Lower teeth
+    lower_teeth = []
+    _top *= 3  // Dependant of canvas
+    _build_data = build_data.build_adult_bottom
+    _build_data.forEach((v)=>{
+      // Calc coordinates
+      let _x = _left
+      if(lower_teeth.length){
+        let last_tooth = lower_teeth[lower_teeth.length-1]
+        _x = last_tooth.x + settings.tooth_spacing
+        _x += last_tooth.body===2 ? settings.width*1.3 : settings.width
+      }
+
+      // Create object with properties
+      let a
+      switch(v.type){
+        case 0: a = new Molar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+      }
+      lower_teeth.push(a)
+    })
+    _teeth_a.lower_teeth = lower_teeth
+    setOTeethA(_teeth_a)
+  }
+  const genKTeeth = () => {
+    if(__debug__) console.log("od_inicial: genKTeeth")
+
+    // General
+    let _left = (
+      // Odontogram element width
+      ctx.canvas.width-
+      // Tooth with plus tooth spacing
+      (settings.width+settings.tooth_spacing)*(2+10)
+    )/2  // Half of the total space left
+    let _top = 40
+    let _build_data
+    // Teeth container
+    let upper_teeth = []
+    let lower_teeth = []
+
+    /*** Generate Kid Teeth ***/
+    // Upper teeth
+    let _teeth_k = []
+    upper_teeth = []
+    _top += settings.data_height+settings.data_space
+    _build_data = build_data.build_kid_top
+    _build_data.forEach((v)=>{
+      // Calc coordinates
+      let _x = _left
+      if(upper_teeth.length){
+        let last_tooth = upper_teeth[upper_teeth.length-1]
+        _x = last_tooth.x + settings.tooth_spacing
+        _x += last_tooth.body===2 ? settings.width*1.3 : settings.width
+      }
+
+      // Create object with properties
+      let a
+      switch(v.type){
+        case 0: a = new Molar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+      }
+      upper_teeth.push(a)
+    })
+    _teeth_k.upper_teeth = upper_teeth
+    // Lower teeth
+    lower_teeth = []
+    _top *= 3  // Dependant of canvas
+    _build_data = build_data.build_kid_bottom
+    _build_data.forEach((v)=>{
+      // Calc coordinates
+      let _x = _left
+      if(lower_teeth.length){
+        let last_tooth = lower_teeth[lower_teeth.length-1]
+        _x = last_tooth.x + settings.tooth_spacing
+        _x += last_tooth.body===2 ? settings.width*1.3 : settings.width
+      }
+
+      // Create object with properties
+      let a
+      switch(v.type){
+        case 0: a = new Molar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 1: a = new Premolar(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 2: a = new Canine(o_ctx, _x, _top, v.key, v.orientation, v.root, v.incidents); break;
+        case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
+        default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
+      }
+      lower_teeth.push(a)
+    })
+    _teeth_k.lower_teeth = lower_teeth
+    setOTeethK(_teeth_k)
+  }
+  const getIncidences = () => {
+    /* This function uses the 'odontogram' global object */
+    /* This function should be called only once and only if odontogram exists */
+    if(__debug__) console.log("od_inicial: getIncidences")
+
+    // Get incidents
+    simpleGet(`atencion/odontograma/${init_od_pk}/incidencia/`)
+    .then(insertIncidencesInTeeth)  // Add incidences to teeth
+    .then(changeTeethType)
+  }
+  const getToothByKey = (_teeth_, key) => {
+    /* Search for the tooth inside the given teeth object
+    */
+    // Get tooth by key
+    let tooth
+    let first_digit = parseInt(String(key)[0])
+    let last_digit = parseInt(String(key)[1])
+    let up = [1, 2, 5, 6].includes(first_digit)
+    let _teeth = up ? _teeth_.upper_teeth : _teeth_.lower_teeth
+    let middle_range = _teeth.length/2
+    if(up){  // Upper side
+      if([1, 5].includes(first_digit)){  // Left side
+        tooth = _teeth[middle_range-last_digit]
+      }else{  // Right side
+        tooth = _teeth[middle_range+last_digit-1]
+      }
+    }else{  // Lower side
+      if([4, 8].includes(first_digit)){  // Left side
+        tooth = _teeth[middle_range-last_digit]
+      }else{  // Right side
+        tooth = _teeth[middle_range+last_digit-1]
+      }
+    }
+
+    return tooth
+  }
+  const insertIncidencesInTeeth = objs => {
+    /* This function require teethState to be already declared
+    * This function will return the last odontogram type in incidence
+    */
+    if(__debug__) console.log("od_inicial: insertIncidencesInTeeth")
+    let last_od_type = "1"
+
+    objs.forEach((inc) => {
+      /* getTooth from both A&K */
+      let tooth = getToothByKey(inc.tipo_odontograma=="1"?o_teeth_a:o_teeth_k, inc.diente)
+      if(!tooth) return  // If tooth is not found (below to another odontogram type) skip
+
+      let inc_obj = {}
+      inc_obj.type = parseInt(inc.type)
+      inc_obj.value = {}
+      inc_obj.value.log = inc.log
+      inc_obj.value.state = inc.state
+      inc_obj.value.orientation = inc.orientation
+      inc_obj.value.fractura = JSON.parse(inc.fractura)
+      inc_obj.value.start_tooth_key = inc.start_tooth_key
+      inc_obj.component = JSON.parse(inc.component)
+      inc_obj.odontogram_type = inc.tipo_odontograma
+      tooth.incidents.push(inc_obj)  // Add to global teeth data
+
+      // Set last odontogram type in incidence
+      last_od_type = inc.tipo_odontograma
+
+      // Fix aside incidences
+      if(incident_type.component_beside.includes(inc_obj.type))
+        addBesideIncidence(tooth, inc_obj)
+    })
+
+    return last_od_type=="1"?'A':'K'
+  }
+  const printOdontogram = () => {
+    if(__debug__) console.log("od_inicial: printOdontogram")
+
+    o_ctx.clearRect(0, 0, o_ctx.canvas.width, o_ctx.canvas.height)  // Clear canvas
+    // All teeth
+    let all_teeth = [...o_teeth.upper_teeth, ...o_teeth.lower_teeth]
+    all_teeth.forEach(tooth => tooth.draw())
+    all_teeth.forEach(tooth => tooth.drawIncidents())
+  }
+  // Flujo odontograma
+  const getOdontogramObservation = () => {
+    if(__debug__) console.log("od_inicial: getOdontogramObservation")
+    // Get odontograma
+    simpleGet(`atencion/odontograma/${init_od_pk}/`)
+    // Update observaciones
+    // .then(response => document.getElementById('textarea_observaciones').value = response.observaciones)
+  }
+  // Funciones de vista
+  const changeTeethType = type => {
+    if(__debug__) console.log("od_inicial: changeTeethType")
+
+    if(type!='A'&&type!='K') return  // Allow only A || K
+    if(o_od_type == type) return  // Prevent redundancy
+
+    // Set teeth according to odontogram type
+    setOTeeth(type=='A'?o_teeth_a:o_teeth_k)
+    setOOdType(type)
+  }
+
+  // Only run after first render
+  useEffect(() => {
+    if(__debug__) console.log("od_inicial: useEffect genTeeth")
+    // Elements
+    let odontogram_el = document.getElementById('odontograma_inicial')
+
+    // Save 2d context of odontogram
+    setOCtx(odontogram_el.getContext('2d'))
+    // Get odontogram observation
+    getOdontogramObservation()
+  }, [])
+  // After both teeth types are setted
+  useEffect(() => {
+    if(__debug__) console.log("od_inicial: useEffect o_teeth_a, o_teeth_k")
+
+    if(!o_teeth_a.hasOwnProperty("upper_teeth") || !o_teeth_k.hasOwnProperty("upper_teeth")) return
+    // Get incidences
+    getIncidences()
+  }, [o_teeth_a, o_teeth_k])
+  // After odontogram type has changed
+  useEffect(() => {
+    if(!o_od_type) return
+
+    printOdontogram()
+  }, [o_od_type])
+  // After ctx has changed
+  useEffect(() => {
+    if(!o_ctx) return
+
+    genTeeth()  // Generate teeth objects
+  }, [o_ctx])
+
+  return (
+    <canvas id="odontograma_inicial" width="750" height="530" style={{
+      background:"white",
+      // Factor de aumento 1.2
+      width: "900px",
+      height: "636px",
+    }}></canvas>
+  )
+}
+// Function
 function addBesideIncidence(_tooth, _inc){
-  // console.log(_tooth, _inc);
+  // console.log(_tooth, _inc)
   let _sign = _inc.value.orientation==='R'?1:-1;  // Aside tooth is left or right
   // Get _inx && side tooth
   let _inx = teeth.upper_teeth.indexOf(_tooth);

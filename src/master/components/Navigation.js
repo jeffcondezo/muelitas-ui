@@ -203,7 +203,7 @@ function SelectComponent(props){
 
         {/* Default link */}
         <Route>
-          <Redirect to="/nav/home" />
+          <Redirect to="/nav/cita" />
         </Route>
       </Switch>
     </main>
@@ -214,11 +214,13 @@ function AsideLinks(props){
   return (
     <ul id="js-nav-menu" className="nav-menu">
       <li className="nav-title" style={{color: "#CCC"}}>Principales paginas</li>
+      {/*
       <li className={props.history.location.pathname==="/nav/home"?"active":""}>
         <Link data-filter-tags="home" to='/nav/home'>
           <span className="nav-link-text">HOME</span>
         </Link>
       </li>
+      */}
       <li className={props.history.location.pathname==="/nav/admision"?"active":""}>
         <Link data-filter-tags="admision" to='/nav/admision'>
           <span className="nav-link-text">ADMISION</span>
