@@ -239,18 +239,18 @@ export const ModalLoading = ({_title, _id, _body_text}) => (
     </div>
   </div>
 )
-export const RegularModalCentered = ({_title, _id, _body_component}) => (
-  <div className="modal modal-fullscreen fade" id={_id} tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
-    <div className="modal-dialog modal-lg" role="document">
+export const RegularModalCentered = ({_title, _id, _body, _min_width="800"}) => (
+  <div className="modal fade" id={_id} tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
+    <div className="modal-dialog" role="document" style={{minWidth: _min_width+"px"}}>
       <div className="modal-content" style={{height: "100%"}}>
-          <div className="modal-header">
-            <h2 className="modal-title">{_title || "Default text"}</h2>
+          <div className="modal-header" style={{paddingBottom: "0px"}}>
+            <h1 className="modal-title">{_title || "Default text"}</h1>
           </div>
           <button type="button" className="close p-sm-2 p-md-4 text-white fs-xxl position-absolute pos-right mr-sm-2 mt-sm-1 z-index-space" data-dismiss="modal">
             <span aria-hidden="true"><i className="fal fa-times" style={{color: "black"}}></i></span>
           </button>
           <div className="modal-body">
-            <_body_component />
+            {_body}
           </div>
       </div>
     </div>

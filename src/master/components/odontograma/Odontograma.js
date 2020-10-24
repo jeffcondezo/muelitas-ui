@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef , useCallback } from 'react';
 import { useParams } from 'react-router-dom'
 import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
 import { getDataByPK, simpleGet } from '../../functions';
-import { RegularModalCentered } from '../bits';
+import { ModalCancel, RegularModalCentered } from '../bits';
 
 
 // Constant
@@ -14,7 +14,6 @@ let teeth_a=[], teeth_k=[];
 let ctx;  // Context 2d
 let select_type = 4;  // Tooth select
 let currentTooth = {tooth: null, path: null, preserve: false};
-let odontogram = {pk: -1, type: false}
 // Objects properties
 const scale = 0.9;
 const preview_scale = 2.5;
@@ -23,7 +22,7 @@ const preview_select_margin = 2;
 // General settings
 const settings = {
   strokeColor: "black",
-  hovercolor: "red",
+  hovercolor: "orange",
   toothhovercolor: "#0002",
   tooth_spacing: 7*scale,
   width: 30*scale,
@@ -99,6 +98,7 @@ let odontogram_squares = {square_top: null, square_bottom: null};
 // Classes
 class Tooth {
   constructor(ctx, x, y, key, orientation, body, incidents){
+    this.teeth = false;  // To be setted later on
     this.ctx = ctx;
     this.key = key;
     this.orientation = orientation;
@@ -377,6 +377,10 @@ class Tooth {
     this.ctx.stroke(e);
     this.ctx.beginPath(); this.ctx.lineWidth = 1;  // Restore line width
   }
+  // Setter
+  setTeeth(_teeth){
+    this.teeth = _teeth
+  }
 
   // Incidents from Manual_Odontograma_Electronico
   selectComponent(key){
@@ -427,6 +431,7 @@ class Tooth {
     return component;
   }
   drawIncidents(){
+    if(!this.teeth) return  // this.teeth is not setted
     if(!this.incidents) return;  // There is no incidents
     let data = [];  // Array to store tooth incident data
     // Print incident
@@ -640,8 +645,8 @@ class Tooth {
     */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
     let _teeth;
-    if(direction) _teeth = teeth.upper_teeth;
-    else _teeth = teeth.lower_teeth;
+    if(direction) _teeth = this.teeth.upper_teeth;
+    else _teeth = this.teeth.lower_teeth;
     let last_index = _teeth.length-1;
     let last_width = settings.width;
     if(_teeth[last_index].body===2) last_width*=1.3;
@@ -907,8 +912,8 @@ class Tooth {
     /* This function must be called by the last tooth of the affected teeth */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
     let _teeth;
-    if(direction) _teeth = teeth.upper_teeth;
-    else if(!direction) _teeth = teeth.lower_teeth;
+    if(direction) _teeth = this.teeth.upper_teeth;
+    else if(!direction) _teeth = this.teeth.lower_teeth;
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
       if(tooth.key==v.start_tooth_key){
@@ -946,8 +951,8 @@ class Tooth {
     */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
     let _teeth = [];
-    if(direction) _teeth = teeth.upper_teeth;
-    else if(!direction) _teeth = teeth.lower_teeth;
+    if(direction) _teeth = this.teeth.upper_teeth;
+    else if(!direction) _teeth = this.teeth.lower_teeth;
     let y = this.y - 10;
     let height = 15;
     if(this.orientation==='D'){
@@ -972,9 +977,7 @@ class Tooth {
       otherwise another incident may overdraw this draw
     */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
-    let _teeth;
-    if(direction) _teeth = teeth.upper_teeth;
-    else if(!direction) _teeth = teeth.lower_teeth;
+    let _teeth = direction ? this.teeth.upper_teeth : this.teeth.lower_teeth
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
       if(tooth.key==v.start_tooth_key){
@@ -1009,8 +1012,8 @@ class Tooth {
     /* This function must be called by the last tooth of the affected teeth */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
     let _teeth;
-    if(direction) _teeth = teeth.upper_teeth;
-    else if(!direction) _teeth = teeth.lower_teeth;
+    if(direction) _teeth = this.teeth.upper_teeth;
+    else if(!direction) _teeth = this.teeth.lower_teeth;
     let start_index;
     let _inx = _teeth.some((tooth, inx) => {
       if(tooth.key==v.start_tooth_key){
@@ -1045,8 +1048,8 @@ class Tooth {
     /* This function must be called by the last tooth of the affected teeth */
     let direction = ["1", "2", "5", "6"].includes(String(this.key)[0]);
     let _teeth = [];
-    if(direction) _teeth = teeth.upper_teeth;
-    else if(!direction) _teeth = teeth.lower_teeth;
+    if(direction) _teeth = this.teeth.upper_teeth;
+    else if(!direction) _teeth = this.teeth.lower_teeth;
     let start_index = 0;
     let y = this.y - 25;
     let height = 5;
@@ -1629,11 +1632,15 @@ function Odontograma(props){
   let [incident_list, setIncidentList] = useState([]);
   // DOM variables
   let odontogram_type = useRef('A');
+  // Odontograma
+  const [odontogram, setOdontogram] = useState(-1)  // -1 to difference when it becomes False after asking the api
   // Odontograma inicial
-  const [init_od, setInitOd] = useState(false)
+  const [init_od, setInitOd] = useState(-1)  // -1 to difference when it becomes False after asking the api
 
   // Generic rest function
   const getCita = cita_pk => {
+    if(__debug__) console.log("getCita")
+
     getDataByPK('atencion/cita', cita_pk)
     .then(setCita)
   }
@@ -1695,6 +1702,7 @@ function Odontograma(props){
         case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(teeth_a)  // Add teeth's memory reference
       upper_teeth.push(a);
     });
     teeth_a.upper_teeth = upper_teeth;
@@ -1720,6 +1728,7 @@ function Odontograma(props){
         case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(teeth_a)  // Add teeth's memory reference
       lower_teeth.push(a);
     });
     teeth_a.lower_teeth = lower_teeth;
@@ -1763,6 +1772,7 @@ function Odontograma(props){
         case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(teeth_k)  // Add teeth's memory reference
       upper_teeth.push(a);
     });
     teeth_k.upper_teeth = upper_teeth;
@@ -1788,6 +1798,7 @@ function Odontograma(props){
         case 3: a = new Incisor(ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(teeth_k)  // Add teeth's memory reference
       lower_teeth.push(a);
     });
     teeth_k.lower_teeth = lower_teeth;
@@ -2080,33 +2091,58 @@ function Odontograma(props){
       });
     }
   }, [incident]);
-
-  // Only run after first render
-  useEffect(() => {
-    if(__debug__) console.log("useEffect genTeeth");
+  const initRegularOd = () => {
+    /* Initialize canvas */
     // Elements
     let odontogram_el = document.getElementById('odontogram');
     ctx = odontogram_el.getContext('2d');
     // Generate teeth objects
     genTeeth()
 
+    /* At this point odontogram is whether false or object */
+    if(!odontogram){
+      // Get last evolution state odontogram
+      simpleGet(`atencion/paciente/${cita.paciente}/odontograma/evolucion/`)
+      .then(ev_od => getIncidences(ev_od.pk))  // Get last evol od's incidences
+      // Initialize brand new odontogram with last evol od's incidences
+    }
+    // If u don't want to get last evolution odontogram incidences
+    // if(!odontogram) changeTeethType("A")
+    else getIncidences()  // Get incidences
+  }
+
+  // Only run after first render
+  useEffect(() => {
+    if(__debug__) console.log("useEffect genTeeth");
+
     // If cita is not in props
     if(!cita) getCita(__params__.cita_pk)
-  }, [genTeeth]);
+  }, [genTeeth])
+  // Cita
+  useEffect(() => {
+    if(__debug__) console.log("useEffect cita");
+    if(!cita) return
+
+    // Get odontogram
+    getOdontogram()
+    // Get initial odontogram
+    getInitialOdontogram()
+  }, [cita])
   // Run after teeth has changed
   useEffect(() => {
     if(__debug__) console.log("useEffect teethState");
     if(!teeth) return;
+
     ctx.canvas.onmousemove = (e)=>{mouseInCanvas(e)}  // Declare drawSelectedPaths listener
     ctx.canvas.onclick = (e)=>{toothPartClickHandle(e)}  // Declare toothPartClickHandle listener
     printTeeth();  // Draw odontogram
-  }, [teethState]);
+  }, [teethState])
   // Click listener in canvas
   useEffect(() => {
     if(__debug__) console.log("useEffect incident");
     if(!teethState) return  // Prevent execution before teeth is setted
-
     if(!ctx) return;  // Ctx is not defined
+
     inc_paths = [];  // Reset array
     if(incident===false){
       printTeeth();  // Draw odontogram
@@ -2129,40 +2165,31 @@ function Odontograma(props){
     if(select_type===3 && currentTooth.tooth){
       initPreview();
     }
-  }, [incident]);
-  // Cita
+  }, [incident])
+  // odontogram, init_od
   useEffect(() => {
-    if(__debug__) console.log("useEffect cita");
-    if(!cita) return
+    if(__debug__) console.log("useEffect odontogram, init_od");
+    if(odontogram==-1 || init_od==-1) return
 
-    // Initialize odontogram
-    initOdontogram()
-    // Get initial odontogram
-    getInitialOdontogram()
-  }, [cita])
+    // Check if odontogram and init_od are the same
+    if(init_od && odontogram.pk == init_od.pk) return
+    else initRegularOd()  // Initialize odontogram
+  }, [odontogram, init_od])
 
   /* We declare this function as it is 'cuz we want it to be dinamically generated in every render
     that way it keeps updated with the newest state variables
   */
-  function initOdontogram(){
-    if(__debug__) console.log("initOdontogram");
+  // Initial odontogram
+  function getOdontogram(){
+    if(__debug__) console.log("getOdontogram");
     // Get odontograma
     simpleGet(`atencion/${cita.atencion}/odontograma/`)
-    .then(
-      response => {
-        // Update observaciones
-        document.getElementById('textarea_observaciones').value = response.observaciones;
-        // Save odontogram
-        odontogram.pk = response.pk;
-        // Get incidences
-        getIncidences()
-      },
+    .then(setOdontogram,  // Save odontogram
       error_response => {
         // In case of error_response
         if(error_response.status == 404){
-          odontogram.pk = -1  // Odontogram is brand new
-          changeTeethType("A");
-          if(__debug__) console.log("initOdontogram: brand new odontogram");
+          if(__debug__) console.log("getOdontogram: brand new odontogram")
+          setOdontogram(false)
         }
         else console.error("error", error_response)
       }
@@ -2221,7 +2248,7 @@ function Odontograma(props){
     odontogram_data.observaciones = document.getElementById('textarea_observaciones').value;
 
     // Create or modify?
-    if(odontogram.pk===-1){  // Save to API
+    if(!odontogram){  // Save to API
       odontogram_data.atencion = cita.atencion;
       odontogram_data.paciente = cita.paciente;
 
@@ -2249,7 +2276,8 @@ function Odontograma(props){
       // Promise actions
       result.then(
         response_obj => {  // In case it's ok
-          odontogram.pk = response_obj.pk;  // Save odontogram id
+          console.log("saveOdontogram response_obj", response_obj);
+          setOdontogram(response_obj)  // Save odontogram
           handleErrorResponse('custom', "Exito", "Odontograma guardado exitosamente")
         },
         error => {  // In case of error
@@ -2289,12 +2317,17 @@ function Odontograma(props){
       );
     }
   }
-  function getIncidences(){
+  function getIncidences(_od_pk=odontogram.pk){
     /* This function uses the 'odontogram' global object */
     /* This function should be called only once and only if odontogram exists */
     if(__debug__) console.log("getIncidences");
+    // If _od_pk takes it's default value (odontogram.pk) and odontogram is false
+    if(!_od_pk){
+      console.error("getIncidences: can't get incidences from odontogram_pk=undefined");
+      return
+    }
     // Get incidents
-    simpleGet(`atencion/odontograma/${odontogram.pk}/incidencia/`)
+    simpleGet(`atencion/odontograma/${_od_pk}/incidencia/`)
     .then(
       response => {
         // Set teeth incidence from db
@@ -2311,6 +2344,12 @@ function Odontograma(props){
     /* This function require teethState to be already declared */
     if(__debug__) console.log("insertIncidencesInTeeth");
     let new_inc_list = [];
+    // If there is no incidences to insert
+    if(objs.length == 0){
+      changeTeethType('A')  // Set default odontogram type
+      return []
+    }
+
     objs.forEach((inc) => {
       changeTeethType(inc.tipo_odontograma=="1"?"A":"K")
       /* getTooth from both A&K */
@@ -2327,6 +2366,8 @@ function Odontograma(props){
       inc_obj.value.start_tooth_key = inc.start_tooth_key;
       inc_obj.component = JSON.parse(inc.component)
       inc_obj.odontogram_type = inc.tipo_odontograma;
+      inc_obj.detalle = inc.detalle
+      inc_obj.nueva_incidencia = false
       tooth.incidents.push(inc_obj);  // Add to global teeth data
 
       new_inc_list.push({
@@ -2338,7 +2379,7 @@ function Odontograma(props){
 
       // Fix aside incidences
       if(incident_type.component_beside.includes(inc_obj.type))
-        addBesideIncidence(tooth, inc_obj);
+        addBesideIncidence(teeth, tooth, inc_obj);
     });
     return new_inc_list;
   }
@@ -2470,16 +2511,54 @@ function Odontograma(props){
     .then(response => {
       if(__debug__) console.log("getInitialOdontogram: response", response);
       // If response is false then there is no initial odontogram
-      if(!response){
-        if(__debug__) console.log("getInitialOdontogram: no initial odontogram");
-        return
-      }
+      if(!response) if(__debug__) console.log("getInitialOdontogram: no initial odontogram");
+
       // Set response as initial odontogram
       setInitOd(response)
     })
   }
+  const saveInitialOdontogram = () => {
+    // Show alert
+    window.$("#modal_save_init_od").modal("show")
+  }
 
-  return (
+
+  /* Check if current odontogram is the init odontogram already setted
+  * conditions:
+  *   odontogram.pk is setted
+  *   init_od can't be false
+  *   odontogram.pk equals init_od.pk
+  */
+  return (odontogram==-1||init_od==-1) ? "loading"  // Still loading
+    : (init_od && odontogram.pk == init_od.pk)  // init_od is setted and equals odontogram
+    // Setted initial odontogram
+    ? (
+    <div>
+      <div className="subheader">
+        <h1 className="subheader-title">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"
+            data-prefix="fas" data-icon="tooth" className="svg-inline--fa fa-tooth fa-w-14"
+            role="img" viewBox="0 0 448 512" style={{width: "15px", height: "16px", verticalAlign: "baseline", filter: "opacity(.9)"}}>
+              <path fill="currentColor" d="M443.98 96.25c-11.01-45.22-47.11-82.06-92.01-93.72-32.19-8.36-63 5.1-89.14 24.33-3.25 2.39-6.96 3.73-10.5 5.48l28.32 18.21c7.42 4.77 9.58 14.67 4.8 22.11-4.46 6.95-14.27 9.86-22.11 4.8L162.83 12.84c-20.7-10.85-43.38-16.4-66.81-10.31-44.9 11.67-81 48.5-92.01 93.72-10.13 41.62-.42 80.81 21.5 110.43 23.36 31.57 32.68 68.66 36.29 107.35 4.4 47.16 10.33 94.16 20.94 140.32l7.8 33.95c3.19 13.87 15.49 23.7 29.67 23.7 13.97 0 26.15-9.55 29.54-23.16l34.47-138.42c4.56-18.32 20.96-31.16 39.76-31.16s35.2 12.85 39.76 31.16l34.47 138.42c3.39 13.61 15.57 23.16 29.54 23.16 14.18 0 26.48-9.83 29.67-23.7l7.8-33.95c10.61-46.15 16.53-93.16 20.94-140.32 3.61-38.7 12.93-75.78 36.29-107.35 21.95-29.61 31.66-68.8 21.53-110.43z"/>
+          </svg> Odontograma inicial
+        </h1>
+      </div>
+      {/* Paciente */}
+      <div>
+        <h5>Paciente: <i>{
+          cita
+          ? cFL(cita.paciente_data.nombre_principal)+" "+
+            cita.paciente_data.ape_paterno.toUpperCase()+" "+
+            cita.paciente_data.ape_materno.toUpperCase()
+          : ""
+        }</i></h5>
+      </div>
+
+      <OdontogramaInicial init_od={init_od} />
+    </div>
+    )
+    // Brand new odontogram or evolution or whatsoever
+    : (
     <>
       {/* ALERTS */}
       <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
@@ -2495,19 +2574,17 @@ function Odontograma(props){
           </svg> {init_od?"Odontograma de evolucion":"Odontograma inicial"}
         </h1>
         <div className="row">
-          {odontogram.pk==-1
-            ? ""
+          {!init_od ? ""
             : (
               <div style={{marginRight: "8px"}}>
                 <button type="button" className="btn btn-secondary waves-effect waves-themed" data-toggle="modal" data-target="#initialodontogram_modal">Ver Inicial</button>
               </div>
             )
           }
-          {odontogram.pk==-1
-            ? ""
+          {!init_od ? ""
             : (
               <div style={{marginRight: "8px"}}>
-                <button type="button" className="btn btn-secondary waves-effect waves-themed">Registro de evolucion</button>
+                <button type="button" className="btn btn-secondary waves-effect waves-themed" data-toggle="modal" data-target="#evologod_modal">Registro de evolucion</button>
               </div>
             )
           }
@@ -2521,13 +2598,16 @@ function Odontograma(props){
           </div>
         </div>
       </div>
-      <h5>Paciente: <i>{
-        cita
-        ? cFL(cita.paciente_data.nombre_principal)+" "+
-          cita.paciente_data.ape_paterno.toUpperCase()+" "+
-          cita.paciente_data.ape_materno.toUpperCase()
-        : ""
-      }</i></h5>
+      {/* Paciente */}
+      <div>
+        <h5>Paciente: <i>{
+          cita
+          ? cFL(cita.paciente_data.nombre_principal)+" "+
+            cita.paciente_data.ape_paterno.toUpperCase()+" "+
+            cita.paciente_data.ape_materno.toUpperCase()
+          : ""
+        }</i></h5>
+      </div>
 
       <div style={{whiteSpace: "nowrap"}}>
         <canvas id="odontogram" width="750" height="530" style={{background:"white", verticalAlign:"top"}}></canvas>
@@ -2545,7 +2625,7 @@ function Odontograma(props){
         <div  className="row" style={{width: "100%"}}>
           <div className="col-sm" style={{height: "160px"}}>
             <label className="form-label" htmlFor="textarea_observaciones">Observaciones</label>
-            <textarea className="form-control" id="textarea_observaciones" rows="5"></textarea>
+            <textarea className="form-control" id="textarea_observaciones" rows="5">{odontogram.observaciones}</textarea>
           </div>
           <div style={{width: "325px"}}>
             <IncidentList inc_list={incident_list} set_inc_list={setIncidentList}
@@ -2554,14 +2634,24 @@ function Odontograma(props){
         </div><br/>
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
           <button type="button" className="btn btn-success waves-effect waves-themed"
-            onClick={()=>saveOdontogram()} title="Asegurate de escribir las observaciones que encuentres">Guardar</button>
+            onClick={init_od?saveOdontogram:saveInitialOdontogram} title="Asegurate de escribir las observaciones que encuentres">{init_od?"Guardar":"Guardar Odontograma Inicial"}</button>
           <button type="button" className="btn btn-secondary waves-effect waves-themed"
             onClick={()=>changeTeethType()}>Reiniciar</button>
         </div>
       </div>
-      {odontogram.pk==-1
-        ? ""
-        : <RegularModalCentered _title={"Odontograma inicial"} _id={"initialodontogram_modal"} _body_component={InitialOdontogramModal} />
+      {!init_od ? ""
+        : <InitialOdontogramModal init_od={init_od} />
+      }
+      {!init_od ? ""
+        : <EvoLogOdModal />
+      }
+      {init_od ? ""
+        : <ModalCancel
+            _id={"modal_save_init_od"}
+            _title={"Guardar odontograma inicial"}
+            _action_text={"Guardar"}
+            _action_func={saveOdontogram}
+            _body_text={"Una vez guardado el odontograma inicial no puede ser modificado"} />
       }
     </>
   )
@@ -2584,7 +2674,7 @@ function IncidentForm(props){
     select_type = 3;
     // Preview canvas
     elements.push(
-      <div key="preview-canvas">
+      <div key="preview-canvas" className="form-group">
       <canvas id="preview"
         width={(settings.width*1.3+preview_margin*2)*preview_scale}
         height={(settings.height+preview_margin*2)*preview_scale}
@@ -2609,7 +2699,7 @@ function IncidentForm(props){
     select_type = 0;
     dom_select_info = [<span key="inc_title" style={{fontSize: '1.4em'}}>Ubicación</span>];
     elements.push(
-      <div key={"location_div"+inc_code} id="form-direction">
+      <div key={"location_div"+inc_code} id="form-direction" className="form-group">
         <div className="custom-control custom-radio">
           <input type="radio" className="custom-control-input" id="all-up" name="all-direction" value="U" defaultChecked />
           <label className="custom-control-label" htmlFor="all-up">Arriba</label>
@@ -2622,6 +2712,8 @@ function IncidentForm(props){
     );
   }
   else return;
+
+
   let inc = incident_type.incidents[inc_code];
 
   // Form fields
@@ -2646,7 +2738,7 @@ function IncidentForm(props){
   if(inc.hasOwnProperty("state")){
     // Add to main elements
     elements.push(
-      <div key={"state_div"+inc_code} id="form-state">
+      <div key={"state_div"+inc_code} id="form-state" className="form-group">
         <span style={{fontSize: '1.4em'}}>Estado</span>
         <div className="custom-control custom-radio">
           <input type="radio" className="custom-control-input" id="value-state-T" value="true" name="inc_state" defaultChecked />
@@ -2662,7 +2754,7 @@ function IncidentForm(props){
   if(inc.hasOwnProperty("orientation")){
     // Add to main elements
     elements.push(
-      <div key={"orientation_div"+inc_code} id="form-orientation">
+      <div key={"orientation_div"+inc_code} id="form-orientation" className="form-group">
       <span style={{fontSize: '1.4em'}}>Dirección</span>
         <div className="custom-control custom-radio">
           <input type="radio" className="custom-control-input" id="value-orientation-R" value="R" name="inc_orientation" defaultChecked />
@@ -2675,7 +2767,7 @@ function IncidentForm(props){
       </div>
     );
   }
-  if(inc.hasOwnProperty("fractura")){  // Fractura
+  if(inc.hasOwnProperty("fractura")){
     const _elements = [];
     inc.fractura.forEach((v, i) => {
       _elements.push(
@@ -2693,6 +2785,14 @@ function IncidentForm(props){
       </div>
     );
   }
+  // Add incidence detail form
+  elements.push(
+    <div key={"detail_div"+inc_code} id="form-group form-detail">
+      <label className="form-label" htmlFor="inc_detail">Detalle de la incidencia: </label>
+      <input type="text" id="inc_detail" name="inc_detail"
+        className="form-control" />
+    </div>
+  );
 
   // Save incidence function
   const saveIncidence = () => {
@@ -2709,6 +2809,8 @@ function IncidentForm(props){
     let _inc_obj = {};  // Incident object
     _inc_obj.odontogram_type = props.odontogram_type=='A'?"1":"2"  // Specify what odontogram type does this incident belong
     _inc_obj.type = inc_code;  // Incident code
+    _inc_obj.detalle = window.document.getElementById('inc_detail').value  // Incident detail
+    _inc_obj.nueva_incidencia = true  // Nueva incidencia ingresada por el usuario
 
     // Get form data
     let _form_data = {};
@@ -2730,7 +2832,7 @@ function IncidentForm(props){
       _tooth = _teeth[_teeth.length-1];  // Select last tooth
     }else if(select_type===4){
       if(incident_type.component_beside.includes(inc_code)){  // Only two teeth
-        if( !addBesideIncidence(_tooth, _inc_obj) ) return;
+        if( !addBesideIncidence(teeth, _tooth, _inc_obj) ) return;
       }else if(incident_type.component_range.includes(inc_code)){  // *Range of teeth
         if(inc_paths.length!==1 || !inc_paths[0].key){
           alert("Debe seleccionar el otro extremo del rango")
@@ -2787,15 +2889,15 @@ function IncidentForm(props){
   }
 
   return (
-    <div style={{width: "280px"}}>
-      <h1>{inc_functions[inc_code-1]}</h1>
-      <span>{dom_select_info}</span>
+    <div style={{width: "280px", paddingLeft: "10px"}}>
+      <h1 style={{whiteSpace: "initial"}}>{inc_functions[inc_code-1]}</h1>
+      <div className="form-group">{dom_select_info}</div>
       {elements}
       <br/>
-      <button onClick={()=>props.setIncident(false)}>Cancelar</button>
-      <button onClick={()=>saveIncidence()}>Guardar</button>
+      <button className="btn btn-secondary" onClick={()=>props.setIncident(false)}>Cancelar</button>
+      <button className="btn btn-primary" onClick={()=>saveIncidence()}>Guardar</button>
     </div>
-  );
+  )
 }
 function IncidentPanel(props){
   select_type = 4;
@@ -2999,17 +3101,28 @@ function IncidentList(props){
     </div>
   )
 }
-function InitialOdontogramModal({}){
-  return <OdontogramaInicial init_od_pk={odontogram.pk}/>
+// Initial odontogram
+function InitialOdontogramModal({init_od}){
+  return (
+    <RegularModalCentered
+      _title={"Odontograma inicial"}
+      _id={"initialodontogram_modal"}
+      _body={
+        <OdontogramaInicial init_od={init_od}/>
+      }
+      _min_width={"1000"} />
+  )
 }
-function OdontogramaInicial({init_od_pk}){
+function OdontogramaInicial({init_od}){
   /* Prefijo de las variables de este contexto
   * o_: variable inicial
+  * init_od: odontogram object (this component don't handle bad odontogram object, check it out before using this)
   */
   const [o_ctx, setOCtx] = useState(false)  // Canvas context
   const [o_teeth, setOTeeth] = useState([])  // Data current teeth
   const [o_teeth_a, setOTeethA] = useState([])  // Data teeth adult
   const [o_teeth_k, setOTeethK] = useState([])  // Data teeth kid
+  const [o_inc_list, setOIncList] = useState([])  // Data teeth kid
   const [o_od_type, setOOdType] = useState(false)  // Current odontogram type
 
   // Flujo incidencias
@@ -3027,7 +3140,7 @@ function OdontogramaInicial({init_od_pk}){
     // General
     let _left = (
       // Odontogram element width
-      ctx.canvas.width-
+      o_ctx.canvas.width-
       // Tooth with plus tooth spacing
       (settings.width+settings.tooth_spacing)*(2+16)
     )/2  // Half of the total space left
@@ -3061,6 +3174,7 @@ function OdontogramaInicial({init_od_pk}){
         case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(_teeth_a)  // Add teeth's memory reference
       upper_teeth.push(a)
     })
     _teeth_a.upper_teeth = upper_teeth
@@ -3086,6 +3200,7 @@ function OdontogramaInicial({init_od_pk}){
         case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(_teeth_a)  // Add teeth's memory reference
       lower_teeth.push(a)
     })
     _teeth_a.lower_teeth = lower_teeth
@@ -3097,7 +3212,7 @@ function OdontogramaInicial({init_od_pk}){
     // General
     let _left = (
       // Odontogram element width
-      ctx.canvas.width-
+      o_ctx.canvas.width-
       // Tooth with plus tooth spacing
       (settings.width+settings.tooth_spacing)*(2+10)
     )/2  // Half of the total space left
@@ -3131,6 +3246,7 @@ function OdontogramaInicial({init_od_pk}){
         case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(_teeth_k)  // Add teeth's memory reference
       upper_teeth.push(a)
     })
     _teeth_k.upper_teeth = upper_teeth
@@ -3156,6 +3272,7 @@ function OdontogramaInicial({init_od_pk}){
         case 3: a = new Incisor(o_ctx, _x, _top, v.key, v.orientation, v.incidents); break;
         default: alert(`ERROR IN TEETH BUILD DATA: tooth type not found in key ${v.key}`); break;
       }
+      a.setTeeth(_teeth_k)  // Add teeth's memory reference
       lower_teeth.push(a)
     })
     _teeth_k.lower_teeth = lower_teeth
@@ -3167,9 +3284,9 @@ function OdontogramaInicial({init_od_pk}){
     if(__debug__) console.log("od_inicial: getIncidences")
 
     // Get incidents
-    simpleGet(`atencion/odontograma/${init_od_pk}/incidencia/`)
+    simpleGet(`atencion/odontograma/${init_od.pk}/incidencia/`)
     .then(insertIncidencesInTeeth)  // Add incidences to teeth
-    .then(changeTeethType)
+    .then(changeOdType)
   }
   const getToothByKey = (_teeth_, key) => {
     /* Search for the tooth inside the given teeth object
@@ -3203,11 +3320,17 @@ function OdontogramaInicial({init_od_pk}){
     */
     if(__debug__) console.log("od_inicial: insertIncidencesInTeeth")
     let last_od_type = "1"
+    let _o_inc_list = []
 
-    objs.forEach((inc) => {
+    objs.forEach(inc => {
       /* getTooth from both A&K */
-      let tooth = getToothByKey(inc.tipo_odontograma=="1"?o_teeth_a:o_teeth_k, inc.diente)
-      if(!tooth) return  // If tooth is not found (below to another odontogram type) skip
+      let _teeth = inc.tipo_odontograma=="1"?o_teeth_a:o_teeth_k
+      let tooth = getToothByKey(_teeth, inc.diente)
+      if(!tooth){
+        console.error("Tooth not found");
+        console.error("inc:", inc);
+        return
+      }
 
       let inc_obj = {}
       inc_obj.type = parseInt(inc.type)
@@ -3219,15 +3342,28 @@ function OdontogramaInicial({init_od_pk}){
       inc_obj.value.start_tooth_key = inc.start_tooth_key
       inc_obj.component = JSON.parse(inc.component)
       inc_obj.odontogram_type = inc.tipo_odontograma
+      inc_obj.detalle = inc.detalle
+      inc_obj.nueva_incidencia = false
       tooth.incidents.push(inc_obj)  // Add to global teeth data
 
       // Set last odontogram type in incidence
       last_od_type = inc.tipo_odontograma
 
+      // Add incidence to o_inc_list
+      _o_inc_list.push({
+        diente_inicio: Number(inc.start_tooth_key),
+        diente: tooth.key,
+        type: Number(inc.type),
+        detalle: inc_obj.detalle,
+      });
+
       // Fix aside incidences
       if(incident_type.component_beside.includes(inc_obj.type))
-        addBesideIncidence(tooth, inc_obj)
+        addBesideIncidence(_teeth, tooth, inc_obj)
     })
+
+    // Set incidence list
+    setOIncList(_o_inc_list)
 
     return last_od_type=="1"?'A':'K'
   }
@@ -3240,17 +3376,10 @@ function OdontogramaInicial({init_od_pk}){
     all_teeth.forEach(tooth => tooth.draw())
     all_teeth.forEach(tooth => tooth.drawIncidents())
   }
-  // Flujo odontograma
-  const getOdontogramObservation = () => {
-    if(__debug__) console.log("od_inicial: getOdontogramObservation")
-    // Get odontograma
-    simpleGet(`atencion/odontograma/${init_od_pk}/`)
-    // Update observaciones
-    // .then(response => document.getElementById('textarea_observaciones').value = response.observaciones)
-  }
+
   // Funciones de vista
-  const changeTeethType = type => {
-    if(__debug__) console.log("od_inicial: changeTeethType")
+  const changeOdType = type => {
+    if(__debug__) console.log("od_inicial: changeOdType")
 
     if(type!='A'&&type!='K') return  // Allow only A || K
     if(o_od_type == type) return  // Prevent redundancy
@@ -3268,8 +3397,6 @@ function OdontogramaInicial({init_od_pk}){
 
     // Save 2d context of odontogram
     setOCtx(odontogram_el.getContext('2d'))
-    // Get odontogram observation
-    getOdontogramObservation()
   }, [])
   // After both teeth types are setted
   useEffect(() => {
@@ -3293,37 +3420,82 @@ function OdontogramaInicial({init_od_pk}){
   }, [o_ctx])
 
   return (
-    <canvas id="odontograma_inicial" width="750" height="530" style={{
-      background:"white",
-      // Factor de aumento 1.2
-      width: "900px",
-      height: "636px",
-    }}></canvas>
+    <div className="row">
+      <canvas id="odontograma_inicial" width="750" height="530" style={{
+        background:"white",
+        width: "750px",
+        height: "530px",
+      }}></canvas>
+
+      {/* Lista de inciencias */}
+      <div style={{flex: "1 1 0%", paddingLeft: "15px"}}>
+        {/* Odontogram type*/}
+        <div className="btn-group btn-group-toggle" data-toggle="buttons">
+          <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='A'?'active':'')} onClick={()=>changeOdType('A')}>
+            <input type="radio" name="odontogram_type" /> Adulto
+          </label>
+          <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='K'?'active':'')} onClick={()=>changeOdType('K')}>
+            <input type="radio" name="odontogram_type" /> Infante
+          </label>
+        </div>
+        <hr style={{borderBottomWidth: "2px", borderBottomStyle: "solid"}}/> {/* Separator */}
+        {/* Incidences list */}
+        <b style={{fontSize: "1.4em"}}>Incidencias</b><br/>
+        <div>
+          {o_inc_list.length==0
+            ? <span style={{fontSize: "1.2em"}}>No hay ninguna incidencia</span>
+            : o_inc_list.map((inc, inx) => (
+              <div key={"o-inc-"+inx} style={{fontSize: "1.2em", cursor: "pointer"}}  title={inc.detalle}>
+                <span>Diente: </span>
+                <b>{inc.diente_inicio?`${inc.diente_inicio} - ${inc.diente}`:inc.diente}</b>
+                <span> &nbsp;{inc_functions[inc.type-1]}</span>
+              </div>
+            ))
+          }
+        </div>
+        <hr style={{borderBottomWidth: "2px", borderBottomStyle: "solid"}}/> {/* Separator */}
+        {/* Odontogram observations */}
+        <b style={{fontSize: "1.4em"}}>Observaciones</b><br/>
+        <span style={{fontSize: "1.2em"}}>{cFL(init_od.observaciones)}</span>
+      </div>
+    </div>
   )
 }
+// Evolution odontogram
+function EvoLogOdModal(){
+  return (
+    <RegularModalCentered _title={"Registro de evolución"}
+      _id={"evologod_modal"}
+      _body={
+        "jelou"
+      }
+      _min_width={"600"} />
+  )
+}
+
 // Function
-function addBesideIncidence(_tooth, _inc){
+function addBesideIncidence(_teeth, _tooth, _inc){
   // console.log(_tooth, _inc)
   let _sign = _inc.value.orientation==='R'?1:-1;  // Aside tooth is left or right
   // Get _inx && side tooth
-  let _inx = teeth.upper_teeth.indexOf(_tooth);
+  let _inx = _teeth.upper_teeth.indexOf(_tooth);
   let _side_tooth;
   if(_inx!==-1){
     // Check if it's posible to add aside tooth incident
-    if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
+    if((_sign===1 && _inx===_teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
       alert("No es posible agregar la incidencia en esa dirección")
       return false;
     }
-    _side_tooth = teeth.upper_teeth[_inx+_sign];
+    _side_tooth = _teeth.upper_teeth[_inx+_sign];
   }else{
-    _inx = teeth.lower_teeth.indexOf(_tooth);
+    _inx = _teeth.lower_teeth.indexOf(_tooth);
     if(_inx!==-1){
       // Check if it's posible to add aside tooth incident
-      if((_sign===1 && _inx===teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
+      if((_sign===1 && _inx===_teeth.upper_teeth.length-1) || (_sign===-1 && _inx===0)){
         alert("No es posible agregar la incidencia en esa dirección")
         return false;
       }
-      _side_tooth = teeth.lower_teeth[_inx+_sign];
+      _side_tooth = _teeth.lower_teeth[_inx+_sign];
     }else{
       alert("Ha ocurrido un error, diente no encontrado")
       return false;
@@ -3347,7 +3519,3 @@ function addBesideIncidence(_tooth, _inc){
 
 export default Odontograma;
 // eslint-disable-next-line react-hooks/exhaustive-deps
-
-/*
-* Change to sweetalert to handle successfull response
-*/

@@ -66,6 +66,8 @@ export function handleErrorResponse(type, ...data){
   }, scape_time+200, _id)
 }
 export function capitalizeFirstLetter(word, restLowerCase=true){
+  if(word.length==0) return ""  // If word is empty
+
   return word[0].toUpperCase()
     + (restLowerCase
       ? word.slice(1, word.length).toLowerCase()
