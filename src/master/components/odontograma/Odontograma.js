@@ -3532,12 +3532,20 @@ function EvolutionOdontogramLog({evol_od}){
   useEffect(() => {
     if(__debug__) console.log("od_evolucion");
 
+    if(window.$) window.$('#slimscroll-ev_od_inc_list').slimScroll({
+      width: "100%",
+      height: "450",
+      size: "4px",
+      color: "rgba(0,0,0,0.6)",
+      distance: "4px",
+      railcolor: "#fafafa",
+    });
   }, [])
 
 
   return (
     <div className="row">
-      <div style={{width: "100%"}}>
+      <div id="slimscroll-ev_od_inc_list" className="custom-scroll" style={{width: "100%", height: "450px"}}>
         {/* Incidence log list */}
         {evol_od.length==0 ? <span style={{fontSize: "1.2em"}}>No hay registros de incidencias</span>
           : evol_od.map(inc => (
