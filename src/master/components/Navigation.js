@@ -7,7 +7,11 @@ import {
   withRouter,  // Allow us access to route props
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
-import { deleteUserLogIn, capitalizeFirstLetter } from '../functions'
+import {
+  capitalizeFirstLetter as cFL,
+  deleteUserLogIn,
+  capitalizeFirstLetter
+} from '../functions'
 import { postCacheData, getCacheData } from './HandleCache';
 
 // Components to import
@@ -392,69 +396,70 @@ function PageContent(props){
                 </div>
             </div>
         </div>
-
-        <p id="js-color-profile" className="d-none">
-            <span className="color-primary-50"></span>
-            <span className="color-primary-100"></span>
-            <span className="color-primary-200"></span>
-            <span className="color-primary-300"></span>
-            <span className="color-primary-400"></span>
-            <span className="color-primary-500"></span>
-            <span className="color-primary-600"></span>
-            <span className="color-primary-700"></span>
-            <span className="color-primary-800"></span>
-            <span className="color-primary-900"></span>
-            <span className="color-info-50"></span>
-            <span className="color-info-100"></span>
-            <span className="color-info-200"></span>
-            <span className="color-info-300"></span>
-            <span className="color-info-400"></span>
-            <span className="color-info-500"></span>
-            <span className="color-info-600"></span>
-            <span className="color-info-700"></span>
-            <span className="color-info-800"></span>
-            <span className="color-info-900"></span>
-            <span className="color-danger-50"></span>
-            <span className="color-danger-100"></span>
-            <span className="color-danger-200"></span>
-            <span className="color-danger-300"></span>
-            <span className="color-danger-400"></span>
-            <span className="color-danger-500"></span>
-            <span className="color-danger-600"></span>
-            <span className="color-danger-700"></span>
-            <span className="color-danger-800"></span>
-            <span className="color-danger-900"></span>
-            <span className="color-warning-50"></span>
-            <span className="color-warning-100"></span>
-            <span className="color-warning-200"></span>
-            <span className="color-warning-300"></span>
-            <span className="color-warning-400"></span>
-            <span className="color-warning-500"></span>
-            <span className="color-warning-600"></span>
-            <span className="color-warning-700"></span>
-            <span className="color-warning-800"></span>
-            <span className="color-warning-900"></span>
-            <span className="color-success-50"></span>
-            <span className="color-success-100"></span>
-            <span className="color-success-200"></span>
-            <span className="color-success-300"></span>
-            <span className="color-success-400"></span>
-            <span className="color-success-500"></span>
-            <span className="color-success-600"></span>
-            <span className="color-success-700"></span>
-            <span className="color-success-800"></span>
-            <span className="color-success-900"></span>
-            <span className="color-fusion-50"></span>
-            <span className="color-fusion-100"></span>
-            <span className="color-fusion-200"></span>
-            <span className="color-fusion-300"></span>
-            <span className="color-fusion-400"></span>
-            <span className="color-fusion-500"></span>
-            <span className="color-fusion-600"></span>
-            <span className="color-fusion-700"></span>
-            <span className="color-fusion-800"></span>
-            <span className="color-fusion-900"></span>
-        </p>
+        {/*
+          <p id="js-color-profile" className="d-none">
+              <span className="color-primary-50"></span>
+              <span className="color-primary-100"></span>
+              <span className="color-primary-200"></span>
+              <span className="color-primary-300"></span>
+              <span className="color-primary-400"></span>
+              <span className="color-primary-500"></span>
+              <span className="color-primary-600"></span>
+              <span className="color-primary-700"></span>
+              <span className="color-primary-800"></span>
+              <span className="color-primary-900"></span>
+              <span className="color-info-50"></span>
+              <span className="color-info-100"></span>
+              <span className="color-info-200"></span>
+              <span className="color-info-300"></span>
+              <span className="color-info-400"></span>
+              <span className="color-info-500"></span>
+              <span className="color-info-600"></span>
+              <span className="color-info-700"></span>
+              <span className="color-info-800"></span>
+              <span className="color-info-900"></span>
+              <span className="color-danger-50"></span>
+              <span className="color-danger-100"></span>
+              <span className="color-danger-200"></span>
+              <span className="color-danger-300"></span>
+              <span className="color-danger-400"></span>
+              <span className="color-danger-500"></span>
+              <span className="color-danger-600"></span>
+              <span className="color-danger-700"></span>
+              <span className="color-danger-800"></span>
+              <span className="color-danger-900"></span>
+              <span className="color-warning-50"></span>
+              <span className="color-warning-100"></span>
+              <span className="color-warning-200"></span>
+              <span className="color-warning-300"></span>
+              <span className="color-warning-400"></span>
+              <span className="color-warning-500"></span>
+              <span className="color-warning-600"></span>
+              <span className="color-warning-700"></span>
+              <span className="color-warning-800"></span>
+              <span className="color-warning-900"></span>
+              <span className="color-success-50"></span>
+              <span className="color-success-100"></span>
+              <span className="color-success-200"></span>
+              <span className="color-success-300"></span>
+              <span className="color-success-400"></span>
+              <span className="color-success-500"></span>
+              <span className="color-success-600"></span>
+              <span className="color-success-700"></span>
+              <span className="color-success-800"></span>
+              <span className="color-success-900"></span>
+              <span className="color-fusion-50"></span>
+              <span className="color-fusion-100"></span>
+              <span className="color-fusion-200"></span>
+              <span className="color-fusion-300"></span>
+              <span className="color-fusion-400"></span>
+              <span className="color-fusion-500"></span>
+              <span className="color-fusion-600"></span>
+              <span className="color-fusion-700"></span>
+              <span className="color-fusion-800"></span>
+              <span className="color-fusion-900"></span>
+          </p>
+        */}
     </div>
   )
 }
@@ -1060,7 +1065,6 @@ function UserSettings(props){
     window.location.reload()  // Reload page
   }
 
-  console.log(props);
   return (
     <div>
         <a href="#" data-toggle="dropdown"
@@ -1072,7 +1076,7 @@ function UserSettings(props){
             className="profile-image rounded-circle"
             alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
           />
-          <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down">
+          <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down" style={{fontSize: "1.4em"}}>
             { props.current_sucursal_pk!=-1 && capitalizeFirstLetter(props.user.personal.nombre_principal)}
           </span>
           <i className="ni ni-chevron-down hidden-xs-down"></i>
@@ -1105,11 +1109,6 @@ function UserSettings(props){
             <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
                 <span data-i18n="drpdwn.settings">Settings</span>
             </a>
-            <div className="dropdown-divider m-0"></div>
-            <a href="#" className="dropdown-item" data-action="app-fullscreen">
-                <span data-i18n="drpdwn.fullscreen">Fullscreen</span>
-                <i className="float-right text-muted fw-n">F11</i>
-            </a>
             <a href="#" className="dropdown-item" data-action="app-print">
                 <span data-i18n="drpdwn.print">Print</span>
                 <i className="float-right text-muted fw-n">Ctrl + P</i>
@@ -1121,9 +1120,11 @@ function UserSettings(props){
               current_sucursal_pk={props.current_sucursal_pk}
               changeSucursal={props.changeSucursal} />
             {/* FIN CHOOSE SUCURSAL*/}
+            <a href="#" className="dropdown-item" data-action="app-fullscreen">
+              <span data-i18n="drpdwn.fullscreen">Pantalla Completa</span>
+            </a>
             <a className="dropdown-item fw-500 pt-3 pb-3" onClick={userLogOut}>
               <span data-i18n="drpdwn.page-logout">Logout</span>
-              <span className="float-right fw-n"></span>
             </a>
         </div>
     </div>
@@ -1137,12 +1138,11 @@ function ChooseSucursal(props){
       <a key={a.pk}
         onClick={()=>props.changeSucursal(a.pk)}
         className={a.pk==props.current_sucursal_pk?"dropdown-item active":"dropdown-item"}>
-          {a.direccion}
+          {cFL(a.direccion)}
       </a>
     );
   }
   return (
-    <>
     <div className="dropdown-multilevel dropdown-multilevel-left">
       <div className="dropdown-item">
         Sucursal
@@ -1151,8 +1151,6 @@ function ChooseSucursal(props){
         {sucursales}
       </div>
     </div>
-    <div className="dropdown-divider m-0"></div>
-    </>
   )
 }
 function PageFooter(){

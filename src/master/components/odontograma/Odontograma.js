@@ -1636,6 +1636,11 @@ function Odontograma(props){
   const [odontogram, setOdontogram] = useState(-1)  // -1 to difference when it becomes False after asking the api
   // Odontograma inicial
   const [init_od, setInitOd] = useState(-1)  // -1 to difference when it becomes False after asking the api
+  // Array odontograma evolucion log
+  const [ar_ev_od_log, setArrayEvolutionOdLog] = useState([])
+  // Incidence counter
+  let inc_count_a = useRef(0)
+  let inc_count_k = useRef(0)
 
   // Generic rest function
   const getCita = cita_pk => {
@@ -2092,6 +2097,7 @@ function Odontograma(props){
     }
   }, [incident]);
   const initRegularOd = () => {
+    if(__debug__) console.log("initRegularOd");
     /* Initialize canvas */
     // Elements
     let odontogram_el = document.getElementById('odontogram');
@@ -2103,7 +2109,8 @@ function Odontograma(props){
     if(!odontogram){
       // Get last evolution state odontogram
       simpleGet(`atencion/paciente/${cita.paciente}/odontograma/evolucion/`)
-      .then(ev_od => getIncidences(ev_od.pk))  // Get last evol od's incidences
+      // If exists last evol od's get its incidences, if not initialize as regular od
+      .then(res => res ? getIncidences(res.pk) : changeTeethType("A"))
       // Initialize brand new odontogram with last evol od's incidences
     }
     // If u don't want to get last evolution odontogram incidences
@@ -2127,6 +2134,8 @@ function Odontograma(props){
     getOdontogram()
     // Get initial odontogram
     getInitialOdontogram()
+    // Get evolution odontogram
+    getEvolutionOdontogram()
   }, [cita])
   // Run after teeth has changed
   useEffect(() => {
@@ -2274,11 +2283,13 @@ function Odontograma(props){
         }, () => handleErrorResponse('server'));
       });
       // Promise actions
-      result.then(
+      // Return Promise to handle saving initial odontogram
+      return result.then(
         response_obj => {  // In case it's ok
           console.log("saveOdontogram response_obj", response_obj);
           setOdontogram(response_obj)  // Save odontogram
           handleErrorResponse('custom', "Exito", "Odontograma guardado exitosamente")
+          return response_obj  // Return odontogram (handle save initial odontogram)
         },
         error => {  // In case of error
           console.log("WRONG!", error);
@@ -2344,6 +2355,9 @@ function Odontograma(props){
     /* This function require teethState to be already declared */
     if(__debug__) console.log("insertIncidencesInTeeth");
     let new_inc_list = [];
+    // Reset teeth incidence counter
+    inc_count_a.current = 0
+    inc_count_k.current = 0
     // If there is no incidences to insert
     if(objs.length == 0){
       changeTeethType('A')  // Set default odontogram type
@@ -2370,12 +2384,18 @@ function Odontograma(props){
       inc_obj.nueva_incidencia = false
       tooth.incidents.push(inc_obj);  // Add to global teeth data
 
+      // Add incidence list
       new_inc_list.push({
         diente_inicio: Number(inc.start_tooth_key),
         diente: tooth.key,
         type: Number(inc.type),
-        inx: tooth.incidents.length-1
+        detalle: inc.detalle.length!=0?cFL(inc.detalle):"-",
+        inx: tooth.incidents.length-1,
       });
+
+      // Add to teeth counter
+      if(inc.tipo_odontograma=="1") inc_count_a.current++
+      else inc_count_k.current++
 
       // Fix aside incidences
       if(incident_type.component_beside.includes(inc_obj.type))
@@ -2517,9 +2537,26 @@ function Odontograma(props){
       setInitOd(response)
     })
   }
-  const saveInitialOdontogram = () => {
+  const askSaveInitialOdontogram = () => {
     // Show alert
     window.$("#modal_save_init_od").modal("show")
+  }
+  const saveInitialOdontogram = () => {
+    saveOdontogram()
+    // Set init_od if r is an object
+    .then(r => r ? setInitOd(r) : setInitOd(false))
+  }
+  // Evolution odontogram
+  const getEvolutionOdontogram = () => {
+    simpleGet(`atencion/paciente/${cita.paciente}/odontograma/evolucion/log/`)
+    .then(response => {
+      if(__debug__) console.log("getEvolutionOdontogram: response", response);
+      // If response is empty array then there is no evolution log
+      if(response.length == 0) if(__debug__) console.log("getEvolutionOdontogram: no evolution log");
+
+      // Set response as initial odontogram (it comes pre sorted by api)
+      setArrayEvolutionOdLog(response)
+    })
   }
 
 
@@ -2591,9 +2628,11 @@ function Odontograma(props){
           <div className="btn-group btn-group-toggle" data-toggle="buttons">
             <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>changeTeethType('A')}>
               <input type="radio" name="odontogram_type" defaultChecked /> Adulto
+              <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{inc_count_a.current}</span>
             </label>
             <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>changeTeethType('K')}>
               <input type="radio" name="odontogram_type" /> Infante
+              <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{inc_count_k.current}</span>
             </label>
           </div>
         </div>
@@ -2625,7 +2664,7 @@ function Odontograma(props){
         <div  className="row" style={{width: "100%"}}>
           <div className="col-sm" style={{height: "160px"}}>
             <label className="form-label" htmlFor="textarea_observaciones">Observaciones</label>
-            <textarea className="form-control" id="textarea_observaciones" rows="5">{odontogram.observaciones}</textarea>
+            <textarea className="form-control" id="textarea_observaciones" rows="5" defaultValue={odontogram.observaciones}></textarea>
           </div>
           <div style={{width: "325px"}}>
             <IncidentList inc_list={incident_list} set_inc_list={setIncidentList}
@@ -2634,7 +2673,7 @@ function Odontograma(props){
         </div><br/>
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
           <button type="button" className="btn btn-success waves-effect waves-themed"
-            onClick={init_od?saveOdontogram:saveInitialOdontogram} title="Asegurate de escribir las observaciones que encuentres">{init_od?"Guardar":"Guardar Odontograma Inicial"}</button>
+            onClick={init_od?saveOdontogram:askSaveInitialOdontogram} title="Asegurate de escribir las observaciones que encuentres">{init_od?"Guardar":"Guardar Odontograma Inicial"}</button>
           <button type="button" className="btn btn-secondary waves-effect waves-themed"
             onClick={()=>changeTeethType()}>Reiniciar</button>
         </div>
@@ -2642,15 +2681,16 @@ function Odontograma(props){
       {!init_od ? ""
         : <InitialOdontogramModal init_od={init_od} />
       }
-      {!init_od ? ""
-        : <EvoLogOdModal />
+      {!init_od || ar_ev_od_log.length==0 ? ""
+        // if there is no init_od or ar_ev_od_log is empty -> do nothing
+        : <EvoLogOdModal evol_od={ar_ev_od_log} />
       }
       {init_od ? ""
         : <ModalCancel
             _id={"modal_save_init_od"}
             _title={"Guardar odontograma inicial"}
             _action_text={"Guardar"}
-            _action_func={saveOdontogram}
+            _action_func={saveInitialOdontogram}
             _body_text={"Una vez guardado el odontograma inicial no puede ser modificado"} />
       }
     </>
@@ -3028,7 +3068,9 @@ function IncidentList(props){
             style={{marginRight: "7px"}}>
             <i className="fal fa-times"></i>
           </button>
-          <span>Diente: </span><b>{inc.diente_inicio?`${inc.diente_inicio} - ${inc.diente}`:inc.diente}</b><span> &nbsp;{inc_functions[inc.type-1]}</span>
+          <div style={{display: "inline-block"}} title={inc.detalle}>
+            <span>Diente: </span><b>{inc.diente_inicio?`${inc.diente_inicio} - ${inc.diente}`:inc.diente}</b><span> &nbsp;{inc_functions[inc.type-1]}</span>
+          </div>
       </div>
     );
   });
@@ -3124,6 +3166,9 @@ function OdontogramaInicial({init_od}){
   const [o_teeth_k, setOTeethK] = useState([])  // Data teeth kid
   const [o_inc_list, setOIncList] = useState([])  // Data teeth kid
   const [o_od_type, setOOdType] = useState(false)  // Current odontogram type
+  // Incidence counter
+  let o_inc_count_a = useRef(0)
+  let o_inc_count_k = useRef(0)
 
   // Flujo incidencias
   const genTeeth = () => {
@@ -3321,6 +3366,11 @@ function OdontogramaInicial({init_od}){
     if(__debug__) console.log("od_inicial: insertIncidencesInTeeth")
     let last_od_type = "1"
     let _o_inc_list = []
+    // Reset teeth incidence counter
+    o_inc_count_a.current = 0
+    o_inc_count_k.current = 0
+    // If there is no incidences to insert
+    if(objs.length == 0) changeOdType('A')  // Set default odontogram type
 
     objs.forEach(inc => {
       /* getTooth from both A&K */
@@ -3356,6 +3406,10 @@ function OdontogramaInicial({init_od}){
         type: Number(inc.type),
         detalle: inc_obj.detalle,
       });
+
+      // Add to teeth counter
+      if(inc.tipo_odontograma=="1") o_inc_count_a.current++
+      else o_inc_count_k.current++
 
       // Fix aside incidences
       if(incident_type.component_beside.includes(inc_obj.type))
@@ -3427,15 +3481,17 @@ function OdontogramaInicial({init_od}){
         height: "530px",
       }}></canvas>
 
-      {/* Lista de inciencias */}
+      {/* SideBar */}
       <div style={{flex: "1 1 0%", paddingLeft: "15px"}}>
         {/* Odontogram type*/}
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
           <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='A'?'active':'')} onClick={()=>changeOdType('A')}>
             <input type="radio" name="odontogram_type" /> Adulto
+            <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{o_inc_count_a.current}</span>
           </label>
           <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='K'?'active':'')} onClick={()=>changeOdType('K')}>
             <input type="radio" name="odontogram_type" /> Infante
+            <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{o_inc_count_k.current}</span>
           </label>
         </div>
         <hr style={{borderBottomWidth: "2px", borderBottomStyle: "solid"}}/> {/* Separator */}
@@ -3462,14 +3518,78 @@ function OdontogramaInicial({init_od}){
   )
 }
 // Evolution odontogram
-function EvoLogOdModal(){
+function EvoLogOdModal({evol_od}){
   return (
     <RegularModalCentered _title={"Registro de evolución"}
       _id={"evologod_modal"}
       _body={
-        "jelou"
+        <EvolutionOdontogramLog evol_od={evol_od} />
       }
       _min_width={"600"} />
+  )
+}
+function EvolutionOdontogramLog({evol_od}){
+  useEffect(() => {
+    if(__debug__) console.log("od_evolucion");
+
+  }, [])
+
+
+  return (
+    <div className="row">
+      <div style={{width: "100%"}}>
+        {/* Incidence log list */}
+        {evol_od.length==0 ? <span style={{fontSize: "1.2em"}}>No hay registros de incidencias</span>
+          : evol_od.map(inc => (
+            <div key={"ev_od_inc-"+inc.pk}>
+              <div className="row no-gutters row-grid align-items-stretch">
+                <div className="col-md">
+                  <div className="p-3">
+                    <div className="d-flex">
+                      <div className="d-inline-flex flex-column">
+                        {/* Nombre */}
+                        <span className="fs-xl text-truncate text-truncate-lg text-info" style={{fontWeight: "bold", whiteSpace: "initial"}}>
+                          {inc_functions[inc.type-1]}
+                        </span>
+                        {/* Fecha */}
+                        <span>Fecha: <i className="text-truncate text-truncate-xl">{inc.fecha}</i></span>
+                        {/* Diente */}
+                        <span>Diente: <span className="text-truncate text-truncate-xl">{inc.start_tooth_key?`${inc.start_tooth_key} - ${inc.diente}`:inc.diente}</span></span>
+                        {/* Log */}
+                        {!inc.log ? ""
+                          : <span>Notacion: <i className="text-truncate text-truncate-xl">{inc.log}</i></span>
+                        }
+                        {/* Estado */}
+                        {inc.state==undefined ? ""
+                          : <span>Estado: <b className="text-truncate text-truncate-xl" style={{color: inc.state?"blue":"red"}}>{inc.state?"Bueno":"Malo"}</b></span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-7">
+                  <div className="p-3">
+                    <div className="d-flex">
+                      <div className="d-inline-flex flex-column">
+                        {/* <span>Detalle:</span> */}
+                        {/* Detalle */}
+                        {inc.detalle && inc.detalle.length!=0
+                          ? (
+                            <span className="mt-1 d-block fs-sm fw-400 text-dark" style={{paddingLeft: "10px",lineBreak: "auto"}}>
+                              {inc.detalle}
+                            </span>
+                          ) : ""}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <hr style={{borderBottomStyle: "solid", marginTop: "5px", marginBottom: "5px"}}/>
+            </div>
+          ))
+        }
+      </div>
+    </div>
   )
 }
 
