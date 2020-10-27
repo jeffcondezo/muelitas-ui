@@ -79,9 +79,11 @@ function Login(props){
                               <span className="page-logo-text mr-1">Muelitas</span>
                             </a>
                         </div>
+                        {/*
                         <a href="page_register.html" className="btn-link text-white ml-auto">
                             Registrate
                         </a>
+                        */}
                     </div>
                 </div>
                 <div className="flex-1">
@@ -94,6 +96,7 @@ function Login(props){
                                         Te presentamos la solución que va a darle un nuevo de nivel de calidad a tu empresa.
                                     </small>
                                 </h2>
+                                {/*
                                 <a href="#" className="fs-lg fw-500 text-white opacity-70">Ver más &gt;&gt;</a>
                                 <div className="d-sm-flex flex-column align-items-center justify-content-center d-md-block">
                                     <div className="px-0 py-1 mt-5 text-white fs-nano opacity-50">
@@ -114,6 +117,7 @@ function Login(props){
                                         </a>
                                     </div>
                                 </div>
+                                */}
                             </div>
                             <div className="col-sm-12 col-md-6 col-lg-5 col-xl-4 ml-auto">
                                 <h1 className="text-white fw-300 mb-3 d-sm-block d-md-none">
@@ -135,9 +139,11 @@ function Login(props){
                                             <div className="col-lg-6 pr-lg-1 my-2">
                                                 <button type="submit" className="btn btn-info btn-block btn-lg" onClick={validateForm}>Ingresar </button>
                                             </div>
+                                            {/*
                                             <div className="col-lg-6 pl-lg-1 my-2">
                                                 <button id="js-login-btn" type="submit" className="btn btn-danger btn-block btn-lg">Olvidé mi contraseña</button>
                                             </div>
+                                            */}
                                         </div>
                                     </form>
                                 </div>

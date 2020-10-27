@@ -99,6 +99,13 @@ export function getUrlSearchAsObj(json=true){
 
   return obj
 }
+export function existInObjectArray(arr, _obj, _atribute){
+  for(let inx in arr){
+    if(_obj[_atribute] == arr[inx][_atribute]) return true
+  }
+  return false
+}
+// API functions
 export async function getDataByPK(end_point, _pk){
   // Get patient data by id
   return fetch(

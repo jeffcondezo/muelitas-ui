@@ -10,7 +10,6 @@ import './Navigation.css';
 import {
   capitalizeFirstLetter as cFL,
   deleteUserLogIn,
-  capitalizeFirstLetter
 } from '../functions'
 import { postCacheData, getCacheData } from './HandleCache';
 
@@ -217,7 +216,7 @@ function SelectComponent(props){
 function AsideLinks(props){
   return (
     <ul id="js-nav-menu" className="nav-menu">
-      <li className="nav-title" style={{color: "#CCC"}}>Principales paginas</li>
+      <li className="nav-title" style={{color: "#CCC"}}>Paginas principales</li>
       {/*
       <li className={props.history.location.pathname==="/nav/home"?"active":""}>
         <Link data-filter-tags="home" to='/nav/home'>
@@ -259,23 +258,13 @@ function Aside(props){
   return (<>
     <aside className="page-sidebar">
       <div className="page-logo">
-          <a href="#" className="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
+          <div className="page-logo-link d-flex align-items-center position-relative">
               <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
               <span className="page-logo-text mr-1">Muelitas</span>
-              <span className="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
-              <i className="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
-          </a>
+          </div>
       </div>
 
       <nav id="js-primary-nav" className="primary-nav" role="navigation">
-        <div className="nav-filter">
-            <div className="position-relative">
-                <input type="text" id="nav_filter_input" placeholder="Filter menu" className="form-control" tabIndex="0" />
-                <a href="#" onClick={e => e.preventDefault()} className="btn-primary btn-search-close js-waves-off" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar">
-                    <i className="fal fa-chevron-up"></i>
-                </a>
-            </div>
-        </div>
         <div className="info-card">
           <img
             src={props.current_sucursal_pk!==-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
@@ -286,20 +275,17 @@ function Aside(props){
             <a href="#" className="d-flex align-items-center text-white">
               <span className="text-truncate text-truncate-sm d-inline-block">
                 {props.user.personal?
-                  capitalizeFirstLetter(props.user.personal.nombre_principal)+" "+capitalizeFirstLetter(props.user.personal.ape_paterno) :
+                  cFL(props.user.personal.nombre_principal)+" "+cFL(props.user.personal.ape_paterno) :
                   "Invitado"
                 }
               </span>
             </a>
             <span className="d-inline-block text-truncate text-truncate-sm"
               title={props.user.personal ? props.user.personal.especialidad : "Administrador"}>
-              {props.user.personal ? capitalizeFirstLetter(props.user.personal.especialidad) : "Administrador"}
+              {props.user.personal ? cFL(props.user.personal.especialidad) : "Administrador"}
             </span>
           </div>
           <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
-          <a href="#" onClick={e => e.preventDefault()} className="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
-            <i className="fal fa-angle-down"></i>
-          </a>
         </div>
 
         <AsideLinks history={props.history} />
@@ -307,6 +293,7 @@ function Aside(props){
         <div className="filter-message js-filter-message bg-success-600"></div>
       </nav>
 
+      {/*
       <div className="nav-footer shadow-top">
         <a href="#" onClick={e => e.preventDefault()} data-action="toggle" data-class="nav-function-minify" className="hidden-md-down">
           <i className="ni ni-chevron-right"></i>
@@ -330,6 +317,7 @@ function Aside(props){
           </li>
         </ul>
       </div>
+      */}
     </aside>
     <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
     </>
@@ -1071,60 +1059,35 @@ function UserSettings(props){
           title={props.current_sucursal_pk!=-1 ? props.user.email : ""}
           className="header-icon d-flex align-items-center justify-content-center ml-2"
         >
-          <img
-            src={props.current_sucursal_pk!=-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
-            className="profile-image rounded-circle"
-            alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
-          />
-          <span className="ml-1 mr-1 text-truncate text-truncate-header hidden-xs-down" style={{fontSize: "1.4em"}}>
-            { props.current_sucursal_pk!=-1 && capitalizeFirstLetter(props.user.personal.nombre_principal)}
+          {/*
+          <span className="rounded-circle"
+            style={{
+              fontSize: "1.7em",
+              lineHeight: "normal",
+              padding: "5px",
+              border: "1px solid gray",
+            }}
+          >
+            {cFL(props.user.personal.nombre_principal[0])+cFL(props.user.personal.ape_paterno[0])}
+          </span>
+          */}
+          <span className="ml-1 mr-1 text-truncate" style={{fontSize: "1.4em", display: "block"}}>
+            { props.current_sucursal_pk!=-1 && cFL(props.user.personal.nombre_principal)+" "+cFL(props.user.personal.ape_paterno)}
           </span>
           <i className="ni ni-chevron-down hidden-xs-down"></i>
         </a>
         <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
-            {/*
-            <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
-              <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
-                <span className="mr-2">
-                  <img
-                    src={props.current_sucursal_pk!=-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
-                    className="rounded-circle profile-image"
-                    alt={props.current_sucursal_pk!=-1 ? props.user.username : "Invitado"}
-                  />
-                </span>
-                <div className="info-card-text">
-                  <div className="fs-lg text-truncate text-truncate-lg">
-                    {props.current_sucursal_pk!=-1 && props.user.username.toUpperCase()}
-                  </div>
-                  <span className="text-truncate text-truncate-md opacity-80">
-                    {props.current_sucursal_pk!=-1 && props.user.email}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="dropdown-divider m-0"></div>
-            <a href="#" className="dropdown-item" data-action="app-reset">
-                <span data-i18n="drpdwn.reset_layout">Reset Layout</span>
-            </a>
-            <a href="#" className="dropdown-item" data-toggle="modal" data-target=".js-modal-settings">
-                <span data-i18n="drpdwn.settings">Settings</span>
-            </a>
-            <a href="#" className="dropdown-item" data-action="app-print">
-                <span data-i18n="drpdwn.print">Print</span>
-                <i className="float-right text-muted fw-n">Ctrl + P</i>
-            </a>
-            */}
-            {/* CHOOSE SUCURSAL */}
+            {/* CHOOSE SUCURSAL
             <ChooseSucursal
               sucursales={props.sucursales}
               current_sucursal_pk={props.current_sucursal_pk}
               changeSucursal={props.changeSucursal} />
-            {/* FIN CHOOSE SUCURSAL*/}
+              */}
             <a href="#" className="dropdown-item" data-action="app-fullscreen">
               <span data-i18n="drpdwn.fullscreen">Pantalla Completa</span>
             </a>
             <a className="dropdown-item fw-500 pt-3 pb-3" onClick={userLogOut}>
-              <span data-i18n="drpdwn.page-logout">Logout</span>
+              <span data-i18n="drpdwn.page-logout">Cerrar sesion</span>
             </a>
         </div>
     </div>
