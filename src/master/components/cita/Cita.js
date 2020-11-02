@@ -9,6 +9,7 @@ import { Icon, SelectOptions_Procedimiento } from '../bits';
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
+  simpleGet,
   simplePostData,
 } from '../../functions';
 
@@ -51,8 +52,7 @@ class Cita extends React.Component {
   }
   // This.props functions
   getPersonal(){
-    // let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
-    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
+    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}", "atencion":"true"}`;
     let url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
     url = url + '?' + filter;
     // Generate promise
@@ -139,35 +139,11 @@ class Cita extends React.Component {
         "estado":"1"
       }`;
     }
-    let url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
-    url = url + '?' + filter;
     // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        this.handleCitaResponse(response_obj);
-      }
+    simpleGet('atencion/cita/?'+filter)
+    .then(
+      res => this.handleCitaResponse(res),
+      error => console.log("getCitas error", error)
     );
   }
   handleCitaResponse(response_object){
