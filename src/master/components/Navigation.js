@@ -1050,7 +1050,7 @@ function PageHeader(props){
 function UserSettings(props){
   const userLogOut = () => {
     deleteUserLogIn()  // Delete token from localstorage
-    window.location.reload()  // Reload page
+    window.location.replace("/")  // Reload page
   }
 
   return (
