@@ -288,34 +288,11 @@ class Cita extends React.Component {
       document.getElementById("pac_sex_m").checked = true;
     }
 
-    let filter = `filtro={"dni":"${dni}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+'atencion/paciente/';
-    url = url + '?' + filter;
     // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
+    simpleGet(`atencion/paciente/?filtro={"dni":"${dni}"}`)
+    .then(
+      response_obj => {  // In case it's ok}
+        // If patient was not found, enable inputs
         if(response_obj.length<1){
           _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
           .map(i => document.getElementById(i).disabled = false)
@@ -330,8 +307,8 @@ class Cita extends React.Component {
         document.getElementById("pac_ape_pat").value = response_obj[0].ape_paterno;
         document.getElementById("pac_ape_mat").value = response_obj[0].ape_materno;
         document.getElementById("pac_celular").value = response_obj[0].celular;
-        document.getElementById("pac_sex_m").value = response_obj[0].sexo == '1' ? "1" : "0"
-        document.getElementById("pac_sex_f").value = response_obj[0].sexo == '1' ? "0" : "1"
+        document.getElementById("pac_sex_m").checked = response_obj[0].sexo == '1'
+        document.getElementById("pac_sex_f").checked = response_obj[0].sexo != '1'
         document.getElementById("pac_permiso_sms").value = response_obj[0].permiso_sms ? "1" : "0"
         // Disable inputs
         _tmp = ["pac_pk", "pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular", "pac_sex_m", "pac_sex_f"]
