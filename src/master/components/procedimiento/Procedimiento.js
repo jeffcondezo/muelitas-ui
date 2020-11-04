@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from "react-router-dom";
-import { handleErrorResponse, getDataByPK, simplePostData } from '../../functions';
+import {
+  indexOfInObjectArray,
+  handleErrorResponse,
+  getDataByPK,
+  simplePostData
+} from '../../functions';
 import { PageTitle, SelectOptions_Procedimiento } from '../bits';
 
 // Constant
@@ -29,6 +34,7 @@ const Procedimiento = props => {
     let data = {}
     data.procedimiento = document.getElementById('procedimiento').value;
     data.observaciones = document.getElementById('observaciones').value;
+    data.precio = document.getElementById('cost').value;
     data.dues = document.getElementById('dues').value;
     data.pay_today = document.getElementById('pay_today').checked;
     data.payment_period = document.getElementById('payment_period').value;
@@ -128,6 +134,13 @@ const ProcedimientoForm = props => {
       document.getElementById("pay_today").disabled = false;
     }
   }
+  function handleProcedureChange(el){
+    let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
+    if(inx==-1) return
+
+    // Update coste
+    window.document.getElementById('cost').value = procedures[inx].precio
+  }
 
   useEffect(() => {
     getProcedures(props.sucursal_pk);
@@ -147,31 +160,37 @@ const ProcedimientoForm = props => {
     }
   }, [procedures]);
 
+  console.log("procedure", procedure);
   return !procedures
     ? "loading"
     : (
       <div>
-        <div className="col-sm">
+        <div className="col-sm" style={{marginBottom: "10px"}}>
           <label className="form-label" htmlFor="programado">Programado: </label>
           <select className="custom-select form-control custom-select-lg"
-            id="procedimiento" defaultValue={procedure?procedure.procedimiento:""} >
+            id="procedimiento" defaultValue={procedure?procedure.procedimiento:procedures[0].procedimiento}
+            onChange={e => handleProcedureChange(e.target)} >
             <SelectOptions_Procedimiento procedimientos={procedures} />
           </select>
         </div>
-        <br/>
-        <div className="col-sm">
+        <div className="col-sm" style={{marginBottom: "10px"}}>
           <label className="form-label" htmlFor="observaciones">Observaciones</label>
           <textarea className="form-control" id="observaciones" rows="5" defaultValue={procedure?procedure.observaciones:""} ></textarea>
         </div>
-        <br/>
-        <div className="col-sm">
-          <label className="form-label" htmlFor="dues">N° de cuotas</label>
-          <input type="number" className="form-control custom-select-lg" id="dues"
-            min="0" max="36" onChange={(e) => handlePeriodChange(e.target)}
-            defaultValue={procedure?procedure.dues:"0"} />
+        <div className="row col-sm">
+          <div className="col-md-6" style={{marginBottom: "10px"}}>
+            <label className="form-label" htmlFor="cost">Coste</label>
+            <input type="number" className="form-control custom-select-lg" id="cost"
+              min="0" defaultValue={procedure?procedure.precio_base:procedures[0].precio} />
+          </div>
+          <div className="col-md-6" style={{marginBottom: "10px"}}>
+            <label className="form-label" htmlFor="dues">N° de cuotas</label>
+            <input type="number" className="form-control custom-select-lg" id="dues"
+              min="0" max="36" onChange={(e) => handlePeriodChange(e.target)}
+              defaultValue={procedure?procedure.dues:"0"} />
+          </div>
         </div>
-        <br/>
-        <div className="col-sm">
+        <div className="col-sm" style={{marginBottom: "10px"}}>
           <label className="form-label" htmlFor="payment_period">Periodo de pago</label>
           <select className="custom-select form-control custom-select-lg" id="payment_period">
             <option value="0">Sin cuotas</option>
@@ -182,7 +201,6 @@ const ProcedimientoForm = props => {
             <option value="6">6 meses</option>
           </select>
         </div>
-        <br/>
         <div className="col-sm">
           <div className="custom-control custom-checkbox">
             <input type="checkbox" className="custom-control-input" id="pay_today" />

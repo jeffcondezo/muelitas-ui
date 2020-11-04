@@ -99,6 +99,12 @@ export function getUrlSearchAsObj(json=true){
 
   return obj
 }
+export function indexOfInObjectArray(arr, _atribute, _val){
+  for(let inx in arr){
+    if(arr[inx][_atribute] == _val) return inx
+  }
+  return -1
+}
 export function existInObjectArray(arr, _obj, _atribute){
   for(let inx in arr){
     if(_obj[_atribute] == arr[inx][_atribute]) return true

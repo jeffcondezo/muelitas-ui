@@ -751,7 +751,7 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
               <td style={style.pad_left}>
                 <input
                   type="number" id={"pay-amount-"+dcc.pk} className="form-control form-control-sm"
-                  disabled={!existInObjectArray(selected, dcc, 'pk')} min="1" max={dcc.deuda}
+                  disabled={!existInObjectArray(selected, dcc, 'pk')} min="0" max={dcc.deuda}
                   onChange={ev => onPayAmountChange(ev.target, dcc)}
                 />
               </td>

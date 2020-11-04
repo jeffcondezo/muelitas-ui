@@ -563,7 +563,7 @@ const AttentionProcedures = props => {
       }, () => handleErrorResponse('server'));  // Print server error
     });
     result.then(
-      response_obj => {  // In case it's ok
+      () => {  // In case it's ok
         // Delete item from DOM
         document.getElementById(delete_proc_pk.current).parentElement.remove();
         // Reset delete_proc_pk val
