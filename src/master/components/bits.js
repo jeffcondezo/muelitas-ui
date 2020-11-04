@@ -39,7 +39,7 @@ export const Icon = props => {
           </svg>
       </a>
     ); break;
-    case "admision": el.push(  // Atención
+    case "admision": el.push(  // Admision
       <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
         title="Admision" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
@@ -111,7 +111,7 @@ export const Icon = props => {
     ); break;
     case "add": el.push(  // Agregar
       <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Historia Clinica" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg xmlns="http://www.w3.org/2000/svg" version="1.0" viewBox="0 0 512.000000 512.000000" style={{width: "100%"}}>
@@ -124,7 +124,7 @@ export const Icon = props => {
     ); break;
     case "edit": el.push(  // Edit
       <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Editar" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg viewBox="0 0 24 24" style={{width: "100%"}}>
@@ -134,7 +134,7 @@ export const Icon = props => {
     ); break;
     case "trash": el.push(  // Trash
       <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Editar" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg viewBox="0 0 24 24" style={{width: "100%"}}>

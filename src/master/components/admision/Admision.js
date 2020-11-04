@@ -528,8 +528,8 @@ const PatientDebts = props => {
       </div>
     </div>
   )
-} /**/
-const LinksDetail = props => {
+}
+const LinksDetail = ({patient, redirectTo}) => {
   // WARNING: This component strongly depends on it's props
   return (
     <div className="card col-12" style={{padding: "0px"}}>
@@ -539,24 +539,30 @@ const LinksDetail = props => {
         </div>
       </div>
       <div className="card-body">
-        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="edit-patient"
-            onClick={() => props.redirectTo(`/nav/admision/${props.patient.pk}/editar`, {patient: props.patient})} />
+            onClick={() => redirectTo(`/nav/admision/${patient.pk}/editar`, {patient: patient})} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
-        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="clinic-history"
-            onClick={() => props.redirectTo(`/nav/historiaclinica/${props.patient.pk}/`, {patient_pk: props.patient.pk})} />
+            onClick={() => redirectTo(`/nav/historiaclinica/${patient.pk}/`, {patient_pk: patient.pk})} />
           <span style={{fontSize: "0.9rem"}}>Historia</span>
         </div>
-        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="finance"
-            onClick={() => props.redirectTo(`/nav/cobranza/${props.patient.pk}/detalle`, {patient: props.patient})} />
+            onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/detalle`, {patient: patient})} />
           <span style={{fontSize: "0.9rem"}}>Cobrar</span>
+        </div>
+        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="add" onClick={() => redirectTo('/nav/cita/', {
+            patient_dni: patient.dni
+          })} />
+          <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="plandetrabajo"
-            onClick={() => props.redirectTo(`/nav/plandetrabajo/${props.patient.pk}/`, {patient: props.patient})} />
+            onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/`, {patient: patient})} />
           <span style={{fontSize: "0.9rem"}}>Plan de trabajo</span>
         </div>
       </div>

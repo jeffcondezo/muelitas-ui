@@ -625,6 +625,10 @@ class Cita extends React.Component {
     this.setState(clone, this.getCitas);
   }
   fillDataFromRedirect = () => {
+    console.log("fillDataFromRedirect");
+    /* redirect_data.selected
+    * procedures are added through the SelectProcedimiento component
+    */
     // Set patient data
     this.getPaciente(this.redirect_data.patient_dni)
     // Open modal
