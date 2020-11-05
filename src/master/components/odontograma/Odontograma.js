@@ -2614,7 +2614,14 @@ function Odontograma({role, redirectTo}){
     .then(response => {
       if(__debug__) console.log("getInitialOdontogram: response", response);
       // If response is false then there is no initial odontogram
-      if(!response) if(__debug__) console.log("getInitialOdontogram: no initial odontogram");
+      if(!response){
+        if(__debug__) console.log("getInitialOdontogram: no initial odontogram");
+        if(role=="init"){
+          // NOTE: En desarrollo ***
+          alert("Funcion aún en desarrollo:\nSi el PACIENTE AÚN NO TIENE UN ODONTOGRAMA INICIAL por favor ingrese al odontograma desde una cita")
+          redirectTo(`/nav/admision/${_pac_pk}/detalle`)
+        }
+      }
 
       // Set response as initial odontogram
       setInitOd(response)
@@ -2622,10 +2629,6 @@ function Odontograma({role, redirectTo}){
   }
   const getEvolutionOdontogram = _pac_pk => {
     return simpleGet(`atencion/paciente/${_pac_pk}/odontograma/evolucion/`)
-  }
-  const askSaveInitialOdontogram = () => {
-    // Show alert
-    window.$("#modal_save_init_od").modal("show")
   }
   // Evolution odontogram
   const getEvolutionLog = _pac_pk => {
