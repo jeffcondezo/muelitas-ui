@@ -17,7 +17,7 @@ import { postCacheData, getCacheData } from './HandleCache';
 import Admision from './admision/Admision';
 import Cita from './cita/Cita';
 import Atencion from './atencion/Atencion';
-import Odontograma from './odontograma/Odontograma';
+import OdontogramaNavigation from './odontograma/Odontograma';
 import Procedimiento from './procedimiento/Procedimiento';
 import Prescripcion from './prescripcion/Prescripcion';
 import HistoriaClinica from './historia/Historia';
@@ -180,10 +180,10 @@ function SelectComponent(props){
         </Route>
 
         {/* Components accessed only by redirect */}
-        <Route exact path="/nav/odontograma/:cita_pk/">
-          <Odontograma redirectTo={props.redirectTo} />
+        <Route path="/nav/odontograma/">
+          <OdontogramaNavigation redirectTo={props.redirectTo} />
         </Route>
-        <Route path="/nav/procedimiento/:pk/:action/">
+        <Route exact path="/nav/procedimiento/:pk/:action/">
           <Procedimiento
             sucursal_pk={props.current_sucursal_pk}
             redirectTo={props.redirectTo} />

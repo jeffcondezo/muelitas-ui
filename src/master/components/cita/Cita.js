@@ -7,6 +7,7 @@ import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 import { Icon, SelectOptions_Procedimiento } from '../bits';
 import {
+  getPatientFullName,
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   simpleGet,
@@ -155,9 +156,10 @@ class Cita extends React.Component {
     _calendar.removeAllEvents()  // Remove current events in fullcalendar
 
     // Set event
+    console.log(response_object);
     response_object.forEach((v) => {
       let _data = {};
-      _data.title = v.programado;
+      _data.title = getPatientFullName(v.paciente_data).toUpperCase()+" - "+v.programado;
       _data.info = v;
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
@@ -217,6 +219,7 @@ class Cita extends React.Component {
         },
       },
       eventColor: 'tomato',  // Default event color
+      displayEventTime: false,
     });
 
     // Handle calendar, citas and personal
@@ -929,7 +932,6 @@ function InfoCita(props){
   const [annulCita, setAnnulCita] = useState({toCheck: false, show: false});
   useEffect(()=>{  // To call after render
     if(annulCita.show===true){  // Show annulCita modal
-      console.log('xxxx1');
       window.$('#modal_ver_cita').data('bs.modal')._config.backdrop = true;
       window.$('#modal_ver_cita').data('bs.modal')._config.keyboard = true;
       window.$('#modal_ver_cita').modal('show');

@@ -539,27 +539,38 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
       </div>
       <div className="card-body">
-        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
+        {/* editar */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="edit-patient"
             onClick={() => redirectTo(`/nav/admision/${patient.pk}/editar`, {patient: patient})} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
-        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="clinic-history"
-            onClick={() => redirectTo(`/nav/historiaclinica/${patient.pk}/`, {patient_pk: patient.pk})} />
-          <span style={{fontSize: "0.9rem"}}>Historia</span>
-        </div>
-        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="finance"
-            onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/detalle`, {patient: patient})} />
-          <span style={{fontSize: "0.9rem"}}>Cobrar</span>
-        </div>
-        <div className="col-2" style={{display: "inline-block", textAlign: "center"}}>
+        {/* cita */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="add" onClick={() => redirectTo('/nav/cita/', {
             patient_dni: patient.dni
           })} />
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
+        {/* odontograma */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="odontogram" onClick={() => redirectTo(`/nav/odontograma/${patient.pk}/evolucion/`)} />
+          <span style={{fontSize: "0.9rem"}}>Odont.</span>
+        </div>
+        {/* cobrar */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="finance"
+            onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/detalle`, {patient: patient})} />
+          <span style={{fontSize: "0.9rem"}}>Cobrar</span>
+        </div>
+        {/* Separador*/} <div style={{width:"100%", height:"20px"}}></div>
+        {/* historia */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="clinic-history"
+            onClick={() => redirectTo(`/nav/historiaclinica/${patient.pk}/`, {patient_pk: patient.pk})} />
+          <span style={{fontSize: "0.9rem"}}>Historia</span>
+        </div>
+        {/* pdt */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="plandetrabajo"
             onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/`, {patient: patient})} />
