@@ -368,7 +368,7 @@ class Cita extends React.Component {
 
     // Validate dni & time
     let _dni = document.getElementById("pac_dni").value;
-    if(String(parseInt(_dni)).length!==8){
+    if(String(_dni).length!==8){
       this.errorForm("El dni no contiene 8 digitos");  // Show form error
       return;  // Skip function
     }
