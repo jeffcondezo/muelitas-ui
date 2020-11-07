@@ -65,46 +65,6 @@ const Prescripcion = props => {
   const getBack = () => {
     props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita});
   }
-  const finishCita = () => {
-    let data = {};
-    data['estado'] = '5';
-
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita.pk}/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
-        body: JSON.stringify(data)  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handleErrorResponse("permission");
-          }else{
-            reject(response.statusText)
-          }
-        }
-      }, error => {
-        this.handleErrorResponse("server");
-      });
-    });
-    result.then(
-      res => {
-        handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success")
-        // props.redirectTo(`/nav/atencion/${}/detalle`);
-        window.history.back()
-      },
-      er => handleErrorResponse("custom", "Ups!","Un error ha ocurrido")
-    );
-  }
 
   useEffect(() => {
     // Si props no recibe cita
@@ -119,9 +79,6 @@ const Prescripcion = props => {
   : (
   <>
     <PageTitle title={"Prescripción"} />
-    <div id="alert-info" className="alert bg-info-700" role="alert">
-      <strong id="alert-headline">Ojo</strong> <span id="alert-text">Al guardar la receta se finalizará la atención</span>.
-    </div>
 
     <div className="row">
       <div className="col-lg-8">
@@ -142,14 +99,9 @@ const Prescripcion = props => {
 
         </div>
         <div className="position-absolute pos-bottom">
-          {cita.estado==5
-            ? <button className="btn btn-primary" onClick={() => getBack()}>
-                Regresar
-              </button>
-            : <button className="btn btn-primary" onClick={() => finishCita()}>
-                FINALIZAR ATENCION
-              </button>
-          }
+          <button className="btn btn-primary" onClick={() => getBack()}>
+            Regresar
+          </button>
         </div>
       </div>
     </div>

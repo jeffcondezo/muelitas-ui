@@ -142,6 +142,14 @@ export const Icon = props => {
           </svg>
       </a>
     ); break;
+    case "check": el.push(  // Check
+      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
+        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px", fontSize: "2.1em"}}>
+          <i className="fal fa-check-circle"></i>
+      </a>
+    ); break;
     default: break;
   }
 

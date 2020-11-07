@@ -258,7 +258,11 @@ const AttentionDetail = (props) => {
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
-            <Links paciente_data={cita.paciente_data} redirectTo={redirect} cita_pk={cita.pk} />
+            <Links
+              paciente_data={cita.paciente_data}
+              cita={cita}
+              getCita={() => getCita(cita.pk)}
+              redirectTo={redirect} />
           </div>
           <div className="panel">
             <PatientAttentionHistory
@@ -653,7 +657,22 @@ const AlertModal = props => {
     </div>
   )
 }
-const Links = props => {
+const Links = ({paciente_data, cita, getCita, redirectTo}) => {
+  const finishCita = () => {
+    let data = {estado: '5'}
+
+    simplePostData(`atencion/cita/anular/${cita.pk}/`, data, "PUT")
+    .then(
+      () => {
+        handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success")
+        // Actualizar registro de cita
+        getCita()
+      },
+      () => handleErrorResponse("custom", "Ups!","Un error ha ocurrido, por favor intentelo en unos minutos")
+    )
+  }
+
+  console.log(cita);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -663,23 +682,30 @@ const Links = props => {
       </div>
       <div className="card-body">
         <div className="card-title">
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
             <Icon type="admision"
-              onClick={() => props.redirectTo(`/nav/admision/${props.paciente_data.pk}/detalle`, {patient: props.paciente_data})} /><br/>
+              onClick={() => redirectTo(`/nav/admision/${paciente_data.pk}/detalle`, {patient: paciente_data})} /><br/>
             <span style={{fontSize: "0.9rem"}}>Admision</span>
           </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="odontogram" onClick={() => props.redirectTo(`/nav/odontograma/${props.cita_pk}/`)} /><br/>
+          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
+            <Icon type="odontogram" onClick={() => redirectTo(`/nav/odontograma/${cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
           </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="procedure" onClick={() => props.redirectTo(`/nav/procedimiento/${props.cita_pk}/agregar/`)} /><br/>
+          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
+            <Icon type="procedure" onClick={() => redirectTo(`/nav/procedimiento/${cita.pk}/agregar/`)} /><br/>
             <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
           </div>
-          <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-            <Icon type="prescription" onClick={() => props.redirectTo(`/nav/prescripcion/${props.cita_pk}/`)} /><br/>
+          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
+            <Icon type="prescription" onClick={() => redirectTo(`/nav/prescripcion/${cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Receta</span>
           </div>
+          {cita.estado!="5"
+            ? (
+              <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
+                <Icon type="check" onClick={finishCita} /><br/>
+                <span style={{fontSize: "0.9rem"}}>Finalizar</span>
+              </div>
+            ) : ""}
         </div>
       </div>
     </div>
