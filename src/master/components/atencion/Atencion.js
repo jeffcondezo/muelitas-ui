@@ -28,6 +28,7 @@ function Atencion(props){
         <AttentionDetail
           sucursal_pk={props.sucursal_pk}
           cita={props.data.cita}
+          no_programado={props.data.no_programado}
           redirectTo={props.redirectTo} />
       </Route>
 
@@ -301,16 +302,16 @@ const CitaData = props => {
           <b>Fecha y hora: </b>
           {props.cita.fecha} <code>{props.cita.hora.slice(0, 5)} - {props.cita.hora_fin.slice(0, 5)}</code>
         </h6>
-        <h6>
-          <b>Personal de atención: </b>
-          {cFL(props.cita.personal.ape_paterno)+" "+cFL(props.cita.personal.ape_materno)
-            +", "+cFL(props.cita.personal.nombre_principal)+
-            (props.cita.personal.nombre_secundario?" "+cFL(props.cita.personal.nombre_secundario):"")}
-        </h6>
-        <h6>
-          <b>Indicaciones: </b>
-          {cFL(props.cita.indicaciones)}
-        </h6>
+        {props.cita.personal
+          ? (
+            <h6>
+              <b>Personal de atención: </b>
+              {cFL(props.cita.personal.ape_paterno)+" "+cFL(props.cita.personal.ape_materno)
+                +", "+cFL(props.cita.personal.nombre_principal)+
+                (props.cita.personal.nombre_secundario?" "+cFL(props.cita.personal.nombre_secundario):"")}
+            </h6>
+          ) : ""
+        }
         <h6>
           <b>Estado: </b>
           {props.cita.estado==1
@@ -366,11 +367,6 @@ const PatientAttentionHistory = props => {
       }
     );
   }
-  const redirectToAttentionDetail = _cita => {
-    if(_cita.pk == props.cita.pk) return
-
-    props.redirectTo(`/nav/atencion/${_cita.pk}/detalle`, {cita: _cita});
-  }
 
   // Run at first render
   useEffect(() => {
@@ -391,7 +387,6 @@ const PatientAttentionHistory = props => {
           {attention_list.length>0 ? attention_list.map((i) => {return(
             <div key={"inc_list_"+i.pk}
               style={{cursor: "pointer"}}
-              //onClick={()=>redirectToAttentionDetail(i)}
               >
                 <span>{i.fecha} <b>{i.programado}</b></span>
             </div>

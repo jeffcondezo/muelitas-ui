@@ -219,10 +219,12 @@ const HistoriaCitaList = props => {
                     </td>
                     {/* PERSONAL */}
                     <td>
-                      {
-                        cFL(cita.personal.nombre_principal)+" "+
-                        cFL(cita.personal.ape_paterno)+" "+
-                        cFL(cita.personal.ape_materno)
+                      {cita.personal
+                        ? (
+                          cFL(cita.personal.nombre_principal)+" "+
+                          cFL(cita.personal.ape_paterno)+" "+
+                          cFL(cita.personal.ape_materno)
+                        ) : "No programado"
                       }
                     </td>
                     <td>
