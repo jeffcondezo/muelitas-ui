@@ -28,7 +28,11 @@ function Atencion(props){
         <AttentionDetail
           sucursal_pk={props.sucursal_pk}
           cita={props.data.cita}
-          no_programado={props.data.no_programado}
+          redirectTo={props.redirectTo} />
+      </Route>
+      <Route exact path="/nav/atencion/:pac_pk/atender">
+        <AtenderPaciente
+          sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
 
@@ -251,7 +255,7 @@ const AttentionDetail = (props) => {
       <div className="row">
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
-            <CitaData cita={cita} />
+            <CitaData cita={cita} redirectTo={props.redirectTo} />
           </div>
           <div className="panel">
             <AttentionProcedures cita={cita} redirectTo={props.redirectTo} />
@@ -260,7 +264,6 @@ const AttentionDetail = (props) => {
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
             <Links
-              paciente_data={cita.paciente_data}
               cita={cita}
               getCita={() => getCita(cita.pk)}
               redirectTo={redirect} />
@@ -278,7 +281,11 @@ const AttentionDetail = (props) => {
       </div>
     );
 }
-const CitaData = props => {
+const CitaData = ({cita,  redirectTo}) => {
+  const redirectToPatient = () => {
+    redirectTo(`/nav/admision/${cita.paciente_data.pk}/detalle`)
+  }
+
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -289,36 +296,41 @@ const CitaData = props => {
       <div className="card-body">
         <h6>
           <b>Paciente: </b>
-          {cFL(props.cita.paciente_data.ape_paterno)+" "+cFL(props.cita.paciente_data.ape_materno)
-            +", "+cFL(props.cita.paciente_data.nombre_principal)+
-            (props.cita.paciente_data.nombre_secundario?" "+cFL(props.cita.paciente_data.nombre_secundario):"")}&nbsp;
-          <code>{props.cita.paciente_data.dni}</code>
+          <span
+            onClick={redirectToPatient}
+            style={{cursor: "pointer", color: "blue"}}
+          >
+            {cFL(cita.paciente_data.ape_paterno)+" "+cFL(cita.paciente_data.ape_materno)
+            +", "+cFL(cita.paciente_data.nombre_principal)+
+            (cita.paciente_data.nombre_secundario?" "+cFL(cita.paciente_data.nombre_secundario):"")}
+          </span>
+          &nbsp;<code>{cita.paciente_data.dni}</code>
         </h6>
         <h6>
           <b>Programado: </b>
-          {cFL(props.cita.programado)}
+          {cFL(cita.programado)}
         </h6>
         <h6>
           <b>Fecha y hora: </b>
-          {props.cita.fecha} <code>{props.cita.hora.slice(0, 5)} - {props.cita.hora_fin.slice(0, 5)}</code>
+          {cita.fecha} <code>{cita.hora.slice(0, 5)} - {cita.hora_fin.slice(0, 5)}</code>
         </h6>
-        {props.cita.personal
+        {cita.personal
           ? (
             <h6>
               <b>Personal de atención: </b>
-              {cFL(props.cita.personal.ape_paterno)+" "+cFL(props.cita.personal.ape_materno)
-                +", "+cFL(props.cita.personal.nombre_principal)+
-                (props.cita.personal.nombre_secundario?" "+cFL(props.cita.personal.nombre_secundario):"")}
+              {cFL(cita.personal.ape_paterno)+" "+cFL(cita.personal.ape_materno)
+                +", "+cFL(cita.personal.nombre_principal)+
+                (cita.personal.nombre_secundario?" "+cFL(cita.personal.nombre_secundario):"")}
             </h6>
           ) : ""
         }
         <h6>
           <b>Estado: </b>
-          {props.cita.estado==1
+          {cita.estado==1
             ? "Cita"
-            : props.cita.estado==4
+            : cita.estado==4
             ? "Paciente no se presento"
-            : props.cita.estado==5
+            : cita.estado==5
             ? "Atendido"
             : "Cancelado"}
         </h6>
@@ -652,7 +664,7 @@ const AlertModal = props => {
     </div>
   )
 }
-const Links = ({paciente_data, cita, getCita, redirectTo}) => {
+const Links = ({cita, getCita, redirectTo}) => {
   const finishCita = () => {
     let data = {estado: '5'}
 
@@ -667,7 +679,6 @@ const Links = ({paciente_data, cita, getCita, redirectTo}) => {
     )
   }
 
-  console.log(cita);
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -677,11 +688,6 @@ const Links = ({paciente_data, cita, getCita, redirectTo}) => {
       </div>
       <div className="card-body">
         <div className="card-title">
-          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
-            <Icon type="admision"
-              onClick={() => redirectTo(`/nav/admision/${paciente_data.pk}/detalle`, {patient: paciente_data})} /><br/>
-            <span style={{fontSize: "0.9rem"}}>Admision</span>
-          </div>
           <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
             <Icon type="odontogram" onClick={() => redirectTo(`/nav/odontograma/${cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
@@ -761,6 +767,46 @@ const GDriveFile = ({file, deleteFile}) => {
       </div>
     </div>
   )
+}
+
+const AtenderPaciente = ({sucursal_pk, redirectTo}) => {
+  let __params__ = useParams()
+  let [cita, setCita] = useState(false)
+
+  const getUnfinishedANP = (pac_pk, _sucursal_pk) => {
+    if(__debug__) console.log("AtenderPaciente getUnfinishedANP")
+    simplePostData(`atencion/noprogramado/unfinished/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
+    .then(
+      res => {
+        if(__debug__) console.log("AtenderPaciente getUnfinishedANP res:", res)
+        if(!res){
+          if(__debug__) console.log("AtenderPaciente: no hay una ANP sin finalizar")
+          if(__debug__) console.log("AtenderPaciente: crear una ANP")
+          createANP(pac_pk, _sucursal_pk)
+        }else setCita(res)
+      }
+    )
+  }
+  const createANP = (pac_pk, _sucursal_pk) => {
+    if(__debug__) console.log("AtenderPaciente createANP")
+    simplePostData(`atencion/noprogramado/create/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
+    .then(
+      res => {
+        if(__debug__) console.log("AtenderPaciente createANP res:", res)
+        setCita(res)
+      }
+    )
+  }
+
+  useEffect(() => {
+    if(__debug__) console.log("AtenderPaciente useEffect")
+
+    getUnfinishedANP(__params__.pac_pk, sucursal_pk)
+  }, [])
+
+  return !cita
+    ? "loading"
+    : <Redirect to={`/nav/atencion/${cita.pk}/detalle`} />
 }
 
 export default Atencion;

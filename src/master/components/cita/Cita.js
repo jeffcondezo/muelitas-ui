@@ -132,12 +132,14 @@ class Cita extends React.Component {
       filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
         "estado":"1",
+        "programado":"1",
         "personal":"${String(this.state.calendar_filter)}"
       }`;
     }else{  // Regular filter
       filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
-        "estado":"1"
+        "estado":"1",
+        "programado":"1",
       }`;
     }
     // Generate promise

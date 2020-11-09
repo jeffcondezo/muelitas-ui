@@ -8,7 +8,6 @@ import {
   useParams,
 } from "react-router-dom";
 import {
-  simplePostData,
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   getDataByPK,
@@ -359,7 +358,6 @@ const AdmisionDetail = props => {
           <div className="panel">
             <LinksDetail
               patient={patient}
-              sucursal_pk={props.sucursal_pk}
               redirectTo={props.redirectTo} />
           </div>
           <div className="panel">
@@ -531,13 +529,8 @@ const PatientDebts = props => {
     </div>
   )
 }
-const LinksDetail = ({patient, sucursal_pk, redirectTo}) => {
+const LinksDetail = ({patient, redirectTo}) => {
   // WARNING: This component strongly depends on it's props
-  const postAtender = () => {
-    simplePostData(`atencion/noprogramado/`, {paciente_pk: patient.pk, sucursal_pk: sucursal_pk})
-    .then(cita => redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita, no_programado: true}))
-  }
-
   return (
     <div className="card col-12" style={{padding: "0px"}}>
       <div className="card-header">
@@ -585,7 +578,7 @@ const LinksDetail = ({patient, sucursal_pk, redirectTo}) => {
         </div>
         {/* atender */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="add" onClick={postAtender} />
+          <Icon type="add" onClick={() => redirectTo(`/nav/atencion/${patient.pk}/atender`)} />
           <span style={{fontSize: "0.9rem"}}>Atender</span>
         </div>
       </div>
