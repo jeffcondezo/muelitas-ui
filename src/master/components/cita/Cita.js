@@ -139,7 +139,7 @@ class Cita extends React.Component {
       filter = `filtro={
         "sucursal":"${this.state.global.current_sucursal_pk}",
         "estado":"1",
-        "programado":"1",
+        "programado":"1"
       }`;
     }
     // Generate promise
