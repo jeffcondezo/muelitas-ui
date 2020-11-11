@@ -800,7 +800,8 @@ class Cita extends React.Component {
         annulCita={this.annulCita}
         addAttention={this.addAttention}
         addOdontograma={this.addOdontograma}
-        addProcedure={this.addProcedure} />
+        addProcedure={this.addProcedure}
+        redirectTo={this.redirectTo} />
 
       {/* CALENDAR */}
       <div id="calendar">
@@ -995,6 +996,9 @@ function InfoCita(props){
             </div>
             <div className="modal-body" id="cita-info-form">
               <h6>
+                {/*
+                  <b>Paciente:</b> <span onClick={() => props.redirectTo(`/nav/admision/${props.cita.paciente_data.pk}/detalle`)} style={{color: "blue"}}>{_pac_nombre}</span>
+                  */}
                 <b>Paciente:</b> {_pac_nombre}
               </h6>
               <h6>

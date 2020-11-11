@@ -8,6 +8,8 @@ import {
   useParams,
 } from "react-router-dom";
 import {
+  simpleGet,
+  simplePostData,
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   getDataByPK,
@@ -586,252 +588,159 @@ const LinksDetail = ({patient, redirectTo}) => {
   );
 }
 // Extra
-const EditPatient = props => {
+const EditPatient = () => {
   let __params__ = useParams();
   // Receive {patient, redirectTo, sucursal_pk}
 
-  const [patient, updatePatientData] = useState(props.patient||false);
+  const [patient, updatePatientData] = useState(false);
+  const [antecedente, setAntecedente] = useState(false);
 
-  const saveEdit = (_data, _patient_pk) => {
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${_patient_pk}/`;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(_data)
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
+  const saveEdit = () => {
+    let _data = validatePatientForm()
+    console.log("_data", _data);
+    if(!_data) return
+
+    simplePostData(`atencion/paciente/${patient.pk}/`, _data, "PUT")
+    .then(
       response_obj => {
-        updatePatientData(response_obj);
+        updatePatientData(response_obj)
+        saveEditAntecedents()
+        // handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
+      },
+      error => console.log("WRONG!", error)
+    )
+  }
+  const saveEditAntecedents = () => {
+    let _data = validatePatientAntecedentsForm()
+    _data.paciente = patient.pk
+    if(__debug__) console.log("saveEditAntecedents _data", _data);
+    if(!_data) return
+
+    simplePostData(`atencion/paciente/${antecedente.paciente}/antecedentes/`, _data, "PUT")
+    .then(
+      response_obj => {
+        setAntecedente(response_obj)
         handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
       },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
+      error => console.log("WRONG!", error)
+    )
   }
   const getBack = () => {
     window.history.back()
   }
 
   useEffect(() => {
-    if(!patient){
-      // Get patient by id
-      getDataByPK('atencion/paciente', __params__.patient_pk)
-      .then(updatePatientData)
-    }
+    // Get patient by id
+    getDataByPK('atencion/paciente', __params__.patient_pk)
+    .then(
+      res => {
+        console.log("EditPatient useEffect res", res);
+        if(!res) getBack()
+        updatePatientData(res)
+      }
+    )
+    // Get patients antecedent
+    simpleGet(`atencion/paciente/${__params__.patient_pk}/antecedentes/`)
+    .then(
+      res => {
+        console.log("EditPatient useEffect res", res);
+        setAntecedente(res)
+      }
+    )
   }, []);
 
   return !patient
     ? "loading"
-    : <PatientForm
-        patient={patient}
-        first_button_text={"Guardar"}
-        handleSubmit={saveEdit}
-        second_button_text={"Regresar"}
-        secondButtonHandler={getBack} />
+    : (
+      <div>
+        <PatientForm patient={patient} />
+        <PatientAntecedentsForm antecedente={antecedente} />
+
+        {/* Form buttons */}
+        <div className="form-group d-flex">
+          <button className="btn btn-primary" onClick={saveEdit}>
+            Guardar
+          </button>
+
+          <button className="btn btn-light ml-auto" onClick={getBack}>
+            Regresar
+          </button>
+        </div>
+      </div>
+    )
 }
 const RegisterPatient = props => {
   // Receive {sucursal_pk, redirectTo}
   if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED");
 
-  const savePatient = (_data) => {
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/`;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(_data)
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
+  const savePatient = () => {
+    let _data = validatePatientForm()
+    if(__debug__) console.log("savePatient _data", _data)
+    if(!_data) return
+
+    simplePostData(`atencion/paciente/`, _data)
+    .then(
       response_obj => {
-        console.log(response_obj);
-        // Redirect to AdmisionDetail
-        props.redirectTo(`/nav/admision/${response_obj.pk}/detalle`, {patient: response_obj});
+        if(__debug__) console.log("RegisterPatient savePatient", response_obj)
+        // Save patient's antecedents
+        savePatientAntecedents(response_obj)
       },
       error => {
         console.log("WRONG!", error);
       }
     );
+  }
+  const savePatientAntecedents = (patient) => {
+    let _data = validatePatientAntecedentsForm()
+    _data.paciente = patient.pk
+    if(__debug__) console.log("savePatientAntecedents _data", _data)
+    if(!_data) return
+
+    simpleGet(`atencion/paciente/${patient.pk}/antecedentes/`)
+    .then(antecedente => {
+      if(__debug__) console.log("antecedente", antecedente);
+      simplePostData(`atencion/paciente/${antecedente.id}/antecedentes/`, _data, "PUT")
+      .then(
+        response_obj => {
+          if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
+          // Redirect to AdmisionDetail
+          props.redirectTo(`/nav/admision/${patient.pk}/detalle`, {patient: patient})
+        },
+        error => {
+          console.log("WRONG!", error);
+        }
+      );
+    })
   }
   const getBack = () => {
     window.history.back()
   }
 
-  return <PatientForm
-          first_button_text={"Guardar"}
-          handleSubmit={savePatient}
-          second_button_text={"Regresar"}
-          secondButtonHandler={getBack} />
+  return (
+    <div>
+      <PatientForm />
+      <PatientAntecedentsForm />
+
+      <div style={{paddingTop: "25px"}}></div>  {/* Separador */}
+
+      {/* Form buttons */}
+      <div className="form-group d-flex">
+        <button className="btn btn-primary" onClick={savePatient}>
+          Guardar
+        </button>
+
+        <button className="btn btn-light ml-auto" onClick={getBack}>
+          Regresar
+        </button>
+      </div>
+    </div>
+  )
 }
-export const PatientForm = props => {
-  // Receive {patient?, first_button_text?, handleSubmit(form_data, patient_pk?), second_button_text?, secondButtonHandler}
-  const [ubication, setUbication] = useState([]);
+const PatientForm = props => {
+  // Receive {patient?}
   const patient = props.patient || false;
 
-  function getUbicacion(){
-    return;  // Abort execution (API not ready)
-    let url = process.env.REACT_APP_PROJECT_API+`maestro/ubicacion/`;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
-      response_obj => {
-        console.log(response_obj);
-        // setUbication(response_obj);
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
-  function handleSubmit(){
-    // Values validation
-    let _tmp1;
-    _tmp1 = document.getElementById("name-pric");
-    if(!_tmp1 || _tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Nombre principal no especificado");
-      return;
-    }
-    if(!isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
-      return;
-    }
-
-    _tmp1 = document.getElementById("name-sec");
-    if(!_tmp1){
-      handleErrorResponse("custom", "Error", "Nombre secundario no especificado");
-      return;
-    }
-    if(!isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
-      return;
-    }
-
-    _tmp1 = document.getElementById("ape-p");
-    if(!_tmp1){
-      handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
-      return;
-    }
-    if(_tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio");
-      return;
-    }
-    if(!isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
-      return;
-    }
-
-    _tmp1 = document.getElementById("ape-m");
-    if(!_tmp1){
-      handleErrorResponse("custom", "Error", "Apellido materno no especificado");
-      return;
-    }
-    if(_tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio");
-      return;
-    }
-    if(!isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
-      return;
-    }
-
-    _tmp1 = document.getElementById("dni");
-    if(!_tmp1){
-      handleErrorResponse("custom", "Error", "DNI no especificado");
-      return;
-    }
-    if(_tmp1.value.trim().length!=8){
-      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos");
-      return;
-    }
-    if(isNaN(parseInt(_tmp1.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
-      return;
-    }
-
-    _tmp1 = document.getElementById("born-date");
-    if(_tmp1){
-      if(_tmp1.value>=(new Date().toDateInputValue)){
-        handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy");
-        return;
-      }
-    }
-
-    _tmp1 = document.getElementById("phone");
-    if(_tmp1 && !!_tmp1.value){
-      if(_tmp1.value.length!=9){
-        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
-        return;
-      }
-      if(isNaN(parseInt(_tmp1.value))){
-        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
-        return;
-      }
-    }
-
-    // Address no not need validation
-    // Provenance no not need validation
-    // Residence no not need validation
-
-    let _tmp = {
-      nombre_principal: document.getElementById('name-pric').value,
-      nombre_secundario: document.getElementById('name-sec').value,
-      ape_paterno: document.getElementById('ape-p').value,
-      ape_materno: document.getElementById('ape-m').value,
-      dni: document.getElementById('dni').value,
-      sexo: document.getElementById('sexo').value,
-    }
-    // Add non-required fields
-    if(document.getElementById('born-date').value)
-      _tmp.fecha_nacimiento = document.getElementById('born-date').value;
-    if(document.getElementById('phone').value)
-      _tmp.celular = document.getElementById('phone').value;
-    if(document.getElementById('address').value)
-      _tmp.direccion = document.getElementById('address').value;
-    if(document.getElementById('select_provenance').value)
-      _tmp.procedencia = document.getElementById('select_provenance').value;
-    if(document.getElementById('select_residence').value)
-      _tmp.residencia = document.getElementById('select_residence').value;
-
-    props.handleSubmit(_tmp, (patient&&patient.pk||null));
-  }
-
   useEffect(() => {
-    // Select2 for medicine choose in Prescripcion
     // CSS
     if(!document.getElementById('select2_link')){
       const select2_link = document.createElement("link");
@@ -846,90 +755,262 @@ export const PatientForm = props => {
       const select2_script = document.createElement("script");
       select2_script.async = false;
       select2_script.id = "select2_script";
-      select2_script.onload = () => {
-        // Continue execution here to avoid file not load error
-        getUbicacion();
-      }
       select2_script.src = "/js/formplugins/select2/select2.bundle.js";
       document.body.appendChild(select2_script);
-    }else{
-      getUbicacion();
     }
   }, []);
-  useEffect(() => {
-    if(ubication.length==0) return;
-
-    // Fill data to selects
-    if(window.$){
-      window.$("#select_residence").select2({data: ubication});
-      window.$("#select_provenance").select2({data: ubication});
-    }
-  }, [ubication]);
 
   return (
     <div className="form-group col-md-12">  {/* Form */}
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
         <input type="text" id="name-pric" className="form-control" defaultValue={patient&&patient.nombre_principal||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
         <input type="text" id="name-sec" className="form-control" defaultValue={patient&&patient.nombre_secundario||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="ape-p">Apellido parterno: </label>
         <input type="text" id="ape-p" className="form-control" defaultValue={patient&&patient.ape_paterno||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
         <input type="text" id="ape-m" className="form-control" defaultValue={patient&&patient.ape_materno||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="dni">DNI: </label>
         <input type="text" id="dni" className="form-control" maxLength="8" defaultValue={patient&&patient.dni||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="sexo">Sexo: </label>
         <select id="sexo" className="custom-select form-control">
           <option value="1" defaultValue={patient&&patient.sexo=="1"||true}>Masculino</option>
           <option value="2" defaultValue={patient&&patient.sexo=="2"||false}>Femenino</option>
         </select>
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
         <input type="date" id="born-date" className="form-control" defaultValue={patient&&patient.fecha_nacimiento||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="phone">Celular: </label>
         <input type="text" id="phone" className="form-control" maxLength="9" defaultValue={patient&&patient.celular||""} />
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="address">Dirección: </label>
         <input type="text" id="address" className="form-control" defaultValue={patient&&patient.direccion||""} />
       </div>
-      <div className="col-sm">
+      {/*
+      <div className="form-group">
         <label className="form-label" htmlFor="select_provenance">Procedencia: </label>
         <select id="select_provenance" className="custom-select form-control custom-select-lg">
         </select>
       </div>
-      <div className="col-sm">
+      <div className="form-group">
         <label className="form-label" htmlFor="select_residence">Residencia: </label>
         <select id="select_residence" className="custom-select form-control custom-select-lg">
         </select>
       </div>
-
-      <div className="col-sm d-flex" style={{paddingTop: "25px"}}>
-        <button className="btn btn-light" onClick={() => handleSubmit()}>
-          {props.first_button_text||"Guardar"}
-        </button>
-
-        <button className="btn btn-primary ml-auto" onClick={() => props.secondButtonHandler()}>
-          {props.second_button_text||"Cancelar"}
-        </button>
-      </div>
+      */}
     </div>
-  );
+  )
 }
+const PatientAntecedentsForm = ({antecedente}) => {
+  useEffect(() => {
+    // CSS
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link");
+      select2_link.rel = "stylesheet";
+      select2_link.id = "select2_link";
+      select2_link.media = "screen, print";
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+      document.head.appendChild(select2_link);
+    }
+    // JS
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script");
+      select2_script.async = false;
+      select2_script.id = "select2_script";
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+      document.body.appendChild(select2_script);
+    }
+  }, []);
+
+  return (
+    <div className="form-group col-md-12">  {/* Form */}
+      <h3>Antecedentes</h3>
+      <div className="form-group">
+        <label className="form-label" htmlFor="diabetes">Diabetes? </label>
+        <select id="diabetes" className="custom-select form-control">
+          <option value="0" defaultValue={antecedente&&antecedente.diabetes||false}>No</option>
+          <option value="1" defaultValue={antecedente&&antecedente.diabetes||true}>Si</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="hepatitis">Hepatitis? </label>
+        <select id="hepatitis" className="custom-select form-control">
+          <option value="0" defaultValue={antecedente&&antecedente.hepatitis||false}>No</option>
+          <option value="1" defaultValue={antecedente&&antecedente.hepatitis||true}>Si</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="hemorragia">Hemorragia? </label>
+        <select id="hemorragia" className="custom-select form-control">
+          <option value="0" defaultValue={antecedente&&antecedente.hemorragia||false}>No</option>
+          <option value="1" defaultValue={antecedente&&antecedente.hemorragia||true}>Si</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="enf_cardiovascular">Enfermedad cardiovascular? </label>
+        <select id="enf_cardiovascular" className="custom-select form-control">
+          <option value="0" defaultValue={antecedente&&antecedente.enf_cardiovascular||false}>No</option>
+          <option value="1" defaultValue={antecedente&&antecedente.enf_cardiovascular||true}>Si</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label" htmlFor="alergias">Alergias</label>
+        <textarea className="form-control" id="alergias" rows="2" defaultValue={antecedente?antecedente.alergias:""} ></textarea>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="operaciones">Operaciones</label>
+        <textarea className="form-control" id="operaciones" rows="2" defaultValue={antecedente?antecedente.operaciones:""} ></textarea>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="medicamentos">Medicamentos</label>
+        <textarea className="form-control" id="medicamentos" rows="2" defaultValue={antecedente?antecedente.medicamentos:""} ></textarea>
+      </div>
+
+    </div>
+  )
+}
+function validatePatientForm(){
+  // Values validation
+  let _tmp1;
+  _tmp1 = document.getElementById("name-pric");
+  if(!_tmp1 || _tmp1.value.trim().length==0){
+    handleErrorResponse("custom", "Error", "Nombre principal no especificado");
+    return false
+  }
+  if(!isNaN(parseInt(_tmp1.value))){
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+    return false
+  }
+
+  _tmp1 = document.getElementById("name-sec");
+  if(!_tmp1){
+    handleErrorResponse("custom", "Error", "Nombre secundario no especificado");
+    return false
+  }
+  if(!isNaN(parseInt(_tmp1.value))){
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+    return false
+  }
+
+  _tmp1 = document.getElementById("ape-p");
+  if(!_tmp1){
+    handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
+    return false
+  }
+  if(_tmp1.value.trim().length==0){
+    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio");
+    return false
+  }
+  if(!isNaN(parseInt(_tmp1.value))){
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+    return false
+  }
+
+  _tmp1 = document.getElementById("ape-m");
+  if(!_tmp1){
+    handleErrorResponse("custom", "Error", "Apellido materno no especificado");
+    return false
+  }
+  if(_tmp1.value.trim().length==0){
+    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio");
+    return false
+  }
+  if(!isNaN(parseInt(_tmp1.value))){
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+    return false
+  }
+
+  _tmp1 = document.getElementById("dni");
+  if(!_tmp1){
+    handleErrorResponse("custom", "Error", "DNI no especificado");
+    return false
+  }
+  if(_tmp1.value.trim().length!=8){
+    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos");
+    return false
+  }
+  if(isNaN(parseInt(_tmp1.value.trim()))){
+    handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
+    return false
+  }
+
+  _tmp1 = document.getElementById("born-date");
+  if(_tmp1){
+    if(_tmp1.value>=(new Date().toDateInputValue)){
+      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy");
+      return false
+    }
+  }
+
+  _tmp1 = document.getElementById("phone");
+  if(_tmp1 && !!_tmp1.value){
+    if(_tmp1.value.length!=9){
+      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
+      return false
+    }
+    if(isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
+      return false
+    }
+  }
+
+  // Address no not need validation
+  // Provenance no not need validation
+  // Residence no not need validation
+
+  let _tmp = {
+    nombre_principal: document.getElementById('name-pric').value,
+    nombre_secundario: document.getElementById('name-sec').value,
+    ape_paterno: document.getElementById('ape-p').value,
+    ape_materno: document.getElementById('ape-m').value,
+    dni: document.getElementById('dni').value,
+    sexo: document.getElementById('sexo').value,
+  }
+  // Add non-required fields
+  if(document.getElementById('born-date').value)
+    _tmp.fecha_nacimiento = document.getElementById('born-date').value;
+  if(document.getElementById('phone').value)
+    _tmp.celular = document.getElementById('phone').value;
+  if(document.getElementById('address').value)
+    _tmp.direccion = document.getElementById('address').value;
+  /*
+  if(document.getElementById('select_provenance').value)
+    _tmp.procedencia = document.getElementById('select_provenance').value;
+  if(document.getElementById('select_residence').value)
+    _tmp.residencia = document.getElementById('select_residence').value;
+  */
+
+  return _tmp
+}
+function validatePatientAntecedentsForm(){
+  let values = {
+    diabetes: document.getElementById('diabetes').value,
+    hepatitis: document.getElementById('hepatitis').value,
+    hemorragia: document.getElementById('hemorragia').value,
+    enf_cardiovascular: document.getElementById('enf_cardiovascular').value,
+    alergias: document.getElementById('alergias').value,
+    operaciones: document.getElementById('operaciones').value,
+    medicamentos: document.getElementById('medicamentos').value,
+  }
+  return values
+}
+
 
 export default Admision;
 
