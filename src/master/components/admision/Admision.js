@@ -24,7 +24,8 @@ const __debug__ = process.env.REACT_APP_DEBUG
 function Admision(props){
   return(
   <>
-    <PageTitle title={"Admision"} />
+    {/* <PageTitle title={"Admision"} />
+      */}
 
     <Switch>
       <Route exact path="/nav/admision">

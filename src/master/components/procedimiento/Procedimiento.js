@@ -158,15 +158,40 @@ const ProcedimientoForm = props => {
       document.getElementById("pay_today").checked = false;
       document.getElementById("pay_today").disabled = true;
     }
+
+    // Select2 for personal choose in Cita
+    // CSS
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link");
+      select2_link.rel = "stylesheet";
+      select2_link.id = "select2_link";
+      select2_link.media = "screen, print";
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+      document.head.appendChild(select2_link);
+    }
+    // JS
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script");
+      select2_script.async = false;
+      select2_script.id = "select2_script";
+      select2_script.onload = ()=>{
+        // Set select2 for procedimiento
+        window.$("#procedimiento").select2()
+      };
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+      document.body.appendChild(select2_script);
+    }else{
+      // Set select2 for procedimiento
+      window.$("#procedimiento").select2()
+    }
   }, [procedures]);
 
-  console.log("procedure", procedure);
   return !procedures
     ? "loading"
     : (
       <div>
         <div className="col-sm" style={{marginBottom: "10px"}}>
-          <label className="form-label" htmlFor="programado">Programado: </label>
+          <label className="form-label" htmlFor="programado">Procedimiento: </label>
           <select className="custom-select form-control custom-select-lg"
             id="procedimiento" defaultValue={procedure?procedure.procedimiento:procedures[0].procedimiento}
             onChange={e => handleProcedureChange(e.target)} >

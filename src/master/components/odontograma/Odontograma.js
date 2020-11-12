@@ -2748,16 +2748,14 @@ function Odontograma({role, redirectTo}){
               getToothByKey={getToothByKey} clearTooth={clearTooth} />
           </div>
         </div><br/>
-        <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <button type="button" className="btn btn-success waves-effect waves-themed"
-            onClick={saveOdontogram} title="Asegurate de escribir las observaciones que encuentres">
-            {init_od!=-1 && (!init_od || init_od && odontogram.pk == init_od.pk)
-              ? "Guardar Odontograma Inicial"
-              : "Guardar"}
-          </button>
-          <button type="button" className="btn btn-secondary waves-effect waves-themed"
-            onClick={()=>getIncidences(odontogram.pk)}>Reiniciar</button>
-        </div>
+        <button type="button" className="btn btn-success waves-effect waves-themed"
+          onClick={saveOdontogram} title="Asegurate de escribir las observaciones que encuentres">
+          {init_od!=-1 && (!init_od || init_od && odontogram.pk == init_od.pk)
+            ? "Guardar Odontograma Inicial"
+            : "Guardar"}
+        </button>
+        <button type="button" className="btn btn-secondary waves-effect waves-themed"
+          style={{marginLeft: "15px"}} onClick={()=>window.history.back()}>Atras</button>
       </div>
       {/* ALERTS */}
       <br/>

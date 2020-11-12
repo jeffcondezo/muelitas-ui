@@ -224,17 +224,17 @@ function AsideLinks(props){
         </Link>
       </li>
       */}
-      <li className={props.history.location.pathname==="/nav/admision"?"active":""}>
+      <li className={/^\/nav\/admision/.test(props.history.location.pathname)?"active":""}>
         <Link data-filter-tags="admision" to='/nav/admision'>
           <span className="nav-link-text">ADMISION</span>
         </Link>
       </li>
-      <li className={props.history.location.pathname==="/nav/cita"?"active":""}>
+      <li className={/^\/nav\/cita/.test(props.history.location.pathname)?"active":""}>
         <Link data-filter-tags="cita" to='/nav/cita'>
           <span className="nav-link-text">CITA</span>
         </Link>
       </li>
-      <li className={props.history.location.pathname==="/nav/atencion"?"active":""}>
+      <li className={/^\/nav\/atencion/.test(props.history.location.pathname)?"active":""}>
         <Link data-filter-tags="atencion" to='/nav/atencion'>
           <span className="nav-link-text">ATENCION</span>
         </Link>

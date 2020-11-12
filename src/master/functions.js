@@ -168,7 +168,8 @@ export async function simplePostData(end_point, data, method="POST"){
         Authorization: localStorage.getItem('access_token'),  // Token
         'Content-Type': 'application/json'  // JSON type
       },
-      body: JSON.stringify(data)  // Data
+      // Data
+      body: JSON.stringify(data)
     },
   ).then(
     response => (
@@ -205,6 +206,20 @@ export async function simpleDelete(end_point){
     ),
     () => handleErrorResponse('server')
   );
+}
+export function addRequestValidation(promise){
+  return promise.then(
+    response => (
+      response.ok
+      ? response.json()
+      : response.status==403
+      ? handleErrorResponse('permission')
+      : response.status==500
+      ? handleErrorResponse('server')
+      : Promise.reject()
+    ),
+    () => handleErrorResponse('server')
+  )
 }
 // Specific
 export function getPatientFullName(patient){

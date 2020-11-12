@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Switch, Route, Redirect, useParams } from "react-router-dom";
 import {
   handleErrorResponse,
+  addRequestValidation,
   capitalizeFirstLetter as cFL,
   getDataByPK,
   simplePostData,
@@ -18,7 +19,8 @@ function Atencion(props){
   // Receive {data.cita, sucursal_pk, redirectTo}
   return(
   <>
-    <PageTitle title={"Atención"} />
+    {/* <PageTitle title={"Atención"} />
+    */}
 
     <Switch>
       <Route exact path="/nav/atencion">
@@ -275,7 +277,7 @@ const AttentionDetail = (props) => {
               redirectTo={props.redirectTo} />
           </div>
           <div className="panel">
-            <PatientAttentionFiles atencion={cita.atencion} />
+            <PatientAttentionFiles atencion={cita.atencion} paciente={cita.paciente_data} />
           </div>
         </div>
       </div>
@@ -416,7 +418,7 @@ const PatientAttentionHistory = props => {
       </div>
     );
 }
-const PatientAttentionFiles = ({atencion}) => {
+const PatientAttentionFiles = ({atencion, paciente}) => {
   const gadrive_modal_id = "gadrive_loading"
   const [files, setFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState(false)
@@ -429,45 +431,38 @@ const PatientAttentionFiles = ({atencion}) => {
   const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
   const uploadFile = () => {
     let input_file = window.document.getElementById('input-file')
-    if(input_file.files.length == 0){
-      return
-    }
+    if(input_file.files.length == 0) return
 
     let file = input_file.files[0]
     let data = new FormData()
     data.append("file", file)
+    data.append("atencion", atencion)
 
     /* Show modal */
     showLoadingModal()
 
-    return fetch(
-      process.env.REACT_APP_PROJECT_API+`atencion/${atencion}/files/`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          // 'Content-Type': 'application/octet-stream'  // JSON type
-        },
-        body: data,
-      },
-    ).then(
-      response => (
-        response.ok
-        ? response.json()
-        : response.status==403
-        ? handleErrorResponse('permission')
-        : response.status==500
-        ? handleErrorResponse('server')
-        : Promise.reject()
-      ),
-      () => handleErrorResponse('server')
-    )
-    .then(getAtencionFiles)
-    .then(hideLoadingModal)
+    return addRequestValidation(
+        fetch(
+          process.env.REACT_APP_PROJECT_API+`atencion/paciente/${paciente.pk}/files/`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: localStorage.getItem('access_token'),  // Token
+            },
+            body: data,
+          },
+        )
+      )
+      .then(getAtencionFiles)
+      .then(hideLoadingModal)
   }
   const deleteFile = file_id => {
-    simplePostData(`atencion/${atencion}/files/delete/`, {file_id: file_id})
+    /* Show modal */
+    showLoadingModal()
+
+    simplePostData(`atencion/paciente/${paciente.pk}/files/delete/`, {file_id: file_id})
     .then(getAtencionFiles)
+    .then(hideLoadingModal)
   }
   const showLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("show")
   const hideLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("hide")
@@ -505,7 +500,7 @@ const PatientAttentionFiles = ({atencion}) => {
         <ModalLoading
           _id={gadrive_modal_id}
           _title={"Subiendo archivo"}
-          _body_text={"Por favor espere unos segundos mientras el archivos se guarda"} />
+          _body_text={"Por favor espere unos segundos mientras se realiza la operación"} />
       </div>
     )
 }
@@ -713,9 +708,9 @@ const Links = ({cita, getCita, redirectTo}) => {
   );
 }
 const GDriveFile = ({file, deleteFile}) => {
-  let last_dot_index = file.name.split("").lastIndexOf(".")
-  let ext = file.name.slice(last_dot_index+1, file.name.length)
-  let name = file.name.slice(0, last_dot_index)
+  let last_dot_index = file.nombre_archivo.split("").lastIndexOf(".")
+  let ext = file.nombre_archivo.slice(last_dot_index+1, file.nombre_archivo.length)
+  let name = file.nombre_archivo.slice(0, last_dot_index)
 
   const css = {
     icon: {
@@ -760,7 +755,7 @@ const GDriveFile = ({file, deleteFile}) => {
             fontSize: "2em",
             cursor: "pointer",
           }}
-          onClick={()=>deleteFile(file.id)}
+          onClick={()=>deleteFile(file.file_id)}
         >
           <i className="fal fa-trash-alt"></i>
         </div>
