@@ -150,6 +150,14 @@ export const Icon = props => {
           <i className="fal fa-check-circle"></i>
       </a>
     ); break;
+    case "files": el.push(  // Files
+      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
+        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px", fontSize: "2.5em"}}>
+          <i className="fal fa-file-alt"></i>
+      </a>
+    ); break;
     default: break;
   }
 

@@ -485,7 +485,7 @@ const PatientAttentionFiles = ({atencion, paciente}) => {
         <div className="card-body">
           {/* files */}
           {files.length>0 ? files.map(f => (
-            <div key={"file_list_"+f.id} style={{
+            <div key={"file_list_"+f.pk} style={{
               margin: "15px 0",
             }}>
               <GDriveFile file={f} deleteFile={deleteFile} />
@@ -499,7 +499,7 @@ const PatientAttentionFiles = ({atencion, paciente}) => {
 
         <ModalLoading
           _id={gadrive_modal_id}
-          _title={"Subiendo archivo"}
+          _title={"Cargando.."}
           _body_text={"Por favor espere unos segundos mientras se realiza la operación"} />
       </div>
     )
@@ -707,7 +707,7 @@ const Links = ({cita, getCita, redirectTo}) => {
     </div>
   );
 }
-const GDriveFile = ({file, deleteFile}) => {
+export const GDriveFile = ({file, deleteFile}) => {
   let last_dot_index = file.nombre_archivo.split("").lastIndexOf(".")
   let ext = file.nombre_archivo.slice(last_dot_index+1, file.nombre_archivo.length)
   let name = file.nombre_archivo.slice(0, last_dot_index)
