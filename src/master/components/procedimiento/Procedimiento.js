@@ -135,6 +135,7 @@ const ProcedimientoForm = props => {
     }
   }
   function handleProcedureChange(el){
+    if(__debug__) console.log("handleProcedureChange el", el);
     let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
     if(inx==-1) return
 
@@ -176,13 +177,13 @@ const ProcedimientoForm = props => {
       select2_script.id = "select2_script";
       select2_script.onload = ()=>{
         // Set select2 for procedimiento
-        window.$("#procedimiento").select2()
+        window.$("#procedimiento").select2().on('select2:select', ev => handleProcedureChange(ev.params.data.element))
       };
       select2_script.src = "/js/formplugins/select2/select2.bundle.js";
       document.body.appendChild(select2_script);
     }else{
       // Set select2 for procedimiento
-      window.$("#procedimiento").select2()
+      window.$("#procedimiento").select2().on('select2:select', ev => handleProcedureChange(ev.params.data.element))
     }
   }, [procedures]);
 
@@ -194,7 +195,7 @@ const ProcedimientoForm = props => {
           <label className="form-label" htmlFor="programado">Procedimiento: </label>
           <select className="custom-select form-control custom-select-lg"
             id="procedimiento" defaultValue={procedure?procedure.procedimiento:procedures[0].procedimiento}
-            onChange={e => handleProcedureChange(e.target)} >
+          >
             <SelectOptions_Procedimiento procedimientos={procedures} />
           </select>
         </div>

@@ -157,6 +157,7 @@ class Cita extends React.Component {
     let _calendar = this.state.calendar;
     _calendar.removeAllEvents()  // Remove current events in fullcalendar
 
+    if(!response_object) return
     // Set event
     console.log(response_object);
     response_object.forEach((v) => {
@@ -494,32 +495,11 @@ class Cita extends React.Component {
       data['paciente'] = _paciente;
     else if(typeof(_paciente)==='object')
       data['paciente_obj'] = _paciente;
+    // Add PDT reference if exist
+    if(this.redirect_data) data['pdt'] = this.redirect_data.pdt;
 
-    let url = process.env.REACT_APP_PROJECT_API+'atencion/cita/';
     // Generate promise
-    new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
-        body: JSON.stringify(data)  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            reject(response.json());
-          }
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    })
+    simplePostData('atencion/cita/', data)
     .then(
       res => {
         // If there was data from redirect
@@ -643,14 +623,14 @@ class Cita extends React.Component {
     if(!this.redirect_data?.selected) return
     // Compare procs sended and procs received
     let sended_ar = window.$("#programado").select2('data').map(i => Number(i.id))
-
     this.redirect_data.selected.map(obj => {
       if(sended_ar.indexOf(obj.proc_pk) == -1) return
 
       // If proc was sended add cita as dpdt's reference
-      simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`, {})
+      simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`)
+      // Add DA from DPDT
+      simplePostData(`atencion/${cita.atencion}/detalle/dpdt/${obj.dpdt}/`)
     })
-
 
     // Delete redirect_data
     this.redirect_data = false
@@ -919,7 +899,12 @@ function SelectProcedimiento({procedimiento, selected}){
     if(!procedimiento || !selected) return
 
     // Select values
-    window.$("#programado").val(selected.map(i => i.proc_pk)).trigger('change')
+    if(selected.length!=0){
+      window.$("#programado").val(selected.map(i => i.proc_pk)).trigger('change')
+      window.$("#programado").prop('disabled', true)  // Deshabilitar el cambio
+    }else{
+      window.$("#programado").prop('disabled', false)  // Habilitar el cambio
+    }
   }, [selected, procedimiento])
 
   return (

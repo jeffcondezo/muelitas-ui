@@ -66,7 +66,7 @@ export function handleErrorResponse(type, ...data){
   }, scape_time+200, _id)
 }
 export function capitalizeFirstLetter(word, restLowerCase=true){
-  if(word.length==0) return ""  // If word is empty
+  if(!word || word.length==0) return ""  // If word is empty
 
   return word[0].toUpperCase()
     + (restLowerCase
@@ -154,7 +154,7 @@ export async function simpleGet(end_point){
     () => handleErrorResponse('server')
   );
 }
-export async function simplePostData(end_point, data, method="POST"){
+export async function simplePostData(end_point, data={}, method="POST"){
   method = method.toUpperCase()
   if(method != "POST" && method != "PUT"){
     console.error("simplePostData only supports methods POST and PUT");

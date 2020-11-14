@@ -29,7 +29,6 @@ function Atencion(props){
       <Route exact path="/nav/atencion/:cita_pk/detalle">
         <AttentionDetail
           sucursal_pk={props.sucursal_pk}
-          cita={props.data.cita}
           redirectTo={props.redirectTo} />
       </Route>
       <Route exact path="/nav/atencion/:pac_pk/atender">
@@ -230,7 +229,7 @@ const AttentionList = props => {
 }
 
 const AttentionDetail = (props) => {
-  // Receive {cita, sucursal_pk, redirectTo}
+  // Receive {sucursal_pk, redirectTo}
   let __params__ = useParams()
   const [cita, setCita] = useState(false);
 
@@ -262,6 +261,12 @@ const AttentionDetail = (props) => {
           <div className="panel">
             <AttentionProcedures cita={cita} redirectTo={props.redirectTo} />
           </div>
+          <div className="panel">
+            <PatientAttentionHistory
+              sucursal_pk={props.sucursal_pk}
+              cita={cita}
+              redirectTo={props.redirectTo} />
+          </div>
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
@@ -269,12 +274,6 @@ const AttentionDetail = (props) => {
               cita={cita}
               getCita={() => getCita(cita.pk)}
               redirectTo={redirect} />
-          </div>
-          <div className="panel">
-            <PatientAttentionHistory
-              sucursal_pk={props.sucursal_pk}
-              cita={cita}
-              redirectTo={props.redirectTo} />
           </div>
           <div className="panel">
             <PatientAttentionFiles atencion={cita.atencion} paciente={cita.paciente_data} />

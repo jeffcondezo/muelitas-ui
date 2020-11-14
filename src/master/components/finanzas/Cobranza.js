@@ -746,7 +746,7 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
               <td style={style.pad_left}>
                 <span className={"badge badge-"
                   +(dcc.is_over==1?"danger":dcc.is_over==0?"warning":"info")
-                  +" badge-pill"}>{dcc.fecha_limite.split("-").reverse().join("-")}</span>
+                  +" badge-pill"}>{dcc.fecha_limite ? dcc.fecha_limite.split("-").reverse().join("-") : "no indicado"}</span>
               </td>
               <td style={style.pad_left}>
                 <input

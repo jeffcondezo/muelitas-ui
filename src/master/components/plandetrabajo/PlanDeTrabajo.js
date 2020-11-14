@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react'
+import ReactDOM from 'react-dom';
 import {
   Switch,
   Route,
   useParams,
 } from "react-router-dom";
 import {
+  indexOfInObjectArray,
   handleErrorResponse,
   getDataByPK,
   simplePostData,
@@ -18,12 +20,13 @@ import {
   PageTitle,
   SelectOptions_Procedimiento,
   ModalCancel,
-  Icon
+  Icon,
+  RegularModalCentered,
 } from '../bits';
 
-const PDTContext = createContext({
-  current_pdt_pk: null,
-})
+// Constant
+const __debug__ = process.env.REACT_APP_DEBUG
+
 const PDTCreateCxt = createContext({
   pdt: false,
 })
@@ -51,9 +54,9 @@ const PlanDeTrabajo = ({sucursal_pk, redirectTo}) => {
 }
 
 const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
-  const pdt_context = useContext(PDTContext)
   let {patient_pk} = useParams()
   // PDT List info
+  const [pdt, setPDT] = useState(false)
   const [patient, setPatient] = useState(false)
   const [ar_proc_selected, setSelectPDT] = useState([])
   // Multi component state handling
@@ -78,13 +81,12 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
     setSelectPDT(ar_copy)
   }
   const deletePDT = () => {
-    if(pdt_context.current_pdt_pk == null){
-      console.error("current_pdt_pk from PDTContext is null");
-      return;
-    }
+    if(!pdt) return
     // Delete
-    simpleDelete(`atencion/plantrabajo/${Number(pdt_context.current_pdt_pk)}/`)
+    simpleDelete(`atencion/plantrabajo/${Number(pdt.pk)}/`)
     .then(() => setPDTDeleted(true))
+    .then(() => setPDT(false))
+    .then(() => setSelectPDT(false))
   }
 
   useEffect(() => {
@@ -97,8 +99,6 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
 
   return (
     <div>
-      <h2>Paciente: {patient ? getPatientFullName(patient) : "loading.."}</h2>
-
       <div className="row">
         <div className="col-lg-8">
           <div style={{
@@ -109,6 +109,8 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
               sucursal_pk={sucursal_pk}
               redirectTo={redirectTo}
               patient_pk={patient_pk}
+              pdt={pdt}
+              setPDT={setPDT}
               pdtDeleted={pdtDeleted}
               setPDTDeleted={setPDTDeleted}
               thereIsPDT={thereIsPDT}
@@ -126,6 +128,9 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
                 </div>
               ) : ""
             }
+            <div className="col-2">
+              <button className="btn btn-primary" style={{fontSize: "0.9rem"}} onClick={()=>window.history.back()}>Regresar</button>
+            </div>
           </div>
         </div>
         {thereIsPDT
@@ -135,13 +140,11 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
                 <PDTActions
                   redirectTo={redirectTo}
                   selected={ar_proc_selected}
-                  patient_pk={patient_pk} />
+                  patient={patient}
+                  pdt={pdt} />
               </div>
               <div className="panel">
-                <DPDTActions
-                  patient_dni={patient.dni}
-                  selected={ar_proc_selected}
-                  redirectTo={redirectTo} />
+                <PDTInfo pdt={pdt} />
               </div>
             </div>
           ) : ""
@@ -153,11 +156,13 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
         _action_text={"Eliminar"}
         _action_func={deletePDT}
         _body_text={"Esta seguro que quiere eliminar este Plan de trabajo"} />
+      <ModalPagos pdt={pdt}
+      setPDTDeleted={setPDTDeleted}
+       />
     </div>
   )
 }
-const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT}) => {
-  const pdt_context = useContext(PDTContext)
+const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT, pdt, setPDT}) => {
   const [pdts, setPdts] = useState(false)  // Planes de trabajo
   const [dpdts, setDpdts] = useState(false)  // Detalles de Plan de trabajo
   const [datatable, setDatatable] = useState(false)
@@ -166,10 +171,9 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     simpleGet(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}"}`)
     .then(setPdts)
   }
-  const getDptByPdt = (pdt_pk) => {
-    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
+  const getDptByPdt = (pdt) => {
+    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt.pk}`)
     .then(setDpdts)
-    .then(() => pdt_context.current_pdt_pk = Number(pdt_pk))
   }
 
   // Add DataTable rel docs
@@ -199,7 +203,8 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
   }, []);
   // When pdts are setted
   useEffect(() => {
-    if(!pdts) return;
+    console.log("pdts", pdts);
+    if(!pdts) return
     if(isArray(pdts) && pdts.length == 0){
       // There is no pdt
       setThereIsPDT(false)
@@ -207,8 +212,13 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     }
 
     if(!thereIsPDT) setThereIsPDT(true)  // Fix state
-    getDptByPdt(pdts[0].pk)
+    setPDT(pdts[0])
   }, [pdts]);
+  useEffect(() => {
+    if(!pdt) return
+
+    getDptByPdt(pdt)
+  }, [pdt])
   // When dpdts are setted
   useEffect(() => {
     if(!dpdts) return;  // Abort if it's false
@@ -222,7 +232,8 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
         {title: "Procedimiento", data: "procedimiento_nombre"},
         {title: "Estado", data: 'estado'},
         {title: "Orden", data: 'orden'},
-        {title: "", data: 'cita_relacionada'},
+        {title: "Pago", data: 'dcc'},
+        {title: "Cita", data: 'cita_relacionada'},
       ],
       columnDefs: [
         {
@@ -231,23 +242,38 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
         }, {
           // Estado
           targets: 1,
-          render: data => data=='1'?'Planificado':'Concluido',
+          render: data => data=='1'?'Planificado':data=='2'?'Cita':'Concluido',
         }, {
-        // Checkbox
-        targets: -1,
-        orderable: false,
-        // width: "1px",
-        render: data => data==null?"<input type='checkbox' />":"",
-        createdCell: (cell, data, rowData) => {
-          // Add click listener to button (children[0])
-          var tmp = cell.children[0]
-          if(tmp){
-            tmp.onchange = () => {
-              selectProc({dpdt: rowData.pk, proc_pk: rowData.procedimiento})
-            }
+          // Pago
+          targets: 3,
+          createdCell: (cell, dcc, rowData) => {
+            console.log(dcc);
+            ReactDOM.render(
+              dcc ? (
+                <span className={"badge badge-"
+                  +(dcc.estado_pago=='1'?"danger":dcc.estado_pago=='2'?"warning":"info")
+                  +" badge-pill"}>{dcc.monto_pagado}/{dcc.precio}</span>
+              ) : "-"
+              , cell
+            )
+          }
+        }, {
+          // Checkbox
+          targets: -1,
+          orderable: false,
+          createdCell: (cell, data, rowData) => {
+            // Render whether checkbox or link
+            ReactDOM.render(
+              data
+              ? <Icon type="attention" onClick={() => redirectTo(`/nav/atencion/${data}/detalle`)} />
+              : <input type='checkbox' onChange={() => selectProc({dpdt: rowData.pk, proc_pk: rowData.procedimiento})} />,
+              cell
+            )
+            cell.style.textAlign = "center"
+            if(data) cell.style.transform = "scale(.7)"
           }
         }
-      }],
+      ],
       order: [[2, 'asc']],  // Default sort by 'orden' field
       pageLength: 8,
       lengthMenu: [[8, 15, 25], [8, 15, 25]],
@@ -299,13 +325,14 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
       _select.options.add(opt);
     })
     _select.onchange = (e) => getDptByPdt(e.target.value);  // Add change listener
-    _select.value = pdt_context.current_pdt_pk
+    _select.value = pdt.pk
     _input.replaceWith(_select);  // Replace previous input.text with new select element
   }, [datatable])
   useEffect(() => {
     if(pdtDeleted){
       getPdts()
       setPDTDeleted(false)
+      if(datatable) window.$('#show-dpdt').DataTable().clear().destroy();
     }
   }, [pdtDeleted])
 
@@ -314,21 +341,26 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     : (
       <div className="datatable-container col-12">
         <h3>
-          {thereIsPDT
-            ? "Seleccione un plan de trabajo"
-            : "El paciente no tiene ningún plan de trabajo programado"
-          }
+          {!thereIsPDT && "El paciente no tiene ningún plan de trabajo programado"}
         </h3>
-        {thereIsPDT
-          ? (
-            <table id="show-dpdt" style={{width: "100%"}}></table>
-          ) : ""
-        }
+        {thereIsPDT && <table id="show-dpdt" style={{width: "100%"}}></table>}
       </div>
     );
 }
-const PDTActions = ({redirectTo, selected, patient_pk}) => {
-  const pdt_context = useContext(PDTContext);
+const PDTActions = ({redirectTo, selected, patient, pdt}) => {
+  const redirectToCita = () => {
+    if(selected.length == 0){
+      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento")
+      return
+    }
+
+    redirectTo('/nav/cita/', {
+      patient_dni: patient.dni,
+      selected: selected,
+      pdt: pdt.pk
+    })
+  }
+  const openPagosModal = () => window.$("#pdtpay_modal").modal('show')
 
   return (
     <div className="card col-12" style={{
@@ -347,39 +379,16 @@ const PDTActions = ({redirectTo, selected, patient_pk}) => {
           display: "inline-block",
           textAlign: "center"
         }}>
-          <Icon type="edit" onClick={() => redirectTo(`/nav/plandetrabajo/${patient_pk}/editar/${pdt_context.current_pdt_pk}/`)} />
+          <Icon type="edit" onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/editar/${pdt.pk}/`)} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
-      </div>
-    </div>
-  )
-}
-const DPDTActions = ({redirectTo, selected, patient_dni}) => {
-  const redirectToCita = () => {
-    if(selected.length == 0){
-      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento")
-      return
-    }
-
-    redirectTo('/nav/cita/', {
-      patient_dni: patient_dni,
-      selected: selected
-    })
-  }
-
-  return (
-    <div className="card col-12" style={{
-      padding: "0px"
-    }}>
-      <div className="card-header">
-        <div className="card-title">
-          Acciones de los seleccionados
+        <div className="col-4" style={{
+          display: "inline-block",
+          textAlign: "center"
+        }}>
+          <Icon type="finance" onClick={openPagosModal} />
+          <span style={{fontSize: "0.9rem"}}>Pagos</span>
         </div>
-      </div>
-      <div className="card-body" style={{
-        display: "flex",
-        alignItems: "center",
-      }}>
         <div className="col-4" style={{
           display: "inline-block",
           textAlign: "center"
@@ -388,6 +397,80 @@ const DPDTActions = ({redirectTo, selected, patient_dni}) => {
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
       </div>
+    </div>
+  )
+}
+const PDTInfo = ({pdt}) => {
+  return pdt ? (
+    <div className="card col-12" style={{
+      padding: "0px"
+    }}>
+      <div className="card-header">
+        <div className="card-title">
+          Detalles del Plan de Trabajo
+        </div>
+      </div>
+      <div className="card-body">
+        <h4>
+          <b>Nombre: </b>
+          <span>{cFL(pdt.nombre)}</span>
+        </h4>
+        <h4>
+          <b>Paciente: </b>
+          <span>{pdt.paciente_fullname}</span>
+        </h4>
+        <h4>
+          <b>Observaciones: </b>
+          <span>{cFL(pdt.observaciones)}</span>
+        </h4>
+        <h4>
+          <b>Presupuesto: </b>
+          <span>{pdt.precio_total}</span>
+        </h4>
+        <h4>
+          <b>Pagado: </b>
+          <span>{pdt.monto_pagado}</span>
+        </h4>
+        <h4>
+          <b>Resta: </b>
+          <span>{pdt.precio_total - pdt.monto_pagado}</span>
+        </h4>
+      </div>
+    </div>
+  ) : ""
+}
+const ModalPagos = ({pdt, setPDTDeleted}) => {
+  return pdt ? (
+    <RegularModalCentered _title={"Pagos del Plan de trabajo"}
+      _id={"pdtpay_modal"}
+      _body={
+        <PagoPDT pdt={pdt} setPDTDeleted={setPDTDeleted} />
+      }
+      _min_width={"600"} />
+  ) : ""
+}
+const PagoPDT = ({pdt, setPDTDeleted}) => {
+  const doPay = () => {
+    if(__debug__) console.log("PagoPDT doPay")
+    let monto_pagado = window.document.getElementById('pdtpay-monto').value
+    simplePostData(`finanzas/plantrabajo/${pdt.pk}/`, {monto_pagado: monto_pagado})
+    .then(() => window.$("#pdtpay_modal").modal('hide'))
+    .then(() => handleErrorResponse('custom', "Exito", "Pago realizado correctamente", 'info'))
+    .then(() => setPDTDeleted(true))
+  }
+
+  return (
+    <div>
+      <div className="" style={{marginBottom: "10px"}}>
+        <label className="form-label" htmlFor="precio">Monto a pagar</label>
+        <input type="number" className="form-control form-control-lg"
+          id="pdtpay-monto" min="0" defaultValue={"0"}
+        />
+      </div>
+
+      <button className="btn btn-primary" onClick={doPay}>
+        Pagar
+      </button>
     </div>
   )
 }
@@ -403,6 +486,8 @@ const CreatePDT = ({sucursal_pk}) => {
     let data = {}
     data.paciente = patient_pk;
     data.nombre = document.getElementById('proc-name').value;
+    data.observaciones = document.getElementById('proc-observaciones').value;
+    data.sucursal = sucursal_pk;
 
     // Dinamically change when pdt is already created update instead of create a new one
     simplePostData(`atencion/plantrabajo/${pdt?pdt.pk+'/':''}`, data, pdt?"PUT":"POST")
@@ -419,12 +504,14 @@ const CreatePDT = ({sucursal_pk}) => {
   }
 
   useEffect(() => {
+    // Get PDT
     if(pdt_pk) getDataByPK('atencion/plantrabajo', pdt_pk).then(setPdt)
   }, [])
   useEffect(() => {
     if(!pdt) return
 
     document.getElementById('proc-name').value = pdt.nombre
+    document.getElementById('proc-observaciones').value = " " && pdt.observaciones
     // Add to context
     ctx_pdt.pdt = pdt.pk
     refreshProcList()
@@ -433,7 +520,7 @@ const CreatePDT = ({sucursal_pk}) => {
 
   return (
     <div>
-      <div className="row">
+      <div className="row" style={{marginBottom: "10px"}}>
         <div className="col-8">
           <label className="form-label" htmlFor="proc-name">Nombre</label>
           <input type="text" className="form-control form-control-lg" id="proc-name" />
@@ -446,6 +533,10 @@ const CreatePDT = ({sucursal_pk}) => {
             Guardar
           </button>
         </div>
+      </div>
+      <div style={{marginBottom: "10px"}}>
+        <label className="form-label" htmlFor="proc-observaciones">Observaciones: </label>
+        <textarea className="form-control" id="proc-observaciones" rows="2"></textarea>
       </div>
       <br/>
       <div className="row">
@@ -482,33 +573,86 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
     let data = {}
     data.plantrabajo = ctx_pdt.pdt;
     data.procedimiento = document.getElementById('procedimiento').value
+    data.precio = document.getElementById('precio').value
+    data.cantidad = document.getElementById('cantidad').value
 
     simplePostData(`atencion/plantrabajo/detalle/`, data)
     .then(() => refreshProcList())
   }
-  const getBack = () => {
-    window.history.back()
+  const handleProcedureChange = el => {
+    if(__debug__) console.log("handleProcedureChange el", el);
+    let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
+    if(inx==-1) return
+
+    // Update coste
+    window.document.getElementById('precio').value = procedures[inx].precio
   }
+  const getBack = () => window.history.back()
 
   useEffect(() => {
     getProcedures(sucursal_pk);
   }, []);
+  useEffect(() => {
+    if(!procedures) return
+
+    // Select2 for personal choose in Cita
+    // CSS
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link");
+      select2_link.rel = "stylesheet";
+      select2_link.id = "select2_link";
+      select2_link.media = "screen, print";
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
+      document.head.appendChild(select2_link);
+    }
+    // JS
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script");
+      select2_script.async = false;
+      select2_script.id = "select2_script";
+      select2_script.onload = ()=>{
+        // Set select2 for procedimiento
+        window.$("#procedimiento").select2().on('select2:select', ev => handleProcedureChange(ev.params.data.element))
+      };
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
+      document.body.appendChild(select2_script);
+    }else{
+      // Set select2 for procedimiento
+      window.$("#procedimiento").select2()
+      .on('select2:select', ev => handleProcedureChange(ev.params.data.element))
+    }
+  }, [procedures])
 
   return !procedures
     ? "loading"
     : (
       <div>
-        <label className="form-label" htmlFor="procedimiento">Procedimiento: </label>
-        <select className="custom-select form-control custom-select-lg" id="procedimiento" >
-          <SelectOptions_Procedimiento procedimientos={procedures} />
-        </select>
+        <div style={{marginBottom: "10px"}}>
+          <label className="form-label" htmlFor="procedimiento">Procedimiento: </label>
+          <select className="custom-select form-control custom-select-lg" id="procedimiento">
+            <SelectOptions_Procedimiento procedimientos={procedures} />
+          </select>
+        </div>
+        <div className="row">
+          <div className="col-md-6" style={{marginBottom: "10px"}}>
+            <label className="form-label" htmlFor="precio">Coste</label>
+            <input type="number" className="form-control form-control-lg"
+              id="precio" min="0" defaultValue={"0" && procedures[0].precio}
+            />
+          </div>
+          <div className="col-md-6" style={{marginBottom: "10px"}}>
+            <label className="form-label" htmlFor="cantidad">Cantidad</label>
+            <input type="number" className="form-control form-control-lg" id="cantidad"
+              min="1" defaultValue="1" />
+          </div>
+        </div>
 
-        <br/><br/>
+        <br/>
         <div className="d-flex">
           <button className="btn btn-primary" onClick={() => handleSubmitProc()}>
             Agregar
           </button>
-          <button className="btn btn-light ml-auto" onClick={() => getBack()}>
+          <button className="btn btn-light ml-auto" onClick={getBack}>
             Regresar
           </button>
         </div>
