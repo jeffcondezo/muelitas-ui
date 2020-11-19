@@ -16,7 +16,12 @@ import {
   getDataByPK,
 } from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
-import { PageTitle, Icon, ModalLoading } from '../bits';
+import {
+  PageTitle,
+  Icon,
+  ModalLoading,
+  RegularModalCentered
+} from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
 
 // Constant
@@ -53,9 +58,7 @@ function Admision(props){
           patient={props.data.patient} />
       </Route>
       <Route exact path="/nav/admision/:patient_pk/archivos">
-        <ArchivosPaciente
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
+        <ArchivosPaciente />
       </Route>
 
       <Route>
@@ -712,7 +715,7 @@ const RegisterPatient = props => {
     simpleGet(`atencion/paciente/${patient.pk}/antecedentes/`)
     .then(antecedente => {
       if(__debug__) console.log("antecedente", antecedente);
-      simplePostData(`atencion/paciente/${antecedente.id}/antecedentes/`, _data, "PUT")
+      simplePostData(`atencion/paciente/${antecedente.pk}/antecedentes/`, _data, "PUT")
       .then(
         response_obj => {
           if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
@@ -1024,11 +1027,11 @@ function validatePatientAntecedentsForm(){
   return values
 }
 // Archivos del paciente
-const ArchivosPaciente = ({sucursal_pk, redirectTo}) => {
+const ArchivosPaciente = () => {
   let __params__ = useParams();
-  const gadrive_modal_id = "gadrive_loading"
+  const fileupload_modal_id = "gadrive_upload"
+  const fileloadingdelete_modal_id = "gadrive_loadingdelete"
   const [files, setFiles] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(false)
 
   // Google drive API functions
   const getPatientFiles = pac_pk => {
@@ -1043,49 +1046,29 @@ const ArchivosPaciente = ({sucursal_pk, redirectTo}) => {
       }
     )
   }
-  const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
-  const uploadFile = () => {
-    let input_file = window.document.getElementById('input-file')
-    if(input_file.files.length == 0) return
-
-    let file = input_file.files[0]
-    let data = new FormData()
-    data.append("file", file)
-
-    /* Show modal */
-    showLoadingModal()
-
-    return addRequestValidation(
-        fetch(
-          process.env.REACT_APP_PROJECT_API+`atencion/paciente/${__params__.patient_pk}/files/`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: localStorage.getItem('access_token'),  // Token
-            },
-            body: data,
-          },
-        )
-      )
-      .then(() => getPatientFiles())
-      .then(hideLoadingModal)
-  }
   const deleteFile = file_id => {
     /* Show modal */
-    showLoadingModal()
+    showLoadingDeleteModal()
 
     simplePostData(`atencion/paciente/${__params__.patient_pk}/files/delete/`, {file_id: file_id})
     .then(() => getPatientFiles())
-    .then(hideLoadingModal)
+    .then(hideLoadingDeleteModal)
   }
-  const showLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("show")
-  const hideLoadingModal = () => window.$(`#${gadrive_modal_id}`).modal("hide")
-
+  // Modals
+  const showLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("show")
+  const hideLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
 
   // Run at first render
-  useEffect(() => {
-    getPatientFiles(__params__.patient_pk)
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$(`#${fileupload_modal_id}`).modal("hide")
+    window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
   }, [])
+  // Files
+  useEffect(() => {
+    if(!files) getPatientFiles(__params__.patient_pk)
+
+  }, [files])
 
   const css = {
     table: {
@@ -1131,7 +1114,7 @@ const ArchivosPaciente = ({sucursal_pk, redirectTo}) => {
                 ? files.map(file => {
                   let last_dot_index = file.nombre_archivo.split("").lastIndexOf(".")
                   let ext = file.nombre_archivo.slice(last_dot_index+1, file.nombre_archivo.length)
-                  let name = file.nombre_archivo.slice(0, last_dot_index)
+                  let name = file.descripcion ? file.descripcion : file.nombre_archivo.slice(0, last_dot_index)
 
                   return (
                     <tr key={"file_list_"+file.pk}>
@@ -1139,13 +1122,8 @@ const ArchivosPaciente = ({sucursal_pk, redirectTo}) => {
                         {name}
                       </td>
                       <td>
-                        <pre>{file.created}</pre>
+                        <pre>{file.fecha}</pre>
                       </td>
-                      {/*
-                      <td style={css.icon}>
-                        {file.atencion && <Icon type="attention" onClick={() => redirectTo(`/nav/atencion/${file.atencion}/detalle`)} />}
-                      </td>
-                      */}
                       <td style={css.icon}>
                         <a href={file.webViewLink} target="_blank" style={{
                           display: "inline-block",
@@ -1176,22 +1154,98 @@ const ArchivosPaciente = ({sucursal_pk, redirectTo}) => {
                       </td>
                     </tr>
                   )
-                }
-              ) : "No hay archivos añadidos"}
+                })
+                : (<tr><td>No hay archivos añadidos</td></tr>)
+              }
             </tbody>
           </table>
         </div>
         <div className="card-footer">
-          <input type="file" id="input-file" onChange={inputFileChange} />
-          <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
+          <button className="btn btn-primary" data-toggle="modal" data-target={`#${fileupload_modal_id}`}>Subir archivo</button>
         </div>
 
+        <ModalFileUpload
+          modal_id={fileupload_modal_id}
+          patient_pk={__params__.patient_pk}
+          refresFiles={() => setFiles(false)} />
         <ModalLoading
-          _id={gadrive_modal_id}
+          _id={fileloadingdelete_modal_id}
           _title={"Cargando.."}
-          _body_text={"Por favor espere unos segundos mientras se realiza la operación"} />
+          _body_text={"Por favor espere unos segundos mientras se elimina el archivo"} />
       </div>
     )
+}
+export const ModalFileUpload = ({modal_id, patient_pk, refresFiles}) => {
+  const gadriveloadingupload_modal_id = "gadrive_loadingupload"
+  const [selectedFile, setSelectedFile] = useState(false)
+
+  const uploadFile = () => {
+    let input_file = window.document.getElementById('input-file')
+    if(input_file.files.length == 0) return
+
+    let file = input_file.files[0]
+    let data = new FormData()
+    data.append("file", file)
+    let input_descripcion = window.document.getElementById('input-descripcion').value
+    data.append("descripcion", input_descripcion)
+    let input_fecha = window.document.getElementById('input-fecha').value
+    data.append("fecha", input_fecha)
+
+    window.$(`#${modal_id}`).modal("hide")  // Hide file upload modal
+    showLoadingUploadModal()  // Show loading file upload modal
+
+    return addRequestValidation(
+        fetch(
+          process.env.REACT_APP_PROJECT_API+`atencion/paciente/${patient_pk}/files/`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: localStorage.getItem('access_token'),  // Token
+            },
+            body: data,
+          },
+        )
+      )
+      .then(refresFiles)
+      .then(hideLoadingUploadModal)
+  }
+  const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
+  const showLoadingUploadModal = () => window.$(`#${gadriveloadingupload_modal_id}`).modal("show")
+  const hideLoadingUploadModal = () => window.$(`#${gadriveloadingupload_modal_id}`).modal("hide")
+
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$(`#${gadriveloadingupload_modal_id}`).modal("hide")
+  }, [])
+
+  return (
+    <div>
+      <RegularModalCentered
+        _id={modal_id}
+        _title={"Subir archivo"}
+        _body={
+          <div>
+            <div className="form-group">
+              <input type="file" id="input-file" onChange={inputFileChange} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="input-descripcion">Descripcion del archivo</label>
+              <input type="text" id="input-descripcion" className="form-control" />
+            </div>
+            <div className="form-group">
+            <label className="form-label" htmlFor="input-fecha">Fecha</label>
+            <input type="date" id="input-fecha" className="form-control" defaultValue={(new Date().toDateInputValue())} />
+            </div>
+            <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
+          </div>
+        } />
+
+      <ModalLoading
+        _id={gadriveloadingupload_modal_id}
+        _title={"Cargando.."}
+        _body_text={"Por favor espere unos segundos mientras se guarda el archivo"} />
+    </div>
+  )
 }
 
 
