@@ -1100,7 +1100,7 @@ const ArchivosPaciente = () => {
             <thead style={{fontWeight: "bold"}}>
               <tr>
                 <td style={{width: "55%"}}>Nombre</td>
-                <td style={{width: "15%"}}>Creado</td>
+                <td style={{width: "15%"}}>Fecha</td>
                 {/*
                 <td style={css.icon_container}>Atencion</td>
                 */}

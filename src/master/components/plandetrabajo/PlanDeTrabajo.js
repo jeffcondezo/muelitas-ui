@@ -171,8 +171,9 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     simpleGet(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}"}`)
     .then(setPdts)
   }
-  const getDptByPdt = (pdt) => {
-    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt.pk}`)
+  const getDptByPdt = pdt_pk => {
+    console.log("pdt_pk", pdt_pk);
+    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
     .then(setDpdts)
   }
 
@@ -217,7 +218,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
   useEffect(() => {
     if(!pdt) return
 
-    getDptByPdt(pdt)
+    getDptByPdt(pdt.pk)
   }, [pdt])
   // When dpdts are setted
   useEffect(() => {

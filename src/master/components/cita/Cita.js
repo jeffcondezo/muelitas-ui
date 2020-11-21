@@ -843,6 +843,12 @@ class Cita extends React.Component {
     // Fill data from redirect_data
     if(this.redirect_data) this.fillDataFromRedirect()
   }
+  componentWillUnmount(){
+    console.log("Cita unmount");
+    window.$("#modal-crear_cita").modal("hide")
+    window.$('#modal_ver_cita').modal('hide');
+    window.$('#modal_anular_cita').modal('hide');
+  }
 }
 
 /*** COMPONENTS ***/
