@@ -172,7 +172,6 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     .then(setPdts)
   }
   const getDptByPdt = pdt_pk => {
-    console.log("pdt_pk", pdt_pk);
     simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
     .then(setDpdts)
   }

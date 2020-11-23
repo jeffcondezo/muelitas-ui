@@ -632,7 +632,7 @@ const EditPatient = () => {
     if(__debug__) console.log("saveEditAntecedents _data", _data);
     if(!_data) return
 
-    simplePostData(`atencion/paciente/${antecedente.paciente}/antecedentes/`, _data, "PUT")
+    simplePostData(`atencion/paciente/${patient.pk}/antecedentes/`, _data, "PUT")
     .then(
       response_obj => {
         setAntecedente(response_obj)
@@ -712,21 +712,17 @@ const RegisterPatient = props => {
     if(__debug__) console.log("savePatientAntecedents _data", _data)
     if(!_data) return
 
-    simpleGet(`atencion/paciente/${patient.pk}/antecedentes/`)
-    .then(antecedente => {
-      if(__debug__) console.log("antecedente", antecedente);
-      simplePostData(`atencion/paciente/${antecedente.pk}/antecedentes/`, _data, "PUT")
-      .then(
-        response_obj => {
-          if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
-          // Redirect to AdmisionDetail
-          props.redirectTo(`/nav/admision/${patient.pk}/detalle`, {patient: patient})
-        },
-        error => {
-          console.log("WRONG!", error);
-        }
-      );
-    })
+    simplePostData(`atencion/paciente/antecedentes/`, _data)
+    .then(
+      response_obj => {
+        if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
+        // Redirect to AdmisionDetail
+        props.redirectTo(`/nav/admision/${patient.pk}/detalle`, {patient: patient})
+      },
+      error => {
+        console.log("WRONG!", error);
+      }
+    );
   }
   const getBack = () => {
     window.history.back()
