@@ -1158,6 +1158,7 @@ const ArchivosPaciente = () => {
         </div>
         <div className="card-footer">
           <button className="btn btn-primary" data-toggle="modal" data-target={`#${fileupload_modal_id}`}>Subir archivo</button>
+          <button className="btn btn-secondary" style={{marginLeft: "10px"}} onClick={()=>window.history.back()}>Regresar</button>
         </div>
 
         <ModalFileUpload
