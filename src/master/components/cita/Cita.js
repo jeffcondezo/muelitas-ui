@@ -5,7 +5,13 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
-import { Icon, SelectOptions_Procedimiento } from '../bits';
+import {
+  Icon,
+  SelectOptions_Procedimiento,
+  ModalLoading,
+  RegularModalCentered
+} from '../bits';
+
 import {
   getPatientFullName,
   handleErrorResponse,
@@ -13,6 +19,9 @@ import {
   simpleGet,
   simplePostData,
 } from '../../functions';
+
+// Static
+const reprogramar_modal_id = "cita_reprogramar"
 
 
 class Cita extends React.Component {
@@ -641,7 +650,7 @@ class Cita extends React.Component {
     <>
       {/* ALERTS */}
       <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Error</strong> No se ha podido establecer conexión con el servidor.
+          <strong>Error</strong> Ha ocurrido un error en el procesamiento.
       </div>
       <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
           <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
@@ -786,6 +795,10 @@ class Cita extends React.Component {
       {/* CALENDAR */}
       <div id="calendar">
       </div>
+
+      <ReprogramarCita
+        modal_id={reprogramar_modal_id}
+        getCitas={() => this.getCitas()} />
     </>
     )
   }
@@ -973,6 +986,11 @@ function InfoCita(props){
       console.log(clone);
       setAnnulCita(clone);
     }
+    function openReprogramarCitaModal(){
+      window.$(`#modal_ver_cita`).modal('hide')
+      window.$(`#${reprogramar_modal_id}`).data({cita: props.cita}).modal('show')
+    }
+
     return (
       <div className="modal fade" id="modal_ver_cita" tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -1019,6 +1037,8 @@ function InfoCita(props){
                 <Icon type="odontogram" onClick={() => props.addOdontograma(props.cita)} data_dismiss={"modal"}/>
                 <Icon type="procedure" onClick={() => props.addProcedure(props.cita)} data_dismiss={"modal"}/>
               </div>
+              {/* Reprogramar cita */}
+              <button className="btn btn-info" onClick={openReprogramarCitaModal}>Reprogramar</button>
               {/* Estado cita */}
               <div className="btn-group">
                 <button className="btn btn-primary waves-effect waves-themed"
@@ -1079,6 +1099,95 @@ function InfoCita(props){
       </div>
     )
   }
+}
+const ReprogramarCita = ({modal_id, getCitas}) => {
+  /* ReprogramarCita component
+  * receive 'cita' object through jquery's data
+    $(modal).data()  // cita: cita
+  */
+
+  const reprogramarCita = () => {
+    // Obtener valores
+    let cita = window.$(`#${modal_id}`).data('cita')
+    if(!cita){
+      alert("Ocurrio un problema, no se reconoce la cita\nPor favor contacte con el administrador")
+    }
+    // Validar valores
+    let fecha = window.document.getElementById('reprogram-cita-fecha').value
+    let hora = window.document.getElementById('reprogram-cita-hour').value
+    let minutos = window.document.getElementById('reprogram-cita-minute').value
+
+    let data = {
+      fecha: fecha,
+      hora: `${hora}:${minutos}`,
+    }
+
+    /* Show modal */
+    hideReprogramarModal()
+
+    simplePostData(`atencion/cita/${cita.pk}/reprogramar/`, data)
+    .then(
+      res => {
+        console.log("res", res);
+        if(res.hasOwnProperty("reason")){
+          handleErrorResponse('custom', 'Ups!', res.reason)
+        }
+      },
+      er => console.log("er", er)
+    )
+    .then(getCitas)
+  }
+  // Modals
+  const showReprogramarModal = () => window.$(`#${modal_id}`).modal("show")
+  const hideReprogramarModal = () => window.$(`#${modal_id}`).modal("hide")
+
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$(`#${modal_id}`).modal("hide")
+  }, [])
+
+  return (
+    <div>
+      <RegularModalCentered
+        _id={modal_id}
+        _title={"Reprogramar Cita"}
+        _body={
+          <div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reprogram-cita-fecha">Fecha</label>
+              <input type="date" id="reprogram-cita-fecha" className="form-control" defaultValue={(new Date().toDateInputValue())} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="reprogram-cita-hour" style={{display:'block'}}>Hora: </label>
+              <select id="reprogram-cita-hour" className="custom-select col-lg-6">
+                <option value="08" defaultValue>8 AM</option>
+                <option value="09">9 AM</option>
+                <option value="10">10 AM</option>
+                <option value="11">11 AM</option>
+                <option value="12">12 PM</option>
+                <option value="13">1 PM</option>
+                <option value="14">2 PM</option>
+                <option value="15">3 PM</option>
+                <option value="16">4 PM</option>
+                <option value="17">5 PM</option>
+                <option value="18">6 PM</option>
+                <option value="19">7 PM</option>
+                <option value="20">8 PM</option>
+                <option value="21">9 PM</option>
+              </select>
+              <select id="reprogram-cita-minute" className="custom-select col-lg-6">
+                <option value="00" defaultValue>00</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+              </select>
+            </div>
+            <button className="btn btn-primary" onClick={reprogramarCita}>Reprogramar</button>
+          </div>
+        } />
+
+    </div>
+  )
 }
 
 /* NOTES

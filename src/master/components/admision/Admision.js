@@ -1230,8 +1230,8 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles}) => {
               <input type="text" id="input-descripcion" className="form-control" />
             </div>
             <div className="form-group">
-            <label className="form-label" htmlFor="input-fecha">Fecha</label>
-            <input type="date" id="input-fecha" className="form-control" defaultValue={(new Date().toDateInputValue())} />
+              <label className="form-label" htmlFor="input-fecha">Fecha</label>
+              <input type="date" id="input-fecha" className="form-control" defaultValue={(new Date().toDateInputValue())} />
             </div>
             <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
           </div>

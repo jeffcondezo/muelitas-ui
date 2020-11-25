@@ -10,14 +10,7 @@ ReactDOM.render(<Master />, document.getElementById('root'));
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
-/* TO DO:
-* Add week date range when getting data from api in calendary (cita)
-* Add 'tips' messages to show usefull functionalities
-* Actions icons (odontogram, procedure) in cita's detail in Cita should be read only
-and only appear when procedure or odontogram are already done
 
-* Encrypt data in localStorage
-*/
 
 /* Additional notes:
 * Most of the algorithms are explained in commentaries all over the system

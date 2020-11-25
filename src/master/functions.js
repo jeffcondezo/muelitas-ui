@@ -64,6 +64,7 @@ export function handleErrorResponse(type, ...data){
     if(document.getElementById(id))
       document.getElementById(id).style.display = "none"
   }, scape_time+200, _id)
+  return true
 }
 export function capitalizeFirstLetter(word, restLowerCase=true){
   if(!word || word.length==0) return ""  // If word is empty
@@ -173,15 +174,16 @@ export async function simplePostData(end_point, data={}, method="POST"){
     },
   ).then(
     response => (
+      // There was no brute error in API
       response.ok
       ? response.json()
       : response.status==403
       ? handleErrorResponse('permission')
       : response.status==500
-      ? handleErrorResponse('server')
-      : Promise.reject()
+      ? handleErrorResponse('server') && response.json()
+      : response.json()
     ),
-    () => handleErrorResponse('server')
+    response => handleErrorResponse('server') && response
   );
 }
 export async function simpleDelete(end_point){

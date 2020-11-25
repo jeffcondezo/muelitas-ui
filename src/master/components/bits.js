@@ -173,7 +173,7 @@ export const PageTitle = props => {
     <>
     {/* ALERTS */}
       <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Error</strong> No se ha podido establecer conexión con el servidor.
+          <strong>Error</strong> Ha ocurrido un error en el procesamiento.
       </div>
       <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
           <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
