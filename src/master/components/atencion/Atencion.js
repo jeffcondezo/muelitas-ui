@@ -604,11 +604,13 @@ const AttentionProcedures = props => {
                       onClick={()=>editProcedure(proc)}>
                         <i className="fal fa-edit"></i>
                     </button>
-                    <button className="btn"
-                      style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                      onClick={()=>modalConfirmDelete(proc.pk)}>
-                        <i className="fal fa-trash-alt"></i>
-                    </button>
+                    {!proc.paid && (
+                      <button className="btn"
+                        style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
+                        onClick={()=>modalConfirmDelete(proc.pk)}>
+                          <i className="fal fa-trash-alt"></i>
+                      </button>
+                    )}
                 </li>
                 <div id={"proc-desc-"+proc.pk} className="collapse"
                   aria-labelledby={proc.pk} data-parent="#proc-list"

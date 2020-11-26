@@ -701,12 +701,16 @@ const ListSavedProc = ({proc_list, refreshProcList}) => {
         <span style={{fontSize: "1.2em", width: "100%"}}>
           {proc.orden} - {cFL(proc.procedimiento_nombre)}
         </span>
-        <button className="btn ml-auto" onClick={() => removeProcFromList(proc.pk)} style={{
-          paddingTop: "0",
-          paddingBottom: "0"
-        }} >
-          <i className="fal fa-trash-alt"></i>
-        </button>
+        {proc.dcc && proc.dcc.estado_pago != "1" ? ""
+          : (
+            <button className="btn ml-auto" onClick={() => removeProcFromList(proc.pk)} style={{
+              paddingTop: "0",
+              paddingBottom: "0"
+            }} >
+              <i className="fal fa-trash-alt"></i>
+            </button>
+          )
+        }
       </li>
     </div>
   )});
