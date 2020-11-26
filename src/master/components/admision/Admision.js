@@ -360,12 +360,14 @@ const AdmisionDetail = props => {
               sucursal_pk={props.sucursal_pk}
               redirectTo={props.redirectTo} />
           </div>
+          {/*
           <div>
             <PatientDebts
               patient={patient}
               sucursal_pk={props.sucursal_pk}
               redirectTo={props.redirectTo} />
           </div>
+          */}
         </div>
         <div className="col-lg-6">
           <div className="panel">

@@ -156,9 +156,7 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
         _action_text={"Eliminar"}
         _action_func={deletePDT}
         _body_text={"Esta seguro que quiere eliminar este Plan de trabajo"} />
-      <ModalPagos pdt={pdt}
-      setPDTDeleted={setPDTDeleted}
-       />
+      <ModalPagos pdt={pdt} setPDTDeleted={setPDTDeleted} />
     </div>
   )
 }
@@ -203,7 +201,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
   }, []);
   // When pdts are setted
   useEffect(() => {
-    console.log("pdts", pdts);
+    if(__debug__) console.log("pdts", pdts);
     if(!pdts) return
     if(isArray(pdts) && pdts.length == 0){
       // There is no pdt
@@ -215,6 +213,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
     setPDT(pdts[0])
   }, [pdts]);
   useEffect(() => {
+    if(__debug__) console.log("useEffect pdt", pdt);
     if(!pdt) return
 
     getDptByPdt(pdt.pk)
@@ -247,7 +246,6 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
           // Pago
           targets: 3,
           createdCell: (cell, dcc, rowData) => {
-            console.log(dcc);
             ReactDOM.render(
               dcc ? (
                 <span className={"badge badge-"
@@ -324,7 +322,17 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
       opt.label = v.nombre;
       _select.options.add(opt);
     })
-    _select.onchange = (e) => getDptByPdt(e.target.value);  // Add change listener
+    _select.onchange = (e) => {  // Add change listener
+      let pdt_pk = e.target.value
+      let __pdt = pdts.filter(_pdt => _pdt.pk==pdt_pk)[0]
+      // Handle error
+      if(!__pdt){
+        handleErrorResponse('custom', "Ups!", "Ocurrio un error al cambiar el plan de trabajo")
+        return
+      }
+      // Set new PDT
+      setPDT(__pdt)
+    }
     _select.value = pdt.pk
     _input.replaceWith(_select);  // Replace previous input.text with new select element
   }, [datatable])
