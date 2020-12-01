@@ -628,13 +628,24 @@ const EditPatient = () => {
       error => console.log("WRONG!", error)
     )
   }
+  const createPatientAntecedents = patient_pk => {
+    if(__debug__) console.log("createPatientAntecedents")
+    // Antecedent doesn't exist
+    simplePostData(`atencion/paciente/antecedentes/`, {paciente: patient_pk})
+    .then(
+      res => {
+        if(__debug__) console.log("createPatientAntecedents res")
+        setAntecedente(res)
+      }
+    )
+  }
   const saveEditAntecedents = () => {
     let _data = validatePatientAntecedentsForm()
     _data.paciente = patient.pk
     if(__debug__) console.log("saveEditAntecedents _data", _data);
     if(!_data) return
 
-    simplePostData(`atencion/paciente/${patient.pk}/antecedentes/`, _data, "PUT")
+    simplePostData(`atencion/paciente/antecedentes/${antecedente.pk}/`, _data, "PUT")
     .then(
       response_obj => {
         setAntecedente(response_obj)
@@ -657,15 +668,21 @@ const EditPatient = () => {
         updatePatientData(res)
       }
     )
+  }, []);
+  useEffect(() => {
+    if(!patient) return
+
     // Get patients antecedent
-    simpleGet(`atencion/paciente/${__params__.patient_pk}/antecedentes/`)
+    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${__params__.patient_pk}"}`)
     .then(
       res => {
-        console.log("EditPatient useEffect res", res);
-        setAntecedente(res)
+        if(__debug__) console.log("EditPatient useEffect res", res);
+        // Antecedents doesn't exist
+        if(res.hasOwnProperty("length") && res.length == 0) createPatientAntecedents(patient.pk)
+        else setAntecedente(res[0])  // Antecedent exist
       }
     )
-  }, []);
+  }, [patient])
 
   return !patient
     ? "loading"
@@ -753,6 +770,13 @@ const RegisterPatient = props => {
 const PatientForm = props => {
   // Receive {patient?}
   const patient = props.patient || false;
+  const formatInputDate = date => {
+    /* This only works with specific formats
+    * date: "20/05/2000"
+    * return: "2000-05-20"
+    */
+    return date.split("/").reverse().join("-")
+  }
 
   useEffect(() => {
     // CSS
@@ -805,7 +829,7 @@ const PatientForm = props => {
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
-        <input type="date" id="born-date" className="form-control" defaultValue={patient&&patient.fecha_nacimiento||""} />
+        <input type="date" id="born-date" className="form-control" defaultValue={patient&&formatInputDate(patient.fecha_nacimiento)||""} />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="phone">Celular: </label>
@@ -850,6 +874,17 @@ const PatientAntecedentsForm = ({antecedente}) => {
       document.body.appendChild(select2_script);
     }
   }, []);
+  useEffect(() => {
+    if(!antecedente) return
+    if(__debug__) console.log("PatientAntecedentsForm useEffect antecedente:", antecedente);
+    if(antecedente){
+      // Set default values
+      window.document.getElementById('diabetes').value = Number(antecedente.diabetes)
+      window.document.getElementById('hepatitis').value = Number(antecedente.hepatitis)
+      window.document.getElementById('hemorragia').value = Number(antecedente.hemorragia)
+      window.document.getElementById('enf_cardiovascular').value = Number(antecedente.enf_cardiovascular)
+    }
+  }, [antecedente])
 
   return (
     <div className="form-group col-md-12">  {/* Form */}
@@ -857,29 +892,29 @@ const PatientAntecedentsForm = ({antecedente}) => {
       <div className="form-group">
         <label className="form-label" htmlFor="diabetes">Diabetes? </label>
         <select id="diabetes" className="custom-select form-control">
-          <option value="0" defaultValue={antecedente&&antecedente.diabetes||false}>No</option>
-          <option value="1" defaultValue={antecedente&&antecedente.diabetes||true}>Si</option>
+          <option value="0">No</option>
+          <option value="1">Si</option>
         </select>
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="hepatitis">Hepatitis? </label>
         <select id="hepatitis" className="custom-select form-control">
-          <option value="0" defaultValue={antecedente&&antecedente.hepatitis||false}>No</option>
-          <option value="1" defaultValue={antecedente&&antecedente.hepatitis||true}>Si</option>
+          <option value="0">No</option>
+          <option value="1">Si</option>
         </select>
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="hemorragia">Hemorragia? </label>
         <select id="hemorragia" className="custom-select form-control">
-          <option value="0" defaultValue={antecedente&&antecedente.hemorragia||false}>No</option>
-          <option value="1" defaultValue={antecedente&&antecedente.hemorragia||true}>Si</option>
+          <option value="0">No</option>
+          <option value="1">Si</option>
         </select>
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="enf_cardiovascular">Enfermedad cardiovascular? </label>
         <select id="enf_cardiovascular" className="custom-select form-control">
-          <option value="0" defaultValue={antecedente&&antecedente.enf_cardiovascular||false}>No</option>
-          <option value="1" defaultValue={antecedente&&antecedente.enf_cardiovascular||true}>Si</option>
+          <option value="0">No</option>
+          <option value="1">Si</option>
         </select>
       </div>
 
