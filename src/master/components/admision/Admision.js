@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { postCacheData, getCacheData } from '../HandleCache';
+import React, { useState, useEffect } from 'react';
 import {
   Switch,
   Route,
   Redirect,
-  Link,
   useParams,
 } from "react-router-dom";
 import {
@@ -17,7 +15,6 @@ import {
 } from '../../functions';
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
 import {
-  PageTitle,
   Icon,
   ModalLoading,
   RegularModalCentered
@@ -600,6 +597,12 @@ const LinksDetail = ({patient, redirectTo}) => {
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="files" onClick={() => redirectTo(`/nav/admision/${patient.pk}/archivos`)} />
           <span style={{fontSize: "0.9rem"}}>Archivos</span>
+        </div>
+        {/* Separador*/} <div style={{width:"100%", height:"20px"}}></div>
+        {/* Registro de pagos */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="finance" onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/pagos`, {patient: patient})} />
+          <span style={{fontSize: "0.9rem"}}>Registro pagos</span>
         </div>
       </div>
     </div>

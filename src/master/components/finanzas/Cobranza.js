@@ -14,6 +14,7 @@ import {
   getDataByPK,
 } from '../../functions';
 import { PageTitle } from '../bits';
+import HistorialPagos from './HistorialPagos';
 
 
 // Constant
@@ -29,10 +30,16 @@ const Cobranza = props => {
           sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
-      <Route exact path='/nav/cobranza/:patient/detalle/'>
+      <Route path='/nav/cobranza/:patient/detalle'>
         <CobranzaDetail
           patient={props.data.patient}
           attention_pk={props.data.attention_pk}
+          sucursal_pk={props.sucursal_pk}
+          redirectTo={props.redirectTo} />
+      </Route>
+      <Route path='/nav/cobranza/:patient/pagos'>
+        <HistorialPagos
+          _patient={props.data.patient}
           sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
@@ -100,7 +107,6 @@ const DebtXPatientTable = props => {
       columns: [
         {title: "Nombre", data: null},
         {title: "Deuda", data: null},
-        {title: "Proximo pago", data: null},
         {title: "Estado", data: null},
         {title: "", data: null},
       ],
@@ -120,13 +126,6 @@ const DebtXPatientTable = props => {
         createdCell: (cell, data) => {
           cell.children[0].innerText = "S/. "+data.total_deuda;
         },
-      }, {
-        // Proximo pago (fecha)
-        targets: 2,
-        defaultContent: "<code style='font-size: 1em'>0</code>",
-        render: (data, type, row) => (
-          data.pago_fecha.split("-").reverse().join("-")
-        )
       }, {
         // Fecha pago
         targets: -2,
