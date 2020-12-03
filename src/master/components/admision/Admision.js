@@ -1209,7 +1209,7 @@ const ArchivosPaciente = () => {
       </div>
     )
 }
-export const ModalFileUpload = ({modal_id, patient_pk, refresFiles}) => {
+export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}) => {
   const gadriveloadingupload_modal_id = "gadrive_loadingupload"
   const [selectedFile, setSelectedFile] = useState(false)
 
@@ -1224,6 +1224,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles}) => {
     data.append("descripcion", input_descripcion)
     let input_fecha = window.document.getElementById('input-fecha').value
     data.append("fecha", input_fecha)
+    if(atencion_pk) data.append("atencion", atencion_pk)
 
     window.$(`#${modal_id}`).modal("hide")  // Hide file upload modal
     showLoadingUploadModal()  // Show loading file upload modal

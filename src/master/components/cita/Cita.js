@@ -632,18 +632,26 @@ class Cita extends React.Component {
     if(!this.redirect_data?.selected) return
     // Compare procs sended and procs received
     let sended_ar = window.$("#programado").select2('data').map(i => Number(i.id))
-    this.redirect_data.selected.map(obj => {
-      if(sended_ar.indexOf(obj.proc_pk) == -1) return
-
-      // If proc was sended add cita as dpdt's reference
-      simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`)
-      // Add DA from DPDT
-      simplePostData(`atencion/${cita.atencion}/detalle/dpdt/${obj.dpdt}/`)
-    })
-
-    // Delete redirect_data
-    this.redirect_data = false
+    // BUG: Execute it all in promise to avoid multiple instant execution (duplicity in DB objects)
+    // this.redirect_data.selected = [{proc_pk, dpdt}]
+    this.redirect_data.selected.reduce(
+      (promise_chain, obj) => {
+        return sended_ar.indexOf(obj.proc_pk) == -1
+          ? promise_chain
+          : promise_chain.then(
+            // If proc was sended add cita as dpdt's reference
+            () => simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`)
+          ).then(
+            // Add DA from DPDT
+            () => simplePostData(`atencion/${cita.atencion}/detalle/dpdt/${obj.dpdt}/`)
+          )
+      }, Promise.resolve()
+    ).then(
+      // Delete redirect_data
+      () => this.redirect_data = false
+    )
   }
+
 
   render(){
     return(

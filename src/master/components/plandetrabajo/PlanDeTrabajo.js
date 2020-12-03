@@ -588,7 +588,6 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
     .then(() => refreshProcList())
   }
   const handleProcedureChange = el => {
-    if(__debug__) console.log("handleProcedureChange el", el);
     let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
     if(inx==-1) return
 

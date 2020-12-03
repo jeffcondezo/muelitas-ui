@@ -277,7 +277,9 @@ const AttentionDetail = (props) => {
               redirectTo={redirect} />
           </div>
           <div className="panel">
-            <ArchivosPaciente patient_pk={cita.paciente_data.pk} />
+            <ArchivosPaciente
+              atencion_pk={cita.atencion}
+              patient_pk={cita.paciente_data.pk} />
           </div>
         </div>
       </div>
@@ -418,20 +420,20 @@ const PatientAttentionHistory = props => {
       </div>
     );
 }
-const ArchivosPaciente = ({patient_pk}) => {
+const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
   const fileupload_modal_id = "gadrive_upload"
   const fileloadingdelete_modal_id = "gadrive_loadingdelete"
   const [files, setFiles] = useState(false);
 
   // Google drive API functions
   const getPatientFiles = () => {
+    if(__debug__) console.log("ArchivosPaciente getPatientFiles");
     // Get patient by id}
-    simpleGet(`atencion/paciente/${patient_pk}/files/`)
+    simpleGet(`atencion/${atencion_pk}/files/`)
     .then(
       res => {
         console.log("res", res);
-        // if(!res) getBack()
-        setFiles(res)
+        if(res) setFiles(res)
       }
     )
   }
@@ -486,6 +488,7 @@ const ArchivosPaciente = ({patient_pk}) => {
         <ModalFileUpload
           modal_id={fileupload_modal_id}
           patient_pk={patient_pk}
+          atencion_pk={atencion_pk}
           refresFiles={() => setFiles(false)} />
         <ModalLoading
           _id={fileloadingdelete_modal_id}
