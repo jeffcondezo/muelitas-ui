@@ -39,7 +39,6 @@ const Cobranza = props => {
       </Route>
       <Route path='/nav/cobranza/:patient/pagos'>
         <HistorialPagos
-          _patient={props.data.patient}
           sucursal_pk={props.sucursal_pk}
           redirectTo={props.redirectTo} />
       </Route>
@@ -51,13 +50,11 @@ const Cobranza = props => {
   )
 }
 
-const CobranzaList = props => {
-  return (
-    <DebtXPatientTable
-      redirectTo={props.redirectTo}
-      sucursal_pk={props.sucursal_pk} />
-  )
-}
+const CobranzaList = props => (
+  <DebtXPatientTable
+    redirectTo={props.redirectTo}
+    sucursal_pk={props.sucursal_pk} />
+)
 const DebtXPatientTable = props => {
   // Receive {sucursal_pk}
   const [patientxdebt, setPxD] = useState(false);

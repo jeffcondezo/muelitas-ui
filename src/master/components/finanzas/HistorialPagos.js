@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useParams } from "react-router-dom";
 import {
   handleErrorResponse,
@@ -11,26 +12,17 @@ import { PageTitle } from '../bits';
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const HistorialPagos = ({_patient, sucursal_pk, redirectTo}) => {
+const HistorialPagos = ({sucursal_pk, redirectTo}) => {
   let __params__ = useParams();
   const datatable_id = "patientxpagos-table"
 
-  const [patient, setPatient] = useState(false)
   const [patientxpagos, setPxP] = useState(false)
   const [datatable, setDatatable] = useState(false)
 
-  const getPatient = () => {
-    if(__debug__) console.log("HistorialPagos getPatient")
-
-    if(patient) setPatient(_patient)
-    else
-    simpleGet(`atencion/paciente/${__params__.patient}/`)
-    .then(setPatient);
-  }
-  const getPxP = patient_dni => {
+  const getPxP = () => {
     if(__debug__) console.log("HistorialPagos getPxP")
 
-    simpleGet(`finanzas/cuentacorriente/pago/?filtro={"dni":"${patient_dni}"}`)
+    simpleGet(`finanzas/sucursal/${sucursal_pk}/paciente/${__params__.patient}/`)
     .then(setPxP);
   }
 
@@ -42,9 +34,9 @@ const HistorialPagos = ({_patient, sucursal_pk, redirectTo}) => {
       dt_script.async = false;
       dt_script.id = "dt_script";
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
-      dt_script.onload = () => getPatient();
+      dt_script.onload = () => getPxP();
       document.body.appendChild(dt_script);
-    }else getPatient();
+    }else getPxP();
     // CSS
     if(!document.getElementById('dt_style')){
       const dt_style = document.createElement("link");
@@ -54,15 +46,10 @@ const HistorialPagos = ({_patient, sucursal_pk, redirectTo}) => {
       document.head.appendChild(dt_style);
     }
   }, []);
-  // When patient variable is setted
-  useEffect(() => {
-    if(!patient) return
-
-    getPxP(patient.dni)
-  }, [patient])
   // When patientxpagos variable is setted
   useEffect(() => {
     if(!patientxpagos) return;  // Abort if it's false
+    console.log("patientxpagos", patientxpagos);
 
     // Destroy previous DT if exists
     if(datatable) window.$(`#${datatable_id}`).DataTable().clear().destroy();
@@ -70,17 +57,41 @@ const HistorialPagos = ({_patient, sucursal_pk, redirectTo}) => {
     let _tmp = window.$(`#${datatable_id}`).DataTable({
       data: patientxpagos,
       columns: [
-        {title: "Fecha", data: "fecha_pago"},
-        {title: "Origen", data: "detallecuentacorriente.detalle_dpdt"},
-        {title: "Procedimiento", data: "detallecuentacorriente.detalle"},
+        {title: "Fecha y hora de pago", data: "fecha"},
         {title: "Monto", data: "monto"},
+        {title: "Plan de trabajo", data: "pk"},
+        {title: "Detalle", data: "detalle"},
       ],
       columnDefs: [{
         // Origen del pago
-        targets: 1,
-        render: data => data ? "Plan de trabajo" : "Atencion"
+        targets: 0,
+        render: data => {
+          // console.log("data", data);
+          let splited_data = data.split("-")
+          let date = splited_data[0]
+          let time = splited_data[1].split(":")
+          let minute = time[1].padStart(2, "0")
+          let hour = Number(time[0])
+
+          hour = hour > 12 ? String(hour-12).padStart(2, "0")+" PM" : hour == 12 ? "12 PM" : String(hour).padStart(2, "0")+" AM"
+          return date+" - "+minute+":"+hour
+        }
+      }, {
+        // Origen del pago
+        targets: 2,
+        createdCell: (cell, data, row) => {
+          console.log(cell, data, row);
+          ReactDOM.render(
+            <span
+              className={`badge badge-${row.cita ? "success" : "info"} badge-pill`}
+              style={{cursor: "pointer"}}
+              onClick={()=>redirectTo(row.cita?`/nav/atencion/${row.cita}/detalle/`:`/nav/plandetrabajo/${__params__.patient}/`)}
+            >{row.cita ? "Atencion" : "Plan de trabajo"}</span>
+            , cell
+          )
+        }
       }],
-      order: [[0, 'desc']],  // Default sort by newest
+      order: [[0, 'asc']],  // Default sort by newest
       pageLength: 8,  // Default page length
       lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
       language: {
