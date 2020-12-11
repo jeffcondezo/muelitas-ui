@@ -72,15 +72,14 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
           let time = splited_data[1].split(":")
           let minute = time[1].padStart(2, "0")
           let hour = Number(time[0])
-
-          hour = hour > 12 ? String(hour-12).padStart(2, "0")+" PM" : hour == 12 ? "12 PM" : String(hour).padStart(2, "0")+" AM"
-          return date+" - "+minute+":"+hour
+          let indicator = hour >= 12 ? "PM" : "AM"
+          if(hour > 12) hour = hour-12  // Fix hour
+          return date+" - "+String(hour).padStart(2, "0")+":"+minute+" "+indicator
         }
       }, {
         // Origen del pago
         targets: 2,
         createdCell: (cell, data, row) => {
-          console.log(cell, data, row);
           ReactDOM.render(
             <span
               className={`badge badge-${row.cita ? "success" : "info"} badge-pill`}
@@ -91,7 +90,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
           )
         }
       }],
-      order: [[0, 'asc']],  // Default sort by newest
+      order: [[0, 'desc']],  // Default sort by newest
       pageLength: 8,  // Default page length
       lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
       language: {
