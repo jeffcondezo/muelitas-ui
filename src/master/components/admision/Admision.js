@@ -23,6 +23,7 @@ import { FileIcon, defaultStyles } from 'react-file-icon'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
+const format_id = 'format_id'
 
 
 function Admision(props){
@@ -92,32 +93,8 @@ const SearchPatient = props => {
   const [datatable, setDatatable] = useState(false);
 
   const getAllPatients = (_sucursal_pk=props.sucursal_pk) => {
-    let filter = `filtro={"all":"all"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {  // In case it's ok
-        setPatients(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
+    simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/`)
+    .then(res => setPatients(res.map(pxs => pxs.paciente)))
   }
 
   useEffect(() => {
@@ -194,7 +171,7 @@ const SearchPatient = props => {
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",
         sZeroRecords:    "No se encontraron resultados",
-        sEmptyTable:     "No hay atenciones registradas para la fecha seleccionada",
+        sEmptyTable:     "No hay pacientes registrados",
         sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
@@ -378,6 +355,7 @@ const AdmisionDetail = props => {
               redirectTo={props.redirectTo} />
           </div>
         </div>
+        <ModalFormatos patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
       </div>
     );
 }
@@ -484,63 +462,6 @@ const PatientPrescription = props => {
       </div>
     )
 }
-const PatientDebts = props => {
-  // Receive {patient, sucursal_pk}
-  const [cuentacorriente, setCC] = useState(false);
-
-  const getPatientDebts = (_patient_dni) => {
-    // Get patient's cuentacorriente
-    let filter = `filtro={"by_dni":"${_patient_dni}", "sucursal":"${props.sucursal_pk}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`finanzas/cuentacorriente/`;
-    url = url + '?' + filter;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
-      obj => {
-        if(obj.length==1) setCC(obj[0])
-        else setCC({deuda_actual: 0})
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
-
-  useEffect(() => {
-    // Get patient's data by dni
-    getPatientDebts(props.patient.dni)
-  }, []);
-
-  return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Deudas
-        </div>
-      </div>
-      <div className="card-body">
-        {!cuentacorriente
-          ? "loading"
-          : cuentacorriente.deuda_actual==0
-            ? <span style={{fontSize: "1.2em"}}>El paciente no tiene deudas</span>
-            : (<h3>Deuda actual: {cuentacorriente.deuda_actual}</h3>)
-        }
-      </div>
-    </div>
-  )
-}
 const LinksDetail = ({patient, redirectTo}) => {
   // WARNING: This component strongly depends on it's props
   return (
@@ -599,10 +520,15 @@ const LinksDetail = ({patient, redirectTo}) => {
           <span style={{fontSize: "0.9rem"}}>Archivos</span>
         </div>
         {/* Separador*/} <div style={{width:"100%", height:"20px"}}></div>
-        {/* Registro de pagos */}
+        {/* Historial de pagos */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="finance" onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/pagos`, {patient: patient})} />
-          <span style={{fontSize: "0.9rem"}}>Registro pagos</span>
+          <span style={{fontSize: "0.9rem"}}>Historial de pagos</span>
+        </div>
+        {/* Formatos */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="pdf" onClick={() => window.$(`#${format_id}`).modal('show')} />
+          <span style={{fontSize: "0.9rem"}}>Formatos</span>
         </div>
       </div>
     </div>
@@ -718,15 +644,21 @@ const RegisterPatient = props => {
 
     simplePostData(`atencion/paciente/`, _data)
     .then(
-      response_obj => {
-        if(__debug__) console.log("RegisterPatient savePatient", response_obj)
+      paciente => {
+        if(__debug__) console.log("RegisterPatient savePatient", paciente)
+        // Create PacienteXSucursal register
+        createPacienteXSucursal(paciente.pk)
         // Save patient's antecedents
-        savePatientAntecedents(response_obj)
+        savePatientAntecedents(paciente)
       },
       error => {
         console.log("WRONG!", error);
       }
     );
+  }
+  const createPacienteXSucursal = pac_pk => {
+    simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: props.sucursal_pk})
+    .then(r => console.log('createPacienteXSucursal res:', r))
   }
   const savePatientAntecedents = (patient) => {
     let _data = validatePatientAntecedentsForm()
@@ -804,6 +736,10 @@ const PatientForm = props => {
   return (
     <div className="form-group col-md-12">  {/* Form */}
       <div className="form-group">
+        <label className="form-label" htmlFor="dni">DNI: </label>
+        <input type="text" id="dni" className="form-control" maxLength="8" defaultValue={patient&&patient.dni||""} />
+      </div>
+      <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
         <input type="text" id="name-pric" className="form-control" defaultValue={patient&&patient.nombre_principal||""} />
       </div>
@@ -818,10 +754,6 @@ const PatientForm = props => {
       <div className="form-group">
         <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
         <input type="text" id="ape-m" className="form-control" defaultValue={patient&&patient.ape_materno||""} />
-      </div>
-      <div className="form-group">
-        <label className="form-label" htmlFor="dni">DNI: </label>
-        <input type="text" id="dni" className="form-control" maxLength="8" defaultValue={patient&&patient.dni||""} />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="sexo">Sexo: </label>
@@ -1282,6 +1214,28 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
         _id={gadriveloadingupload_modal_id}
         _title={"Cargando.."}
         _body_text={"Por favor espere unos segundos mientras se guarda el archivo"} />
+    </div>
+  )
+}
+// Formatos
+const ModalFormatos = ({patient_pk, sucursal_pk}) => {
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$(`#${format_id}`).modal("hide")
+  }, [])
+
+  return (
+    <div>
+      <RegularModalCentered
+        _id={format_id}
+        _title={"Generar formato"}
+        _body={
+          <div>
+            <button className="btn btn-primary" onClick={() => window.open(`http://localhost:8000/atencion/viewdoc/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+              Cuidados de la ortodoncia
+            </button>
+          </div>
+        } />
     </div>
   )
 }

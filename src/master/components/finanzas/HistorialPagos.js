@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams } from "react-router-dom";
 import {
-  handleErrorResponse,
-  capitalizeFirstLetter as cFL,
   simpleGet,
 } from '../../functions';
-import { PageTitle } from '../bits';
+import { PageTitle, RegularModalCentered } from '../bits';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -18,6 +16,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
 
   const [patientxpagos, setPxP] = useState(false)
   const [datatable, setDatatable] = useState(false)
+  const [selected_pago, selectPago] = useState(false)
 
   const getPxP = () => {
     if(__debug__) console.log("HistorialPagos getPxP")
@@ -63,7 +62,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
         {title: "Detalle", data: "detalle"},
       ],
       columnDefs: [{
-        // Origen del pago
+        // Fecha y hora
         targets: 0,
         render: data => {
           // console.log("data", data);
@@ -86,6 +85,17 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
               style={{cursor: "pointer"}}
               onClick={()=>redirectTo(row.cita?`/nav/atencion/${row.cita}/detalle/`:`/nav/plandetrabajo/${__params__.patient}/`)}
             >{row.cita ? "Atencion" : "Plan de trabajo"}</span>
+            , cell
+          )
+        }
+      }, {
+        // Origen del pago
+        targets: 3,
+        createdCell: (cell, data, row) => {
+          ReactDOM.render(
+            <button className="btn-primary btn-pills waves-effect"
+              data-toggle="modal" data-target="#pago-detalle"
+              onClick={() => selectPago(row)}>Detalle</button>
             , cell
           )
         }
@@ -129,17 +139,31 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
 
   return (
     <>
-    <PageTitle title={"Registro de pagos del paciente"} />
+    <PageTitle title={"Historial de pagos del paciente"} />
     {!patientxpagos
       ? "loading"
       : (
         <div className="datatable-container col-12">
           <table id={datatable_id} style={{width: "100%"}}></table>
+
+          <div>
+            <RegularModalCentered
+              _id={"pago-detalle"}
+              _title={"Detalle de pago"}
+              _body={
+                <ModalPagoDetalle pago={selected_pago} />
+              } />
+          </div>
         </div>
       )
     }
     </>
   )
+}
+const ModalPagoDetalle = ({pago}) => {
+  return !pago
+    ? 'loading'
+    : pago.detalle
 }
 
 

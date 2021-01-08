@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { handleErrorResponse, getDataByPK } from '../../functions';
-import { SelectOptions_Procedimiento } from '../bits';
-import { postCacheData, getCacheData } from '../HandleCache';
 import { PageTitle } from '../bits';
 
 // Constant
@@ -197,6 +195,7 @@ const AddMedicine = props => {
 
     let _tmp = {
       atencion: props.cita.atencion,
+      paciente: props.cita.paciente,
       medicamento: document.getElementById('select_medicine').value,
       medicamento_name: document.getElementById('select_medicine').selectedOptions[0].text,
       cantidad: document.getElementById('amount').value,
@@ -212,29 +211,28 @@ const AddMedicine = props => {
     period -= 0; // Convert string to int
     // Vars
     let now_hour = new Date().getHours();
-    let now_minute = new Date().getMinutes();
     let suggested_hour = 0;
 
     // Algorithm
     if(period==12){
       // Breakfast & Dinner
-      suggested_hour = 7;  // 7 AM
+      suggested_hour = 7;  // 7AM 7PM
     }else if(period==8){
       // Breakfast & Lunch & Dinner
-      suggested_hour = 6;  // 6 AM
+      suggested_hour = 6;  // 6AM 2PM 10PM
     }else if(period==4){
       // Breakfast & Lunch & Dinner & Before sleep
-      suggested_hour = 7;  // 7 AM
+      suggested_hour = 7;  // 7AM 11AM 3PM 7PM 11PM 3AM
     }
 
-    // Fix
+    // Set next hour
     let tmp = suggested_hour;
-    while(suggested_hour <= now_hour){
+    while(suggested_hour <= now_hour-1){  // 1 hour difference
       suggested_hour += period;
       if(suggested_hour > 23){suggested_hour=tmp; break;}
     }
     // Set value
-    document.getElementById('start-time').value = suggested_hour+":00";
+    document.getElementById('start-time').value = String(suggested_hour).padStart(2, 0)+":00";
   }
   const clearForm = () => {
     document.getElementById('amount').value = ""
