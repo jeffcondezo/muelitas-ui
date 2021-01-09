@@ -23,7 +23,8 @@ import { FileIcon, defaultStyles } from 'react-file-icon'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-const format_id = 'format_id'
+const html_format_id = 'html_format_id'
+const html_instant_notification_id = 'html_instant_notification_id'
 
 
 function Admision(props){
@@ -356,6 +357,7 @@ const AdmisionDetail = props => {
           </div>
         </div>
         <ModalFormatos patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
+        <InstantNotification patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
       </div>
     );
 }
@@ -527,8 +529,13 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
         {/* Formatos */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="pdf" onClick={() => window.$(`#${format_id}`).modal('show')} />
+          <Icon type="pdf" onClick={() => window.$(`#${html_format_id}`).modal('show')} />
           <span style={{fontSize: "0.9rem"}}>Formatos</span>
+        </div>
+        {/* Notificacion instantanea */}
+        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="pdf" onClick={() => window.$(`#${html_instant_notification_id}`).modal('show')} />
+          <span style={{fontSize: "0.9rem"}}>Mensaje</span>
         </div>
       </div>
     </div>
@@ -1221,22 +1228,82 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
 const ModalFormatos = ({patient_pk, sucursal_pk}) => {
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${format_id}`).modal("hide")
+    window.$(`#${html_format_id}`).modal("hide")
   }, [])
 
   return (
-    <div>
-      <RegularModalCentered
-        _id={format_id}
-        _title={"Generar formato"}
-        _body={
-          <div>
-            <button className="btn btn-primary" onClick={() => window.open(`http://localhost:8000/atencion/viewdoc/${sucursal_pk}/${patient_pk}/`, '_blank')}>
-              Cuidados de la ortodoncia
-            </button>
+    <RegularModalCentered
+      _id={html_format_id}
+      _title={"Generar formato"}
+      _body={
+        <div>
+          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+            Cuidados de la ortodoncia
+          </button>
+        </div>
+      } />
+  )
+}
+// Send Instant Notification
+const InstantNotification = ({patient_pk, sucursal_pk}) => {
+  let [checkbox_now, setCheckboxNow] = useState(true)
+  let _dt = new Date()
+  let datetime_now = _dt.toDateInputValue()+'T'+_dt.getHours()+":"+String(_dt.getMinutes()).padStart(2, "0")
+
+  const saveInstantNotification = () => {
+    if(__debug__) console.log("InstantNotification saveInstantNotification");
+
+    let data = {
+      message: window.document.getElementById('in-msg').value,
+      now: window.document.getElementById('in-now').checked,
+      fecha: window.document.getElementById('in-fecha').value.split('T')[0],
+      hora: window.document.getElementById('in-fecha').value.split('T')[1],
+    }
+
+    // Verificar que haya mensaje
+    if(data.message.length==0){
+      alert("El mensaje no puede estar vacio")
+      return
+    }
+
+    console.log("data", data);
+    // Enviar data al API
+    simplePostData(`atencion/notification/instant/paciente/${patient_pk}/sucursal/${sucursal_pk}/`, data)
+    .then(r => console.log("r", r))
+  }
+
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$(`#${html_format_id}`).modal("hide")
+  }, [])
+
+  return (
+    <RegularModalCentered
+      _id={html_instant_notification_id}
+      _title={"Enviar mensaje al paciente"}
+      _body={
+        <div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="input-descripcion">Mensaje</label>
+            <textarea className="form-control" id="in-msg" rows="3" placeholder="Mensaje aqui" maxLength="140"></textarea>
+            <span className="help-block">
+              140 caracteres maximo, solo letras y numeros permitidos (no tildes, ñ o simbolos)
+            </span>
           </div>
-        } />
-    </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="input-fecha">Cuándo enviar?</label>
+            <div style={{display: "flex", alignItems: "center"}}>
+              <div className="custom-control custom-checkbox custom-control-inline">
+                <input type="checkbox" className="custom-control-input" id="in-now" defaultChecked onChange={e => setCheckboxNow(e.target.checked)} />
+                <label className="custom-control-label" htmlFor="in-now">Ahora</label>
+              </div>
+              <input type="datetime-local" id="in-fecha" className="form-control" disabled={checkbox_now}
+              defaultValue={datetime_now} />
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={saveInstantNotification}>Subir archivo</button>
+        </div>
+      } />
   )
 }
 
