@@ -157,8 +157,9 @@ export async function simpleGet(end_point){
 }
 export async function simplePostData(end_point, data={}, method="POST"){
   method = method.toUpperCase()
-  if(method != "POST" && method != "PUT"){
-    console.error("simplePostData only supports methods POST and PUT");
+  if(method != "POST" && method != "PUT" && method != "PATCH"){
+    console.error("simplePostData only supports methods POST, PUT and PATCH")
+    return Promise.reject()
   }
 
   return fetch(
@@ -184,7 +185,7 @@ export async function simplePostData(end_point, data={}, method="POST"){
       : response.json()
     ),
     response => handleErrorResponse('server') && response
-  );
+  )
 }
 export async function simpleDelete(end_point){
   return fetch(

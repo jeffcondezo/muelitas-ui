@@ -7,8 +7,6 @@ import listPlugin from '@fullcalendar/list';
 import './fullcalendar.bundle.css'
 import {
   Icon,
-  SelectOptions_Procedimiento,
-  ModalLoading,
   RegularModalCentered
 } from '../bits';
 
@@ -97,34 +95,9 @@ class Cita extends React.Component {
     );
   }
   getProcedimiento(){
-    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+'maestro/procedimiento/precio/';
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
+    simpleGet(`maestro/procedimiento/sucursal/${this.state.global.current_sucursal_pk}/?filtro={"active":"1"}`)
+    .then(
+      response_obj => {
         if(response_obj.length<1) return;
 
         // Save in this.state
@@ -132,7 +105,7 @@ class Cita extends React.Component {
         clone.procedimiento = response_obj
         this.setState(clone);
       }
-    );
+    )
   }
   getCitas(){
     let filter = ``;
@@ -734,7 +707,7 @@ class Cita extends React.Component {
                 </div>
               </div>
               {/* Fin Paciente */}
-              <SelectProcedimiento procedimiento={this.state.procedimiento} selected={this.redirect_data?.selected} />
+              <SelectProcedimiento procedimientos={this.state.procedimiento} selected={this.redirect_data?.selected} />
               <div className="form-group col-md-6" style={{display:'inline-block'}}>
                 <label className="form-label" htmlFor="date">Fecha: </label>
                 <input type="date" id="date" name="date" className="form-control form-control-lg" defaultValue={(new Date().toDateInputValue())} required />
@@ -921,9 +894,22 @@ function SelectPersonal(props){
     </div>
   )
 }
-function SelectProcedimiento({procedimiento, selected}){
+function SelectProcedimiento({procedimientos, selected}){
+  const ar_procedimiento = [];
+  if(procedimientos){
+    if(procedimientos!==false){
+      procedimientos.map(p => {
+        ar_procedimiento.push(
+          <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
+          {p.procedimiento_data.nombre.toUpperCase()}
+          </option>
+        );
+      });
+    }
+  }
+
   useEffect(() => {
-    if(!procedimiento || !selected) return
+    if(!procedimientos || !selected) return
 
     // Select values
     if(selected.length!=0){
@@ -932,13 +918,13 @@ function SelectProcedimiento({procedimiento, selected}){
     }else{
       window.$("#programado").prop('disabled', false)  // Habilitar el cambio
     }
-  }, [selected, procedimiento])
+  }, [selected, procedimientos])
 
   return (
     <div className="form-group col-md-12">
       <label className="form-label" htmlFor="programado">Programado: </label>
       <select id="programado" className="custom-select form-control custom-select-lg" multiple>
-        <SelectOptions_Procedimiento procedimientos={procedimiento} />
+        {ar_procedimiento}
       </select>
     </div>
   )

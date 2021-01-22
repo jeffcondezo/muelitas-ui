@@ -23,6 +23,7 @@ import Prescripcion from './prescripcion/Prescripcion';
 import HistoriaClinica from './historia/Historia';
 import Cobranza from './finanzas/Cobranza';
 import PlanDeTrabajo from './plandetrabajo/PlanDeTrabajo';
+import Admin from './admin/Admin';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -178,6 +179,11 @@ function SelectComponent(props){
             sucursal_pk={props.current_sucursal_pk}
             data={_redirect_obj} redirectTo={props.redirectTo} />
         </Route>
+        <Route path="/nav/admin">
+          <Admin
+            sucursal_pk={props.current_sucursal_pk}
+            redirectTo={props.redirectTo} />
+        </Route>
 
         {/* Components accessed only by redirect */}
         <Route path="/nav/odontograma/">
@@ -214,6 +220,8 @@ function SelectComponent(props){
 }
 /*** PAGE ***/
 function AsideLinks(props){
+  let _path = props.history.location.pathname
+
   return (
     <ul id="js-nav-menu" className="nav-menu">
       <li className="nav-title" style={{color: "#CCC"}}>Paginas principales</li>
@@ -224,33 +232,28 @@ function AsideLinks(props){
         </Link>
       </li>
       */}
-      <li className={/^\/nav\/admision/.test(props.history.location.pathname)?"active":""}>
+      <li className={/^\/nav\/admision/.test(_path)?"active":""}>
         <Link data-filter-tags="admision" to='/nav/admision'>
           <span className="nav-link-text">ADMISION</span>
         </Link>
       </li>
-      <li className={/^\/nav\/cita/.test(props.history.location.pathname)?"active":""}>
+      <li className={/^\/nav\/cita/.test(_path)?"active":""}>
         <Link data-filter-tags="cita" to='/nav/cita'>
           <span className="nav-link-text">CITA</span>
         </Link>
       </li>
-      <li className={/^\/nav\/atencion/.test(props.history.location.pathname)?"active":""}>
+      <li className={/^\/nav\/atencion/.test(_path)?"active":""}>
         <Link data-filter-tags="atencion" to='/nav/atencion'>
           <span className="nav-link-text">ATENCION</span>
         </Link>
       </li>
       {/*
-      <li className={props.history.location.pathname==="/nav/cobranza"?"active":""}>
-        <Link data-filter-tags="cobranza" to='/nav/cobranza'>
-          <span className="nav-link-text">COBRANZA</span>
+      <li className={/^\/nav\/admin/.test(_path)?"active":""}>
+        <Link data-filter-tags="admin" to='/nav/admin'>
+          <span className="nav-link-text">ADMIN</span>
         </Link>
       </li>
       */}
-      {/*<li>
-        <Link data-filter-tags="odontograma" to='/nav/odontograma'>
-          <span className="nav-link-text">ODONTOGRAMA</span>
-        </Link>
-      </li>*/}
     </ul>
   )
 }

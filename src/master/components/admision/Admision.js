@@ -30,8 +30,9 @@ const html_instant_notification_id = 'html_instant_notification_id'
 function Admision(props){
   return(
   <>
-    {/* <PageTitle title={"Admision"} />
-      */}
+    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+    </div>
 
     <Switch>
       <Route exact path="/nav/admision">
@@ -359,7 +360,7 @@ const AdmisionDetail = props => {
         <ModalFormatos patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
         <InstantNotification patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
       </div>
-    );
+    )
 }
 const PatientData = props => {
   // Receive {patient}
@@ -534,7 +535,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
         {/* Notificacion instantanea */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="pdf" onClick={() => window.$(`#${html_instant_notification_id}`).modal('show')} />
+          <Icon type="letter" onClick={() => window.$(`#${html_instant_notification_id}`).modal('show')} />
           <span style={{fontSize: "0.9rem"}}>Mensaje</span>
         </div>
       </div>
@@ -578,7 +579,6 @@ const EditPatient = () => {
   const saveEditAntecedents = () => {
     let _data = validatePatientAntecedentsForm()
     _data.paciente = patient.pk
-    if(__debug__) console.log("saveEditAntecedents _data", _data);
     if(!_data) return
 
     simplePostData(`atencion/paciente/antecedentes/${antecedente.pk}/`, _data, "PUT")
@@ -599,7 +599,6 @@ const EditPatient = () => {
     getDataByPK('atencion/paciente', __params__.patient_pk)
     .then(
       res => {
-        console.log("EditPatient useEffect res", res);
         if(!res) getBack()
         updatePatientData(res)
       }
@@ -612,7 +611,6 @@ const EditPatient = () => {
     simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${__params__.patient_pk}"}`)
     .then(
       res => {
-        if(__debug__) console.log("EditPatient useEffect res", res);
         // Antecedents doesn't exist
         if(res.hasOwnProperty("length") && res.length == 0) createPatientAntecedents(patient.pk)
         else setAntecedente(res[0])  // Antecedent exist
@@ -641,10 +639,16 @@ const EditPatient = () => {
     )
 }
 const RegisterPatient = props => {
+  let [patient_pk, setPatientPK] = useState(-1)
   // Receive {sucursal_pk, redirectTo}
   if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED");
 
   const savePatient = () => {
+    if(patient_pk!=-1){
+      // Create PacienteXSucursal register
+      createPacienteXSucursal(patient_pk)
+      return
+    }
     let _data = validatePatientForm()
     if(__debug__) console.log("savePatient _data", _data)
     if(!_data) return
@@ -661,7 +665,7 @@ const RegisterPatient = props => {
       error => {
         console.log("WRONG!", error);
       }
-    );
+    )
   }
   const createPacienteXSucursal = pac_pk => {
     simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: props.sucursal_pk})
@@ -689,9 +693,10 @@ const RegisterPatient = props => {
     window.history.back()
   }
 
+  console.log("patient_pk", patient_pk);
   return (
     <div>
-      <PatientForm />
+      <PatientForm setpatientpk={setPatientPK} />
       <PatientAntecedentsForm />
 
       <div style={{paddingTop: "25px"}}></div>  {/* Separador */}
@@ -710,7 +715,7 @@ const RegisterPatient = props => {
   )
 }
 const PatientForm = props => {
-  // Receive {patient?}
+  // Receive {patient?, setpatientpk?}
   const patient = props.patient || false;
   const formatInputDate = date => {
     /* This only works with specific formats
@@ -718,6 +723,9 @@ const PatientForm = props => {
     * return: "2000-05-20"
     */
     return date.split("/").reverse().join("-")
+  }
+  const _getPaciente = dni => {
+    if(!patient) getPaciente(dni, props.setpatientpk)
   }
 
   useEffect(() => {
@@ -744,7 +752,9 @@ const PatientForm = props => {
     <div className="form-group col-md-12">  {/* Form */}
       <div className="form-group">
         <label className="form-label" htmlFor="dni">DNI: </label>
-        <input type="text" id="dni" className="form-control" maxLength="8" defaultValue={patient&&patient.dni||""} />
+        <input type="text" id="dni" className="form-control" maxLength="8"
+        defaultValue={patient&&patient.dni||""} onChange={e => _getPaciente(e.target.value)}
+        />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
@@ -764,14 +774,20 @@ const PatientForm = props => {
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="sexo">Sexo: </label>
-        <select id="sexo" className="custom-select form-control">
-          <option value="1" defaultValue={patient&&patient.sexo=="1"||true}>Masculino</option>
-          <option value="2" defaultValue={patient&&patient.sexo=="2"||false}>Femenino</option>
+        <select id="sexo" className="custom-select form-control" defaultValue={patient&&patient.sexo||"1"}>
+          <option value="1">Masculino</option>
+          <option value="2">Femenino</option>
         </select>
       </div>
-      <div className="form-group">
-        <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
-        <input type="date" id="born-date" className="form-control" defaultValue={patient&&formatInputDate(patient.fecha_nacimiento)||""} />
+      <div className="row">
+        <div className="col form-group">
+          <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
+          <input type="date" id="born-date" className="form-control" defaultValue={patient&&formatInputDate(patient.fecha_nacimiento)||""} />
+        </div>
+        <div className="col-3 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
+          <input type="checkbox" className="custom-control-input" id="permiso_sms" defaultChecked={patient&&patient.permiso_sms} />
+          <label className="custom-control-label" htmlFor="permiso_sms">Permitir envio de mensajes?</label>
+        </div>
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="phone">Celular: </label>
@@ -781,18 +797,6 @@ const PatientForm = props => {
         <label className="form-label" htmlFor="address">Dirección: </label>
         <input type="text" id="address" className="form-control" defaultValue={patient&&patient.direccion||""} />
       </div>
-      {/*
-      <div className="form-group">
-        <label className="form-label" htmlFor="select_provenance">Procedencia: </label>
-        <select id="select_provenance" className="custom-select form-control custom-select-lg">
-        </select>
-      </div>
-      <div className="form-group">
-        <label className="form-label" htmlFor="select_residence">Residencia: </label>
-        <select id="select_residence" className="custom-select form-control custom-select-lg">
-        </select>
-      </div>
-      */}
     </div>
   )
 }
@@ -818,7 +822,6 @@ const PatientAntecedentsForm = ({antecedente}) => {
   }, []);
   useEffect(() => {
     if(!antecedente) return
-    if(__debug__) console.log("PatientAntecedentsForm useEffect antecedente:", antecedente);
     if(antecedente){
       // Set default values
       window.document.getElementById('diabetes').value = Number(antecedente.diabetes)
@@ -972,6 +975,7 @@ function validatePatientForm(){
     ape_materno: document.getElementById('ape-m').value,
     dni: document.getElementById('dni').value,
     sexo: document.getElementById('sexo').value,
+    permiso_sms: document.getElementById('permiso_sms').checked,
   }
   // Add non-required fields
   if(document.getElementById('born-date').value)
@@ -1260,9 +1264,12 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
       hora: window.document.getElementById('in-fecha').value.split('T')[1],
     }
 
-    // Verificar que haya mensaje
+    // Verificar valores
     if(data.message.length==0){
       alert("El mensaje no puede estar vacio")
+      return
+    }else if(/[áéíóúÁÉÍÓÚñÑ]/.test(data.message)){
+      alert("El mensaje no puede contener tildes o ñ")
       return
     }
 
@@ -1270,6 +1277,10 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
     // Enviar data al API
     simplePostData(`atencion/notification/instant/paciente/${patient_pk}/sucursal/${sucursal_pk}/`, data)
     .then(r => console.log("r", r))
+    .then(
+      () => handleErrorResponse("custom", "Enviado", "El mensaje fue enviado exitosamente", "info")
+    )
+    .then(() => window.$(`#${html_instant_notification_id}`).modal('hide'))
   }
 
   useEffect(() => () => {
@@ -1301,10 +1312,75 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
               defaultValue={datetime_now} />
             </div>
           </div>
-          <button className="btn btn-primary" onClick={saveInstantNotification}>Subir archivo</button>
+          <button className="btn btn-primary" onClick={saveInstantNotification}>Enviar mensaje</button>
         </div>
       } />
   )
+}
+const getPaciente = (dni, setpatientpk) => {
+  if(dni.length!=8){
+    // Eliminar datos
+    document.getElementById("name-pric").value = "";
+    document.getElementById("name-sec").value = "";
+    document.getElementById("ape-p").value = "";
+    document.getElementById("ape-m").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("sexo").value = "1"  // Default: Male
+    document.getElementById("born-date").value = ""
+    document.getElementById("permiso_sms").checked = true
+    document.getElementById("address").value = ""
+    // Set antecedents values
+    document.getElementById("diabetes").value = false
+    document.getElementById("hepatitis").value = false
+    document.getElementById("hemorragia").value = false
+    document.getElementById("enf_cardiovascular").value = false
+    document.getElementById("alergias").value = ""
+    document.getElementById("operaciones").value = ""
+    document.getElementById("medicamentos").value = ""
+    // Reset patient pk
+    setpatientpk(-1)
+    return
+  }
+
+  // Generate promise
+  simpleGet(`atencion/paciente/?filtro={"dni":"${dni}"}`)
+  .then(_res => {
+    if(!(_res && _res.length > 0)) return
+    let res = _res[0]
+    if(__debug__) console.log("res", res);
+    // Get formated born_date
+    let _fecha_nacimiento = res.fecha_nacimiento.split("/").reverse().join("-")
+
+    // Set paciente data
+    document.getElementById("name-pric").value = res.nombre_principal
+    document.getElementById("name-sec").value = res.nombre_secundario
+    document.getElementById("ape-p").value = res.ape_paterno
+    document.getElementById("ape-m").value = res.ape_materno
+    document.getElementById("phone").value = res.celular
+    document.getElementById("sexo").value = res.sexo
+    document.getElementById("born-date").value = _fecha_nacimiento
+    document.getElementById("permiso_sms").checked = res.permiso_sms
+    document.getElementById("address").value = res.direccion
+    // Set patient pk
+    setpatientpk(res.pk)
+
+    // Get patients antecedent
+    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${res.pk}"}`)
+    .then(_res => {
+      console.log("_res", _res);
+      // Antecedents doesn't exist
+      if(_res.hasOwnProperty("length") && _res.length == 0) return
+      let res = _res[0]
+      // Set antecedents values
+      document.getElementById("diabetes").value = Number(res.diabetes)
+      document.getElementById("hepatitis").value = Number(res.hepatitis)
+      document.getElementById("hemorragia").value = Number(res.hemorragia)
+      document.getElementById("enf_cardiovascular").value = Number(res.enf_cardiovascular)
+      document.getElementById("alergias").value = res.alergias
+      document.getElementById("operaciones").value = res.operaciones
+      document.getElementById("medicamentos").value = res.medicamentos
+    })
+  })
 }
 
 

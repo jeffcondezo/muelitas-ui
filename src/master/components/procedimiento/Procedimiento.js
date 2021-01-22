@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   indexOfInObjectArray,
   handleErrorResponse,
+  simpleGet,
   getDataByPK,
   simplePostData
 } from '../../functions';
@@ -87,37 +88,7 @@ const ProcedimientoForm = props => {
   const [procedures, setProcedures] = useState(false);
   let procedure = props.procedimiento
 
-  function getProcedures(_sucursal_pk){
-    // Add procedure to cita's attention
-    let filter = `filtro={"sucursal":"${_sucursal_pk}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`maestro/procedimiento/precio/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        setProcedures(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/precio/?filtro={"sucursal":"${_sucursal_pk}"}`).then(setProcedures)
   function handlePeriodChange(el){
     if(el.value=="0" || !el.value){
       document.getElementById("dues").value = "0";
@@ -147,7 +118,7 @@ const ProcedimientoForm = props => {
     getProcedures(props.sucursal_pk);
   }, []);
   useEffect(() => {
-    if(!procedures) return;
+    if(!procedures || procedures.length==0) return;
 
     if(procedure){
       document.getElementById("payment_period").value = procedure.payment_period;
@@ -189,6 +160,8 @@ const ProcedimientoForm = props => {
 
   return !procedures
     ? "loading"
+    : procedures.length==0
+    ? "No hay procedimientos encontrados"
     : (
       <div>
         <div className="col-sm" style={{marginBottom: "10px"}}>
