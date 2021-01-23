@@ -88,7 +88,7 @@ const ProcedimientoForm = props => {
   const [procedures, setProcedures] = useState(false);
   let procedure = props.procedimiento
 
-  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/precio/?filtro={"sucursal":"${_sucursal_pk}"}`).then(setProcedures)
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${this.state.global.current_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
   function handlePeriodChange(el){
     if(el.value=="0" || !el.value){
       document.getElementById("dues").value = "0";
