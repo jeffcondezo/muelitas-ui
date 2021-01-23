@@ -88,7 +88,7 @@ const ProcedimientoForm = props => {
   const [procedures, setProcedures] = useState(false);
   let procedure = props.procedimiento
 
-  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${this.state.global.current_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
   function handlePeriodChange(el){
     if(el.value=="0" || !el.value){
       document.getElementById("dues").value = "0";
@@ -106,7 +106,7 @@ const ProcedimientoForm = props => {
     }
   }
   function handleProcedureChange(el){
-    if(__debug__) console.log("handleProcedureChange el", el);
+    if(__debug__) console.log("handleProcedureChange el", el)
     let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
     if(inx==-1) return
 
@@ -121,9 +121,9 @@ const ProcedimientoForm = props => {
     if(!procedures || procedures.length==0) return;
 
     if(procedure){
-      document.getElementById("payment_period").value = procedure.payment_period;
-      document.getElementById("payment_period").disabled = procedure.payment_period==0;
-      document.getElementById("pay_today").disabled = true;
+      document.getElementById("payment_period").value = procedure.payment_period
+      document.getElementById("payment_period").disabled = procedure.payment_period==0
+      document.getElementById("pay_today").disabled = true
     }else{
       document.getElementById("payment_period").value = "0";
       document.getElementById("payment_period").disabled = true;
@@ -169,7 +169,11 @@ const ProcedimientoForm = props => {
           <select className="custom-select form-control custom-select-lg"
             id="procedimiento" defaultValue={procedure?procedure.procedimiento:procedures[0].procedimiento}
           >
-            <SelectOptions_Procedimiento procedimientos={procedures} />
+            {procedures.map(p => (
+                <option key={p.pk} value={p.procedimiento}>
+                  {p.procedimiento_data.nombre.toUpperCase()}
+                </option>
+              ))}
           </select>
         </div>
         <div className="col-sm" style={{marginBottom: "10px"}}>
