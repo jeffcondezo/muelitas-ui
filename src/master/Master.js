@@ -150,3 +150,5 @@ Date.prototype.toDateInputValue = (function(){
   local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
   return local.toJSON().slice(0,10);
 });
+// Set theme settings
+window.localStorage.themeSettings = '{"themeURL":"https://smartadmin.lodev09.com/assets/css/themes/cust-theme-3.css"}'

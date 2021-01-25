@@ -141,7 +141,6 @@ class Cita extends React.Component {
 
     if(!response_object) return
     // Set event
-    console.log(response_object);
     response_object.forEach((v) => {
       let _data = {};
       _data.title = getPatientFullName(v.paciente_data).toUpperCase()+" - "+v.programado;

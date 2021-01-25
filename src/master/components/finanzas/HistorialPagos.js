@@ -44,6 +44,10 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
       dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
       document.head.appendChild(dt_style);
     }
+
+    return () => {
+      window.$("#pago-detalle").modal("hide")
+    }
   }, []);
   // When patientxpagos variable is setted
   useEffect(() => {
@@ -91,7 +95,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
       }, {
         // Origen del pago
         targets: 3,
-        createdCell: (cell, data, row) => {
+        createdCell: (cell, _, row) => {
           ReactDOM.render(
             <button className="btn-primary btn-pills waves-effect"
               data-toggle="modal" data-target="#pago-detalle"

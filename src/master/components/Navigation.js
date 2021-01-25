@@ -30,7 +30,6 @@ const __debug__ = process.env.REACT_APP_DEBUG
 
 
 function Navigation(props){
-  const profile_pic = "https://1.bp.blogspot.com/-w9uMJlU2jME/XDeKZl2VDSI/AAAAAAAAuHg/BG_ou7b5zJcf_9eIi--zV30LQ8MGXpwdACLcBGAs/s1600/lovecraft.jpg";
   // User variable, it's gonna be changing dinamically so we declare it with 'const', if it's not in props initialize it as false
   const user = props.user || false
   const sucursales = useRef([]);  // User's sucursal
@@ -119,14 +118,12 @@ function Navigation(props){
       <div className="page-wrapper">
         <div className="page-inner">
           <Aside
-            profile_pic={profile_pic}
             user={user} history={props.history}
             current_sucursal_pk={current_sucursal_pk} />
           <PageContent
             user={user}
             redirect={redirect}
             history={props.history}
-            profile_pic={profile_pic}
             sucursales={sucursales.current}
             current_sucursal_pk={current_sucursal_pk}
             changeSucursal={changeSucursal}
@@ -247,32 +244,41 @@ function AsideLinks(props){
           <span className="nav-link-text">ATENCION</span>
         </Link>
       </li>
-      {/*
       <li className={/^\/nav\/admin/.test(_path)?"active":""}>
         <Link data-filter-tags="admin" to='/nav/admin'>
           <span className="nav-link-text">ADMIN</span>
         </Link>
       </li>
+      {/*
       */}
     </ul>
   )
 }
 function Aside(props){
+  let profile_pic = props.user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg"
+
   return (<>
     <aside className="page-sidebar">
       <div className="page-logo">
-          <div className="page-logo-link d-flex align-items-center position-relative">
-              <img src="/img/logo.png" alt="SmartAdmin WebApp" aria-roledescription="logo"/>
-              <span className="page-logo-text mr-1">Muelitas</span>
-          </div>
+        <div className="page-logo-link d-flex align-items-center position-relative">
+          <img src="/img/logo_muelitas_image.png" style={{
+            display: "inline-block",
+            width: "58px", height: "58px",
+          }} />
+          <img src="/img/logo_muelitas_text.png" style={{
+            display: "inline-block",
+            height: "40px",
+            filter: "invert(1)",
+          }} />
+        </div>
       </div>
 
       <nav id="js-primary-nav" className="primary-nav" role="navigation">
         <div className="info-card">
           <img
-            src={props.current_sucursal_pk!==-1 ? props.profile_pic : "/img/demo/avatars/avatar-admin.png"}
+            src={props.current_sucursal_pk!==-1 && profile_pic}
             className="profile-image rounded-circle"
-            alt={props.current_sucursal_pk!==-1 ? props.user.first_name : "Dr. Codex Lantern"}
+            alt={props.current_sucursal_pk!==-1 && props.user.first_name}
           />
           <div className="info-card-text">
             <a href="#" className="d-flex align-items-center text-white">
@@ -331,7 +337,6 @@ function PageContent(props){
     <div className="page-content-wrapper">
         <PageHeader
           user={props.user}
-          profile_pic={props.profile_pic}
           sucursales={props.sucursales}
           current_sucursal_pk={props.current_sucursal_pk}
           changeSucursal={props.changeSucursal} />
@@ -506,7 +511,6 @@ function PageHeader(props){
         <div className="ml-auto d-flex">
           <UserSettings
             user={props.user}
-            profile_pic={props.profile_pic}
             sucursales={props.sucursales}
             current_sucursal_pk={props.current_sucursal_pk}
             changeSucursal={props.changeSucursal} />

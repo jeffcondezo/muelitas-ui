@@ -212,7 +212,7 @@ const HistoriaCitaList = props => {
                   <tr key={"cita-"+cita.pk} className="card-body" style={{paddingBottom:"10px"}}>
                     {/* FECHA */}
                     <td>
-                      {cita.fecha}
+                      {cita.fecha.split("-").reverse().join("/")}
                     </td>
                     {/* HORA */}
                     <td>

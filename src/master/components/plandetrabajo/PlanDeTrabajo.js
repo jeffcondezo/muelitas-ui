@@ -569,10 +569,7 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
   const ctx_pdt = useContext(PDTCreateCxt)
   const [procedures, setProcedures] = useState(false)
 
-  const getProcedures = _sucursal_pk => {
-    simpleGet(`maestro/procedimiento/precio/?filtro={"sucursal":"${_sucursal_pk}"}`)
-    .then(setProcedures)
-  }
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
   const handleSubmitProc = () => {
     if(!ctx_pdt.pdt){
       handleErrorResponse('custom', "Error", "Primero debe establecer un nombre para el plan de trabajo y guardarlo")
