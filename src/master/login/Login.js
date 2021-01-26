@@ -1,6 +1,6 @@
 import React from 'react';
 import './Login.css';
-import { handleErrorResponse } from '../functions';
+import { simplePostData, handleErrorResponse } from '../functions';
 
 function Login(props){
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING LOGIN ---------`, 'background: black; color: red');
@@ -14,38 +14,23 @@ function Login(props){
     if(!form.checkValidity()){  // There is error
       form.classList.add('was-validated');
     }else{
-      getToken(form)
+      getToken()
     }
   }
-  function getToken(form){
-    let data = new FormData(form)  // Get data from form element
+  function getToken(){
+    let data = {
+      username: window.document.getElementById('username').value,
+      password: window.document.getElementById('password').value,
+    }
     // Show waiter
-    charging(true)
+    loading(true)
 
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(process.env.REACT_APP_PROJECT_API_TOKEN, {
-        method: 'POST',
-        body: data,  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok && response.status==200){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, error => {
-        handleErrorResponse('server');
-      }).then(() => {
-        charging(false);  // Stop waiter
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
+    simplePostData(`gettoken/`, data)
+    .then(
+      res => {
+        console.log("res", res)
         // Add token to cookie
-        localStorage.setItem('access_token', response_obj.token)
+        localStorage.setItem('access_token', res.token)
         localStorage.setItem('logged', true)
         /*
         We will use access_token cookie afterwards in our requests
@@ -53,15 +38,14 @@ function Login(props){
           Authorization: localStorage.getItem('access_token'),  // Token
         */
         // Redirect
-        props.logIn();
+        props.logIn()
         /* Page will automatically redirect to home when calling props.logIn */
       },
-      error => {  // In case of error
-        handleErrorResponse('login');
-      }
-    );
+      () => handleErrorResponse('login')
+    )
+    .finally(() => loading(false))
   }
-  function charging(state){
+  function loading(state){
     let spinner = document.querySelector("#spinner")
     spinner.style.display = state?"block":"none"
     document.querySelector('#js-login').style.filter=state?"blur(1px)":""
@@ -75,8 +59,15 @@ function Login(props){
                     <div className="d-flex align-items-center container p-0">
                         <div className="page-logo width-mobile-auto m-0 align-items-center justify-content-center p-0 bg-transparent bg-img-none shadow-0 height-9">
                             <a href="#" onClick={e => e.preventDefault()} className="page-logo-link press-scale-down d-flex align-items-center">
-                              <img src={process.env.PUBLIC_URL + '/img/logo.png'} alt="Muelitas" aria-roledescription="logo" />
-                              <span className="page-logo-text mr-1">Muelitas</span>
+                              <img src="/img/logo_muelitas_image.png" style={{
+                                display: "inline-block",
+                                width: "58px", height: "58px",
+                              }} />
+                              <img src="/img/logo_muelitas_text.png" style={{
+                                display: "inline-block",
+                                height: "40px",
+                                filter: "invert(1)",
+                              }} />
                             </a>
                         </div>
                         {/*

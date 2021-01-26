@@ -6,7 +6,11 @@ import {
   Redirect,  // Redirect url
   Link,  // Alternative to a element for Router usage
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
-import { isArray, deleteUserLogIn } from './functions'
+import {
+  simplePostData,
+  isArray,
+  deleteUserLogIn
+} from './functions'
 // Components
 import Login from './login/Login';
 import Navigation from './components/Navigation';
@@ -20,8 +24,7 @@ function Master(){
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c PROPS:`, 'color: yellow', logged, user);
 
   const checkLogIn = () => {
-    // Send token to check if it's alright
-    let url = process.env.REACT_APP_PROJECT_API+`maestro/tokenexist/`;
+    console.log("checkLogIn")
     // Validate there is a access_token in localstorage
     let access_token = localStorage.getItem("access_token")
     if(!access_token){
@@ -30,35 +33,24 @@ function Master(){
       return
     }
 
-    // Generate promise
-    let key = new FormData();
-    key.append("key", access_token)
-
-    // Fetch data to api
-    fetch(url, {
-      method: 'POST',
-      body: key  // Data
-    }).then(response => {
-      return response.ok
-      ? Promise.resolve(response.json())
-      : Promise.reject(response.json())
-    }, res => {
-      setErrorLog(res.message)
-    }).then(response => {
-      // In case it's ok
-      if(!response) return
-      if(isArray(response) && response[0]=="delete"){
-        // If token is wrong
-        if(logged){
-          deleteUserLogIn()
-          setLogged(false)
+    simplePostData(`maestro/tokenexist/`, {key: access_token})
+    .then(
+      res => {
+        if(!res) return
+        if(isArray(res) && res[0]=="delete"){
+          // If token is wrong
+          if(logged){
+            deleteUserLogIn()
+            setLogged(false)
+          }
+          return
         }
-        return
-      }
-      // If token is alright set user data
-      setUser(response);
-      if(!logged) setLogged(true);
-    });
+        // If token is alright set user data
+        setUser(res);
+        if(!logged) setLogged(true);
+      },
+      res => setErrorLog(res.message)
+    )
   }
 
   // Run first render

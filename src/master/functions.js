@@ -123,16 +123,17 @@ export async function getDataByPK(end_point, _pk){
       },
     }
   ).then(
-    response => {
-      return response.ok
+    response => (
+      response.ok
       ? response.json()
-      : Promise.reject(response.text());
-    },
-    () => handleErrorResponse('server')
-  ).then(
-    response_obj => response_obj,
-    () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-  );
+      : response.status==403
+      ? handleErrorResponse('permission') && Promise.reject()
+      : response.status==500
+      ? handleErrorResponse('server') && Promise.reject()
+      : Promise.reject(response)
+    ),
+    response => handleErrorResponse('server') && response
+  )
 }
 export async function simpleGet(end_point){
   return fetch(
@@ -147,12 +148,12 @@ export async function simpleGet(end_point){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission')
+      ? handleErrorResponse('permission') && Promise.reject()
       : response.status==500
-      ? handleErrorResponse('server')
-      : Promise.reject(response)  // Update: return response (special cases where status, code and text are needed)
+      ? handleErrorResponse('server') && Promise.reject()
+      : Promise.reject(response)
     ),
-    () => handleErrorResponse('server')
+    response => handleErrorResponse('server') && response
   );
 }
 export async function simplePostData(end_point, data={}, method="POST"){
@@ -175,14 +176,13 @@ export async function simplePostData(end_point, data={}, method="POST"){
     },
   ).then(
     response => (
-      // There was no brute error in API
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission')
+      ? handleErrorResponse('permission') && Promise.reject()
       : response.status==500
-      ? handleErrorResponse('server') && response.json()
-      : response.json()
+      ? handleErrorResponse('server') && Promise.reject()
+      : Promise.reject(response)
     ),
     response => handleErrorResponse('server') && response
   )
@@ -200,12 +200,12 @@ export async function simpleDelete(end_point){
   ).then(
     response => (
       response.ok
-      ? response
+      ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission')
+      ? handleErrorResponse('permission') && Promise.reject()
       : response.status==500
-      ? handleErrorResponse('server')
-      : Promise.reject()
+      ? handleErrorResponse('server') && Promise.reject()
+      : Promise.reject(response)
     ),
     () => handleErrorResponse('server')
   );
@@ -216,20 +216,12 @@ export function addRequestValidation(promise){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission')
+      ? handleErrorResponse('permission') && Promise.reject()
       : response.status==500
-      ? handleErrorResponse('server')
+      ? handleErrorResponse('server') && Promise.reject()
       : Promise.reject()
     ),
-    () => handleErrorResponse('server')
-  )
-}
-// Specific
-export function getPatientFullName(patient){
-  return (
-    capitalizeFirstLetter(patient.nombre_principal)+
-    (patient.nombre_secundario?" "+capitalizeFirstLetter(patient.nombre_secundario):"")+" "+
-    capitalizeFirstLetter(patient.ape_paterno, false)+" "+capitalizeFirstLetter(patient.ape_materno, false)
+    response => handleErrorResponse('server') && response
   )
 }
 // System handling

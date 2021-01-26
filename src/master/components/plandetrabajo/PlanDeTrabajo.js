@@ -12,13 +12,11 @@ import {
   simplePostData,
   simpleGet,
   simpleDelete,
-  getPatientFullName,
   capitalizeFirstLetter as cFL,
   isArray,
 } from '../../functions'
 import {
   PageTitle,
-  SelectOptions_Procedimiento,
   ModalCancel,
   Icon,
   RegularModalCentered,
@@ -634,7 +632,11 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
         <div style={{marginBottom: "10px"}}>
           <label className="form-label" htmlFor="procedimiento">Procedimiento: </label>
           <select className="custom-select form-control custom-select-lg" id="procedimiento">
-            <SelectOptions_Procedimiento procedimientos={procedures} />
+            {procedures.map(p => (
+                <option key={p.pk} value={p.procedimiento}>
+                  {p.procedimiento_data.nombre.toUpperCase()}
+                </option>
+              ))}
           </select>
         </div>
         <div className="row">

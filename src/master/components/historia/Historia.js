@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
+import {
+  simpleGet,
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL
+} from '../../functions';
 import { Icon, PageTitle } from '../bits';
 import { PatientDataList } from '../admision/Admision';
 
@@ -26,33 +30,7 @@ const HistoriaClinica = props => {
 const HistoriaPatientData = props => {
   const [patient, setPatient] = useState(false);
 
-  const getPatient = pac_pk => {
-    // Get all attentions order by date
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/${pac_pk}/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {
-        setPatient(response_obj);
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  const getPatient = pac_pk => simpleGet(`atencion/paciente/${pac_pk}/`).then(setPatient)
 
   useEffect(() => {
     getPatient(props.patient_pk);
@@ -72,46 +50,23 @@ const HistoriaCitaList = props => {
   const [citaList, setCitaList] = useState(false);
 
   const getCitas = pac_pk => {
-    // Get all attentions order by date
-    let filter = `filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {
-        // Remove duplicated attention
-        let _tmp = response_obj;
-        let _tmp1 = [];  // Store attention's id
-        if(_tmp.length>0){
-          _tmp = response_obj.filter(i => {
-            if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
-              return false;  // Remove
-            }
-            _tmp1.push(i.atencion);  // Save attention in _tmp1 array
-            return true;
-          });
-        }
-
-        setCitaList(_tmp);
-      },
-      error => {
-        console.log("WRONG!", error);
+    simpleGet(`atencion/cita/?filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true"}`)
+    .then(res => {
+      // Remove duplicated attention
+      let _tmp = res;
+      let _tmp1 = [];  // Store attention's id
+      if(_tmp.length>0){
+        _tmp = res.filter(i => {
+          if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
+            return false;  // Remove
+          }
+          _tmp1.push(i.atencion);  // Save attention in _tmp1 array
+          return true;
+        });
       }
-    );
+
+      setCitaList(_tmp);
+    })
   }
 
   useEffect(() => {

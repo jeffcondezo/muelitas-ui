@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Switch,
   Route,
@@ -20,6 +20,7 @@ import {
   RegularModalCentered
 } from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
+import { NavigationContext } from '../Navigation';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -220,25 +221,8 @@ const LastAttendedPatients = props => {
     _day.setDate(_day.getDate()-ndays)
     _day = _day.toDateInputValue();
 
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha_desde":"${_day}", "sort":"true"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha_desde":"${_day}", "sort":"true"}`)
+    .then(
       response_obj => {
         let _fake_obj = [];
         let _tmp1 = [];
@@ -250,11 +234,8 @@ const LastAttendedPatients = props => {
         })
 
         setLastPatients(_fake_obj);
-      },
-      error => {
-        console.log("WRONG!", error);
       }
-    );
+    )
   }
 
   useEffect(() => {
@@ -416,34 +397,7 @@ const PatientPrescription = props => {
 
     setPrescriptionList(_tmp);
   }
-  const getPrescriptionMedicine = (_patient_pk) => {
-    // Get patient's prescription
-    let filter = `filtro={"paciente":"${_patient_pk}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/`;
-    url = url + '?' + filter;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
-      response_obj => {
-        setPrescriptionList(response_obj);
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  const getPrescriptionMedicine = _patient_pk => simpleGet(`atencion/prescripcion/?filtro={"paciente":"${_patient_pk}"}`).then(setPrescriptionList)
 
   useEffect(() => {
     getPrescriptionMedicine(props.patient.pk)
@@ -1251,6 +1205,11 @@ const ModalFormatos = ({patient_pk, sucursal_pk}) => {
 // Send Instant Notification
 const InstantNotification = ({patient_pk, sucursal_pk}) => {
   let [checkbox_now, setCheckboxNow] = useState(true)
+  // Current sucursal
+  const ctx_nv = useContext(NavigationContext)
+  let cur_suc = ctx_nv.sucursales.find(s => s.pk==ctx_nv.current_sucursal)
+  let signature = `- ${cur_suc.empresa_data.nombre_comercial.toUpperCase()}`
+  // Current datetime
   let _dt = new Date()
   let datetime_now = _dt.toDateInputValue()+'T'+_dt.getHours()+":"+String(_dt.getMinutes()).padStart(2, "0")
 
@@ -1258,11 +1217,13 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
     if(__debug__) console.log("InstantNotification saveInstantNotification");
 
     let data = {
-      message: window.document.getElementById('in-msg').value,
+      message: window.document.getElementById('in-msg').value.trim(),
       now: window.document.getElementById('in-now').checked,
       fecha: window.document.getElementById('in-fecha').value.split('T')[0],
       hora: window.document.getElementById('in-fecha').value.split('T')[1],
     }
+    // Add signature
+    data.message += '\n'+signature
 
     // Verificar valores
     if(data.message.length==0){
@@ -1273,7 +1234,7 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
       return
     }
 
-    console.log("data", data);
+    console.log("data", data)
     // Enviar data al API
     simplePostData(`atencion/notification/instant/paciente/${patient_pk}/sucursal/${sucursal_pk}/`, data)
     .then(r => console.log("r", r))
@@ -1296,9 +1257,14 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
         <div>
           <div className="form-group">
             <label className="form-label" htmlFor="input-descripcion">Mensaje</label>
-            <textarea className="form-control" id="in-msg" rows="3" placeholder="Mensaje aqui" maxLength="140"></textarea>
+            <textarea className="form-control"
+            placeholder="Mensaje aqui" id="in-msg" rows="3" maxLength={140-signature.length}
+            style={{borderBottom: "none", resize: "none", borderRadius: "0"}}></textarea>
+            <span className="form-control" style={{
+              display: "block", borderTop: "none", borderRadius: "0",
+            }}>{signature}</span>
             <span className="help-block">
-              140 caracteres maximo, solo letras y numeros permitidos (no tildes, ñ o simbolos)
+              {140-signature.length} caracteres maximo, solo letras y numeros permitidos (no tildes, ñ o simbolos)
             </span>
           </div>
           <div className="form-group">
@@ -1308,7 +1274,7 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
                 <input type="checkbox" className="custom-control-input" id="in-now" defaultChecked onChange={e => setCheckboxNow(e.target.checked)} />
                 <label className="custom-control-label" htmlFor="in-now">Ahora</label>
               </div>
-              <input type="datetime-local" id="in-fecha" className="form-control" disabled={checkbox_now}
+              <input type="datetime-local" id="in-fecha" className="form-control col-3" disabled={checkbox_now}
               defaultValue={datetime_now} />
             </div>
           </div>

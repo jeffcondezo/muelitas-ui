@@ -60,17 +60,7 @@ const DebtXPatientTable = props => {
   const [patientxdebt, setPxD] = useState(false);
   const [datatable, setDatatable] = useState(false);
 
-  const getPxD = () => {
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/paciente/deuda/${props.sucursal_pk}/`;
-    // Generate promise
-    fetch(url, {headers: {Authorization: localStorage.getItem('access_token')}})
-    .then(response => {
-      return response.ok
-      ? Promise.resolve(response.json())
-      : Promise.reject(response.statusText)
-    }, () => handleErrorResponse('server')
-    ).then(setPxD);
-  }
+  const getPxD = _sucursal_pk => simpleGet(`atencion/paciente/deuda/${_sucursal_pk}/`).then(setPxD);
 
   useEffect(() => {
     // Add DataTable rel docs
@@ -80,9 +70,9 @@ const DebtXPatientTable = props => {
       dt_script.async = false;
       dt_script.id = "dt_script";
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
-      dt_script.onload = () => getPxD();
+      dt_script.onload = () => getPxD(props.sucursal_pk);
       document.body.appendChild(dt_script);
-    }else getPxD();
+    }else getPxD(props.sucursal_pk);
     // CSS
     if(!document.getElementById('dt_style')){
       const dt_style = document.createElement("link");
@@ -291,26 +281,8 @@ const PaymentForm = ({patient, sucursal_pk, selected, attention_pk, setRefresh, 
     else setNC(false)
   }
   const getClient = (type, val) => {
-    fetch(
-      process.env.REACT_APP_PROJECT_API+`finanzas/cliente/?filtro={"${type}":"${val}"}`,
-      {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      }
-    ).then(
-      response => (
-        response.ok
-        ? response.json()
-        : response.status==403
-        ? handleErrorResponse('permission')
-        : Promise.reject()
-      ),
-      () => handleErrorResponse('server')
-    ).then(
-      response_obj => {setClient(response_obj.length!=0?response_obj[0]:false)},
-      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-    );
+    simpleGet(`finanzas/cliente/?filtro={"${type}":"${val}"}`)
+    .then(res => setClient(res.length!=0 ? res[0] : false))
   }
   const setValues = (values) => {
     if(clienttype==1){

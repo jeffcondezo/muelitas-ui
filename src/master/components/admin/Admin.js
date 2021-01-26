@@ -8,7 +8,6 @@ import {
 } from "react-router-dom"
 import {
   handleErrorResponse,
-  existInObjectArray,
   capitalizeFirstLetter as cFL,
   simpleGet,
   simplePostData,
@@ -84,6 +83,11 @@ const AdminProcedimiento = ({sucursal_pk, redirectTo}) => {
 
   return (
     <ProcedureModalContext.Provider value={{modal_data, setModalData, updateProcedure}}>
+      {/* ALERTS */}
+      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+      </div>
+
       <div className="row">
         <div className="col-lg-8">
           <div style={{marginBottom: "25px"}}>
@@ -273,18 +277,27 @@ const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
     let _alias = window.document.getElementById('alias').value
     let _data = {
       procedimiento: window.$('#select_procedure').val(),
-      sucursal: window.localStorage.current_sucursal_pk,
+      // Sucursal is added automatically in backend according user's current sucursal
       alias: _alias!=""?_alias:null,
       precio: window.document.getElementById('precio').value,
+    }
+    // Validate values
+    if(!_data.procedimiento){
+      alert("Seleccione un procedimiento")
+      // return
     }
 
     if(ctx_md.modal_data.action=="new"){
       simplePostData(`maestro/procedimiento/sucursal/0/`, _data)
       .then(() => window.$(`#${procedure_edit_modal_id}`).modal("hide"))
+      .then(() => handleErrorResponse('custom', "Exito", "Procedimiento añadido exitosamente, actualice la pagina para ver los cambios", 'success'))
+      .catch(() => handleErrorResponse('custom', "Error", "Ha ocurrido un error", 'danger'))
     }else{
       simplePostData(`maestro/procedimiento/sucursal/detalle/${ctx_md.modal_data.data.pk}/`, _data, "PATCH")
       .then(() => ctx_md.updateProcedure(ctx_md.modal_data.data.pk, _data))
       .then(() => window.$(`#${procedure_edit_modal_id}`).modal("hide"))
+      .then(() => handleErrorResponse('custom', "Exito", "Procedimiento editado exitosamente", 'success'))
+      .catch(() => handleErrorResponse('custom', "Error", "Ha ocurrido un error", 'danger'))
     }
   }
   const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/`).then(setProcedures)

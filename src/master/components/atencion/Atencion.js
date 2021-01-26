@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Switch, Route, Redirect, useParams } from "react-router-dom";
 import {
   handleErrorResponse,
-  addRequestValidation,
   capitalizeFirstLetter as cFL,
   getDataByPK,
   simplePostData,
   simpleGet,
+  simpleDelete,
 } from '../../functions';
 import { PageTitle, Icon, ModalLoading } from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
@@ -57,48 +57,23 @@ const AttentionList = props => {
     if(!_date) _date = (new Date().toDateInputValue());
     else searchDate.current = _date;
 
-    /* Send all values as string */
-    let filter = `filtro={"sucursal":"${_sucursal_pk}", "fecha": "${_date}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {  // In case it's ok
-        // Remove duplicated attention
-        let _tmp = response_obj;
-        let _tmp1 = [];  // Store attention's id
-        if(_tmp.length>0){
-          _tmp = response_obj.filter(i => {
-            if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
-              return false;  // Remove
-            }
-            _tmp1.push(i.atencion);  // Save attention in _tmp1 array
-            return true;
-          });
-        }
-
-        setAttentions(_tmp);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${_sucursal_pk}", "fecha": "${_date}"}`)
+    .then(res => {
+      // Remove duplicated attention
+      let _tmp = res;
+      let _tmp1 = [];  // Store attention's id
+      if(_tmp.length>0){
+        _tmp = res.filter(i => {
+          if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
+            return false;  // Remove
+          }
+          _tmp1.push(i.atencion);  // Save attention in _tmp1 array
+          return true;
+        });
       }
-    );
+
+      setAttentions(_tmp);
+    })
   }
 
   useEffect(() => {
@@ -347,41 +322,16 @@ const PatientAttentionHistory = props => {
   const [attention_list, setAttentionList] = useState(false);
 
   const getAttentionHistory = (_patient_pk) => {
-    // Get last n patient's attentions
-    let filter = `filtro={"sucursal":"${props.sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      });
-    }, () => handleErrorResponse('server'));
-    result.then(
-      response_obj => {  // In case it's ok
-        // Remove current attention
-        let _tmp = response_obj;
-        if(_tmp.length>0){
-          _tmp = response_obj.filter(i => i.pk!=props.cita.pk);
-        }
-
-        setAttentionList(_tmp);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${props.sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`)
+    .then(res => {
+      // Remove current attention
+      let _tmp = res;
+      if(_tmp.length>0){
+        _tmp = res.filter(i => i.pk!=props.cita.pk);
       }
-    );
+
+      setAttentionList(_tmp);
+    })
   }
 
   // Run at first render
@@ -501,37 +451,8 @@ const AttentionProcedures = props => {
   const [procedures, setProcedures] = useState(false);
   const delete_proc_pk = useRef(-1);
 
-  function getProcedures(_atencion){
-    // Add procedure to cita's attention
-    let filter = `filtro={"atencion":"${_atencion}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/`;
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        setProcedures(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  // Add procedure to cita's attention
+  const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setProcedures)
 
   function modalConfirmDelete(_pk){
     window.$('#modal_delete_procedure').modal('show');
@@ -541,37 +462,13 @@ const AttentionProcedures = props => {
     window.$('#modal_delete_procedure').modal('hide');  // Hide modal
     if(delete_proc_pk.current==-1) return;
 
-    // Delete procedure to cita's attention
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/detalle/${delete_proc_pk.current}/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'DELETE',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.text())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
-      () => {  // In case it's ok
-        // Delete item from DOM
-        document.getElementById(delete_proc_pk.current).parentElement.remove();
-        // Reset delete_proc_pk val
-        delete_proc_pk.current = -1;
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
+    simpleDelete(`atencion/detalle/${delete_proc_pk.current}/`)
+    .then(() => {
+      // Delete item from DOM
+      document.getElementById(delete_proc_pk.current).parentElement.remove();
+      // Reset delete_proc_pk val
+      delete_proc_pk.current = -1;
+    })
   }
   function editProcedure(proc){
     props.redirectTo(`/nav/procedimiento/${proc.pk}/editar/`);

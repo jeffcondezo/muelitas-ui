@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { handleErrorResponse, getDataByPK } from '../../functions';
+import {
+  handleErrorResponse,
+  getDataByPK,
+  simpleGet,
+  simpleDelete,
+  simplePostData,
+} from '../../functions';
 import { PageTitle } from '../bits';
 
 // Constant
@@ -32,34 +38,7 @@ const Prescripcion = props => {
 
     setMedicineList(_tmp);
   }
-  const getPrescriptionMedicine = (_attention_pk) => {
-    // Add procedure to cita's attention
-    let filter = `filtro={"atencion":"${_attention_pk}"}`;
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/`;
-    url = url + '?' + filter;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));
-    });
-    result.then(
-      response_obj => {
-        setMedicineList(response_obj);
-      },
-      error => {
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  const getPrescriptionMedicine = (_attention_pk) => simpleGet(`atencion/prescripcion/?filtro={"atencion":"${_attention_pk}"}`).then(setMedicineList)
   const getBack = () => {
     props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita});
   }
@@ -110,35 +89,7 @@ const Prescripcion = props => {
 const AddMedicine = props => {
   const [medicine, setMedicine] = useState(false);
 
-  function getMedicines(_sucursal_pk){
-    // Add procedure to cita's attention
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/medicamento/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        setMedicine(response_obj);
-      },
-      error => {  // In case of error
-        console.log("WRONG!", error);
-      }
-    );
-  }
+  const getMedicines = () => simpleGet(`atencion/medicamento/`).then(setMedicine)
   function selectOptions_Medicine(_medicines){
     if(!_medicines) return;
     const _medicine = [];
@@ -155,29 +106,11 @@ const AddMedicine = props => {
 
     return _medicine;
   }
-  const saveMedicineItem = _item => {
-    // Save medicina
-    fetch(
-      process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
-        body: JSON.stringify(_item)  // Data
-      }
-    ).then(
-      response => {
-        return response.ok
-        ? response.json()
-        : Promise.reject();
-      },
-      error => handleErrorResponse('server')
-    ).then(
-      response_obj => props.addMedicineToList(response_obj),
-      error => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-    ).then(() => clearForm());
+  const saveMedicineItem = _data => {
+    console.log("_data", _data)
+    simplePostData(`atencion/prescripcion/`, _data)
+    .then(props.addMedicineToList)
+    .then(clearForm)
   }
   function handleSubmit(){
     // Values validation
@@ -261,12 +194,12 @@ const AddMedicine = props => {
       select2_script.id = "select2_script";
       select2_script.onload = () => {
         // Continue execution here to avoid file not load error
-        getMedicines(props.sucursal_pk);
+        getMedicines()
       }
       select2_script.src = "/js/formplugins/select2/select2.bundle.js";
       document.body.appendChild(select2_script);
     }else{
-      getMedicines(props.sucursal_pk);
+      getMedicines()
     }
 
     handlePeriodChange();
@@ -335,27 +268,8 @@ const AddMedicine = props => {
 export const ListSavedMedicine = props => {
   // Receive {medicine_list, removeMedicineFromList}
   function deleteMedicine(_medicine_pk){
-    // Add procedure to cita's attention
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/prescripcion/${_medicine_pk}/`;
-    let result = new Promise((resolve, reject) => {
-      let request = fetch(url, {
-        method: 'DELETE',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      request.then(response => {
-        if(response.ok){
-          resolve(response.text())
-        }else{
-          reject(response.statusText)
-        }
-      }, () => handleErrorResponse('server'));  // Print server error
-    });
-    result.then(
-      response_obj => props.removeMedicineFromList(_medicine_pk),
-      error => console.error
-    );
+    simpleDelete(`atencion/prescripcion/${_medicine_pk}/`)
+    .then(() => props.removeMedicineFromList(_medicine_pk))
   }
 
   // Generate elements from medicine_list

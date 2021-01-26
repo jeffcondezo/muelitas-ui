@@ -5,8 +5,13 @@ import {
   Redirect,
   useParams,
 } from "react-router-dom";
-import { handleErrorResponse, capitalizeFirstLetter as cFL } from '../../functions';
-import { getDataByPK, simpleGet } from '../../functions';
+import {
+  simpleGet,
+  getDataByPK,
+  simplePostData,
+  handleErrorResponse,
+  capitalizeFirstLetter as cFL
+} from '../../functions';
 import { ModalCancel, RegularModalCentered } from '../bits';
 
 
@@ -2252,6 +2257,7 @@ function Odontograma({role, redirectTo}){
     simpleGet(`atencion/${cita.atencion}/odontograma/`)
     .then(setOdontogram,  // Save odontogram
       error_response => {
+        console.log("error_response", error_response)
         // In case of error_response
         if(error_response.status == 404){
           if(__debug__) console.log("getOdontogram: brand new odontogram")
@@ -2318,73 +2324,16 @@ function Odontograma({role, redirectTo}){
       odontogram_data.atencion = cita.atencion;
       odontogram_data.paciente = cita.paciente;
 
-      let url = process.env.REACT_APP_PROJECT_API+'atencion/odontograma/';
-      // Generate promise
-      let result = new Promise((resolve, reject) => {
-        // Fetch data to api
-        let request = fetch(url, {
-          method: 'POST',
-          headers: {
-            Authorization: localStorage.getItem('access_token'),  // Token
-            'Content-Type': 'application/json'  // JSON type
-          },
-          body: JSON.stringify(odontogram_data)  // Data
-        });
-        // Once we get response we either return json data or error
-        request.then(response => {
-          if(response.ok){
-            resolve(response.json())
-          }else{
-            reject(response.statusText)
-          }
-        }, () => handleErrorResponse('server'));
-      });
-      // Promise actions
-      // Return Promise to handle saving initial odontogram
-      return result.then(
-        response_obj => {  // In case it's ok
-          console.log("saveOdontogram response_obj", response_obj);
-          setOdontogram(response_obj)  // Save odontogram
-          handleErrorResponse('custom', "Exito", "Odontograma guardado exitosamente")
-          return response_obj  // Return odontogram (handle save initial odontogram)
-        },
-        error => {  // In case of error
-          console.log("WRONG!", error);
-        }
-      )
+      simplePostData('atencion/odontograma/', odontogram_data)
+      .then(res => setOdontogram(res) || res)
+      .then(res => __debug__ && console.log("saveOdontogram response_obj", res))
+      .then(() => handleErrorResponse('custom', "Exito", "Odontograma guardado exitosamente", 'success'))
     }else{  // Modify
-      let url = process.env.REACT_APP_PROJECT_API+`atencion/odontograma/${odontogram.pk}/`;
-      // Generate promise
-      let result = new Promise((resolve, reject) => {
-        // Fetch data to api
-        let request = fetch(url, {
-          method: 'PUT',
-          headers: {
-            Authorization: localStorage.getItem('access_token'),  // Token
-            'Content-Type': 'application/json'  // JSON type
-          },
-          body: JSON.stringify(odontogram_data)  // Data
-        });
-        // Once we get response we either return json data or error
-        request.then(response => {
-          if(response.ok){
-            resolve(response.json())
-          }else{
-            reject(response.statusText)
-          }
-        }, () => handleErrorResponse('server'));
-      });
-      // Promise actions
-      result.then(
-        response_obj => {  // In case it's ok
-          handleErrorResponse('custom', "Exito", "Odontograma actualizado exitosamente")
-          if(__debug__) console.log("saveOdontogram: getEvolutionLog");
-          getEvolutionLog(response_obj.paciente_pk)
-        },
-        error => {  // In case of error
-          console.log("WRONG!", error);
-        }
-      );
+      simplePostData(`atencion/odontograma/${odontogram.pk}/`, odontogram_data, 'PUT')
+      .then(res => setOdontogram(res) || res)
+      .then(res => getEvolutionLog(res.paciente_pk))
+      .then(() => handleErrorResponse('custom', "Exito", "Odontograma actualizado exitosamente", 'success'))
+      .then(() => __debug__ && console.log("saveOdontogram: getEvolutionLog"))
     }
   }
   function getIncidences(_od_pk){
@@ -2632,15 +2581,13 @@ function Odontograma({role, redirectTo}){
   }
   // Evolution odontogram
   const getEvolutionLog = _pac_pk => {
+    /* refer: codeStructure.js: simpleFetch functions: debug log structure */
     simpleGet(`atencion/paciente/${_pac_pk}/odontograma/evolucion/log/`)
-    .then(response => {
-      if(__debug__) console.log("getEvolutionLog: response", response);
-      // If response is empty array then there is no evolution log
-      if(response.length == 0) if(__debug__) console.log("getEvolutionLog: no evolution log");
-
-      // Set response as initial odontogram (it comes pre sorted by api)
-      setArrayEvolutionOdLog(response)
-    })
+    .then(res => (__debug__ && console.log("getEvolutionLog: response", res)) || res)
+    // If response is an empty array then there is no evolution log
+    .then(res => (__debug__ && res.length == 0 && console.log("getEvolutionLog: no evolution log") || res))
+    // Set response as initial odontogram (it comes pre sorted by api)
+    .then(setArrayEvolutionOdLog)
   }
 
 
@@ -2661,26 +2608,26 @@ function Odontograma({role, redirectTo}){
             }
         </h1>
         <div className="row">
-          {odontogram && (role=="init" || role=="regular")
-            // Check that role is init and odontogram is setted (is not new)
-            ? (
-              <div style={{marginRight: "8px"}}>
-                <button
-                  type="button" className="btn btn-success waves-effect waves-themed"
-                  onClick={() => redirectTo(`/nav/odontograma/redirect/${__params__.pac_pk||cita.paciente}/evolucion/`)}
-                >Ir a Evolucion</button>
-              </div>
-            ) : ""
-          }
           {(role=="evol" || role=="regular") && init_od!=-1 && init_od && odontogram.pk != init_od.pk
             // Check that role is evol
             // Check that init_od is setted and that odontogram and init_od are not the same
             ? (
               <div style={{marginRight: "8px"}}>
                 <button
-                  type="button" className="btn btn-success waves-effect waves-themed"
+                  type="button" className="btn btn-primary waves-effect waves-themed"
                   onClick={() => redirectTo(`/nav/odontograma/redirect/${__params__.pac_pk||cita.paciente}/inicial/`)}
                 >Ir a Inicial</button>
+              </div>
+            ) : ""
+          }
+          {odontogram && (role=="init" || role=="regular")
+            // Check that role is init and odontogram is setted (is not new)
+            ? (
+              <div style={{marginRight: "8px"}}>
+                <button
+                  type="button" className="btn btn-primary waves-effect waves-themed"
+                  onClick={() => redirectTo(`/nav/odontograma/redirect/${__params__.pac_pk||cita.paciente}/evolucion/`)}
+                >Ir a Evolucion</button>
               </div>
             ) : ""
           }
@@ -2702,11 +2649,11 @@ function Odontograma({role, redirectTo}){
             )
           }
           <div className="btn-group btn-group-toggle" data-toggle="buttons">
-            <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>changeTeethType('A')}>
+            <label className={"btn btn-success waves-effect waves-themed "+(odontogram_type.current==='A'?'active':'')} onClick={()=>changeTeethType('A')}>
               <input type="radio" name="odontogram_type" defaultChecked /> Adulto
               <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{inc_count_a.current}</span>
             </label>
-            <label className={"btn btn-info waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>changeTeethType('K')}>
+            <label className={"btn btn-success waves-effect waves-themed "+(odontogram_type.current==='K'?'active':'')} onClick={()=>changeTeethType('K')}>
               <input type="radio" name="odontogram_type" /> Infante
               <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{inc_count_k.current}</span>
             </label>
@@ -2748,7 +2695,7 @@ function Odontograma({role, redirectTo}){
               getToothByKey={getToothByKey} clearTooth={clearTooth} />
           </div>
         </div><br/>
-        <button type="button" className="btn btn-success waves-effect waves-themed"
+        <button type="button" className="btn btn-primary waves-effect waves-themed"
           onClick={saveOdontogram} title="Asegurate de escribir las observaciones que encuentres">
           {init_od!=-1 && (!init_od || init_od && odontogram.pk == init_od.pk)
             ? "Guardar Odontograma Inicial"
@@ -3569,11 +3516,11 @@ function OdontogramaInicial({init_od}){
       <div style={{flex: "1 1 0%", paddingLeft: "15px"}}>
         {/* Odontogram type*/}
         <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='A'?'active':'')} onClick={()=>changeOdType('A')}>
+          <label className={"btn btn-success waves-effect waves-themed "+(o_od_type=='A'?'active':'')} onClick={()=>changeOdType('A')}>
             <input type="radio" name="odontogram_type" /> Adulto
             <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{o_inc_count_a.current}</span>
           </label>
-          <label className={"btn btn-info waves-effect waves-themed "+(o_od_type=='K'?'active':'')} onClick={()=>changeOdType('K')}>
+          <label className={"btn btn-success waves-effect waves-themed "+(o_od_type=='K'?'active':'')} onClick={()=>changeOdType('K')}>
             <input type="radio" name="odontogram_type" /> Infante
             <span className="badge border border-light rounded-pill bg-info-500 position-absolute pos-top pos-right">{o_inc_count_k.current}</span>
           </label>

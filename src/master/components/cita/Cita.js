@@ -60,52 +60,23 @@ class Cita extends React.Component {
   }
   // This.props functions
   getPersonal(){
-    let filter = `filtro={"sucursal":"${this.state.global.current_sucursal_pk}", "atencion":"true"}`;
-    let url = process.env.REACT_APP_PROJECT_API+'maestro/empresa/personal/';
-    url = url + '?' + filter;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-        },
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        let clone = Object.assign({}, this.state);
-        clone.personal = response_obj;
-        this.setState(clone, this.getCitas);  // Render citas after personal is setted
-      }
-    );
+    simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${this.state.global.current_sucursal_pk}", "atencion":"true"}`)
+    .then(res => {
+      let clone = Object.assign({}, this.state);
+      clone.personal = res;
+      this.setState(clone, this.getCitas);  // Render citas after personal is setted
+    })
   }
   getProcedimiento(){
     simpleGet(`maestro/procedimiento/sucursal/${this.state.global.current_sucursal_pk}/?filtro={"active":"1"}`)
-    .then(
-      response_obj => {
-        if(response_obj.length<1) return;
+    .then(res => {
+      if(res.length<1) return;
 
-        // Save in this.state
-        let clone = Object.assign({}, this.state);
-        clone.procedimiento = response_obj
-        this.setState(clone);
-      }
-    )
+      // Save in this.state
+      let clone = Object.assign({}, this.state);
+      clone.procedimiento = res
+      this.setState(clone);
+    })
   }
   getCitas(){
     let filter = ``;
@@ -143,7 +114,7 @@ class Cita extends React.Component {
     // Set event
     response_object.forEach((v) => {
       let _data = {};
-      _data.title = getPatientFullName(v.paciente_data).toUpperCase()+" - "+v.programado;
+      _data.title = v.paciente_data.fullname.toUpperCase()+" - "+v.programado;
       _data.info = v;
       _data.start = v.fecha+"T"+v.hora;
       _data.end = v.fecha+"T"+v.hora_fin;
@@ -277,31 +248,29 @@ class Cita extends React.Component {
 
     // Generate promise
     simpleGet(`atencion/paciente/?filtro={"dni":"${dni}"}`)
-    .then(
-      response_obj => {  // In case it's ok}
-        // If patient was not found, enable inputs
-        if(response_obj.length<1){
-          _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
-          .map(i => document.getElementById(i).disabled = false)
-          return;
-        }
-
-        // Set paciente data
-        document.getElementById("pac_pk").value = response_obj[0].pk;
-        document.getElementById("pac_dni").value = response_obj[0].dni;
-        document.getElementById("pac_nom_pri").value = response_obj[0].nombre_principal;
-        document.getElementById("pac_nom_sec").value = response_obj[0].nombre_secundario;
-        document.getElementById("pac_ape_pat").value = response_obj[0].ape_paterno;
-        document.getElementById("pac_ape_mat").value = response_obj[0].ape_materno;
-        document.getElementById("pac_celular").value = response_obj[0].celular;
-        document.getElementById("pac_sex_m").checked = response_obj[0].sexo == '1'
-        document.getElementById("pac_sex_f").checked = response_obj[0].sexo != '1'
-        document.getElementById("pac_permiso_sms").value = response_obj[0].permiso_sms ? "1" : "0"
-        // Disable inputs
-        _tmp = ["pac_pk", "pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular", "pac_sex_m", "pac_sex_f"]
-        .map(i => document.getElementById(i)).map(i => i.disabled = true)
+    .then(res => {
+      // If patient was not found, enable inputs
+      if(res.length<1){
+        _tmp = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
+        .map(i => document.getElementById(i).disabled = false)
+        return;
       }
-    );
+
+      // Set paciente data
+      document.getElementById("pac_pk").value = res[0].pk;
+      document.getElementById("pac_dni").value = res[0].dni;
+      document.getElementById("pac_nom_pri").value = res[0].nombre_principal;
+      document.getElementById("pac_nom_sec").value = res[0].nombre_secundario;
+      document.getElementById("pac_ape_pat").value = res[0].ape_paterno;
+      document.getElementById("pac_ape_mat").value = res[0].ape_materno;
+      document.getElementById("pac_celular").value = res[0].celular;
+      document.getElementById("pac_sex_m").checked = res[0].sexo == '1'
+      document.getElementById("pac_sex_f").checked = res[0].sexo != '1'
+      document.getElementById("pac_permiso_sms").value = res[0].permiso_sms ? "1" : "0"
+      // Disable inputs
+      _tmp = ["pac_pk", "pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular", "pac_sex_m", "pac_sex_f"]
+      .map(i => document.getElementById(i)).map(i => i.disabled = true)
+    })
   }
   errorForm = log => {
     document.querySelector('div#alert-login span').innerText = log;
@@ -541,41 +510,12 @@ class Cita extends React.Component {
     let data = {};
     data['estado'] = status;
 
-    let url = process.env.REACT_APP_PROJECT_API+`atencion/cita/anular/${cita_pk}/`;
-    // Generate promise
-    let result = new Promise((resolve, reject) => {
-      // Fetch data to api
-      let request = fetch(url, {
-        method: 'PUT',
-        headers: {
-          Authorization: localStorage.getItem('access_token'),  // Token
-          'Content-Type': 'application/json'  // JSON type
-        },
-        body: JSON.stringify(data)  // Data
-      });
-      // Once we get response we either return json data or error
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          if(response.status===403){
-            this.handlePermissionError();
-          }else{
-            this.handleBadRequest(response.statusText);
-          }
-        }
-      }, error => {
-        this.handleServerError();
-      });
-    });
-    result.then(
-      response_obj => {  // In case it's ok
-        window.$('#modal_ver_cita').modal('hide');
-        console.log('xxxxxxx3');
-        alert("Cita anulada",status);
-        this.getCitas()  // Re render fullcalendar
-      }
-    );
+    simplePostData(`atencion/cita/anular/${cita_pk}/`, data, 'PUT')
+    .then(() => {
+      window.$('#modal_ver_cita').modal('hide');
+      alert("Cita anulada",status);
+      this.getCitas()  // Re render fullcalendar
+    })
   }
   // Global functions
   setFilter = (personal_pk) => {

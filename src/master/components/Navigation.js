@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef, createContext, useContext } from 'react';
 import {
   Switch,  // Allow to change only content
   Route,  // Route handling
@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
 import './Navigation.css';
 import {
+  simpleGet,
   capitalizeFirstLetter as cFL,
   deleteUserLogIn,
 } from '../functions'
@@ -27,7 +28,7 @@ import Admin from './admin/Admin';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-
+export const NavigationContext = createContext(false)
 
 function Navigation(props){
   // User variable, it's gonna be changing dinamically so we declare it with 'const', if it's not in props initialize it as false
@@ -40,23 +41,7 @@ function Navigation(props){
   if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect.current);
 
   function setSucursal(){
-    new Promise((resolve, reject) => {
-      let _filter = `filtro={"usuario":"${user.pk}"}`;
-      let url = process.env.REACT_APP_PROJECT_API+'maestro/admin/permisos/asignar/';
-      url = url + '?' + _filter;
-      // Get user's sucursal
-      let request = fetch(url);
-      // {headers:{Authorization: localStorage.getItem('access_token')}}
-      request.then(response => {
-        if(response.ok){
-          resolve(response.json())
-        }else{
-          reject(response.statusText)
-        }
-      }, error => {
-        console.log("ERROR", error);
-      });
-    })
+    simpleGet(`maestro/admin/permisos/asignar/?filtro={"usuario":"${user.pk}"}`)
     .then(
       response_obj => {
         // Handle sucursal response
@@ -114,28 +99,30 @@ function Navigation(props){
   return !current_sucursal_pk
   ? "loading"
   : (
-    <div>
-      <div className="page-wrapper">
-        <div className="page-inner">
-          <Aside
-            user={user} history={props.history}
-            current_sucursal_pk={current_sucursal_pk} />
-          <PageContent
-            user={user}
-            redirect={redirect}
-            history={props.history}
-            sucursales={sucursales.current}
-            current_sucursal_pk={current_sucursal_pk}
-            changeSucursal={changeSucursal}
-            redirectTo={redirectTo} />
+    <NavigationContext.Provider value={{sucursales: sucursales.current, current_sucursal: current_sucursal_pk}}>
+      <div>
+        <div className="page-wrapper">
+          <div className="page-inner">
+            <Aside
+              user={user} history={props.history}
+              current_sucursal_pk={current_sucursal_pk} />
+            <PageContent
+              user={user}
+              redirect={redirect}
+              history={props.history}
+              sucursales={sucursales.current}
+              current_sucursal_pk={current_sucursal_pk}
+              changeSucursal={changeSucursal}
+              redirectTo={redirectTo} />
+          </div>
         </div>
+        {/*
+          <FloatShortcut />
+          */}
+        <Messenger />
+        <Settings />
       </div>
-      {/*
-        <FloatShortcut />
-        */}
-      <Messenger />
-      <Settings />
-    </div>
+    </NavigationContext.Provider>
   );
 }
 

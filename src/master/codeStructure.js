@@ -4,7 +4,7 @@
 /* Request to API
 * Standar Fetch and Promise flux
 */
-const StandarFetchAndPromise(){
+const StandarFetchAndPromise = () => {
   // Description of endpoint and fetch purpose
   /* Send all values as string */
   let filter = `filtro={"filter_name":"filter_value"}`;
@@ -91,4 +91,30 @@ const saveAll = (_obj_list) => {
       console.log(error);
     }
   );
+}
+
+/* simpleFetch functions
+* simpleGet,
+* simplePostData,
+* simpleDelete,
+* getDataByPK,
+*/
+/* Recommendations when building functions around simpleFetch functions
+* all values used inside the functions should came as parameter (improves reusability)
+*/
+const getEvolutionLog = _pac_pk => {
+  simpleGet(`atencion/paciente/${_pac_pk}/odontograma/evolucion/log/`)
+  /* debug log structure
+  * the following patter is used to console print debug info while also bypassing values
+  * res => (debug_status && console.log("your log here")) || res
+  * this patter receive response (aka. "res")
+  * then uses a boolean value group (debug_indicator(Bool) && log_function())
+  * finally uses a OR operator to always return res
+  * in a Boolean chain (no matter the previous values) if its last operator is OR (on 1st level of the chain), it will always return that value
+  * in a Boolean chain with AND operators if all the values are True it returns the last value
+  */
+  .then(res => (__debug__ && console.log("getEvolutionLog: response", res)) || res)
+  // Commentary about what is being done
+  .then(res => (__debug__ && res.length == 0 && console.log("getEvolutionLog: no evolution log") || res))
+  .then(setArrayEvolutionOdLog)
 }
