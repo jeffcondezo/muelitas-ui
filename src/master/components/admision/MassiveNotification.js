@@ -16,6 +16,7 @@ const MassiveNotification = ({sucursal_pk}) => {
   const [patients, setPatients] = useState(false)
   let [checkbox_now, setCheckboxNow] = useState(true)
   const age_options = useRef([]).current
+  const show_patients = useRef(false)
   // Current sucursal
   const ctx_nv = useContext(NavigationContext)
   let cur_suc = ctx_nv.sucursales.find(s => s.pk==ctx_nv.current_sucursal)
@@ -87,12 +88,17 @@ const MassiveNotification = ({sucursal_pk}) => {
     window.$("#patients > option").prop("selected", true);
     window.$("#patients").trigger("change");
   }
+  const changeViewPacientes = _on => {
+    window.document.getElementsByClassName('select2-container')[0].style.display = _on?"block":"none"
+    window.document.getElementById('patients-show-button').innerText = !_on?"Mostrar":"Ocultar"
+    show_patients.current = _on
+  }
 
   useEffect(() => {
     getAllPatients()
 
-    age_options.push(<option value="0">-</option>)  // Default option
-    for(let i=1; i<100; i++) age_options.push(<option value={i}>{i}</option>)  // Regular 1-99 options
+    age_options.push(<option key="opt-number-default" value="0">-</option>)  // Default option
+    for(let i=1; i<100; i++) age_options.push(<option key={"opt-number-"+i} value={i}>{i}</option>)  // Regular 1-99 options
   }, [])
   useEffect(() => {
     if(!patients || patients.length == 0) return
@@ -116,6 +122,7 @@ const MassiveNotification = ({sucursal_pk}) => {
         // Set select2 to patients
         window.$("#patients").select2()
         selectAll()
+        changeViewPacientes(false)
       }
       select2_script.src = "/js/formplugins/select2/select2.bundle.js"
       document.body.appendChild(select2_script)
@@ -123,6 +130,7 @@ const MassiveNotification = ({sucursal_pk}) => {
       // Set select2 to patients
       window.$("#patients").select2()
       selectAll()
+      changeViewPacientes(false)
     }
   }, [patients])
 
@@ -136,7 +144,9 @@ const MassiveNotification = ({sucursal_pk}) => {
 
       <div className="form-group">
         <label className="form-label" htmlFor="programado">Pacientes: </label>
-        <select className="custom-select form-control" id="patients" multiple>
+        <i id="patients-show-button" onClick={() => changeViewPacientes(!show_patients.current)} style={{paddingLeft: "10px", textDecoration: "underline"}}></i>
+        <br />
+        <select className="custom-select form-control" id="patients" multiple style={{display: "none"}}>
           {patients.map(p => <option key={p.pk} value={p.procedimiento}>{p.fullname.toUpperCase()}</option>)}
         </select>
         <b>{patients.length} pacientes seleccionados</b>
