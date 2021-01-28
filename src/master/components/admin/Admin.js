@@ -85,7 +85,7 @@ const AdminProcedimiento = ({sucursal_pk, redirectTo}) => {
     <ProcedureModalContext.Provider value={{modal_data, setModalData, updateProcedure}}>
       {/* ALERTS */}
       <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
       </div>
 
       <div className="row">

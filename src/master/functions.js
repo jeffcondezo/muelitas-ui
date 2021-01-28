@@ -200,7 +200,7 @@ export async function simpleDelete(end_point){
   ).then(
     response => (
       response.ok
-      ? response.json()
+      ? response
       : response.status==403
       ? handleErrorResponse('permission') && Promise.reject()
       : response.status==500

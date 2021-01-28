@@ -2707,7 +2707,7 @@ function Odontograma({role, redirectTo}){
       {/* ALERTS */}
       <br/>
       <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
       </div>
       {/* MODALS */}
       {init_od!=-1 && init_od && odontogram.pk != init_od.pk

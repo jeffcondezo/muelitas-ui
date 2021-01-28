@@ -21,6 +21,7 @@ import {
 } from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
 import { NavigationContext } from '../Navigation';
+import MassiveNotification from './MassiveNotification';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -28,35 +29,39 @@ const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
 
 
-function Admision(props){
-  return(
-  <>
+const Admision = ({sucursal_pk, redirectTo, data}) => (
+  <div>
     <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal, parece que al programador se le olvidó especificar qué</span>.
+      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
     </div>
 
     <Switch>
       <Route exact path="/nav/admision">
         <AdmisionHome
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
+          sucursal_pk={sucursal_pk}
+          redirectTo={redirectTo} />
       </Route>
       <Route exact path="/nav/admision/nuevo">
         <RegisterPatient
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
+          sucursal_pk={sucursal_pk}
+          redirectTo={redirectTo} />
+      </Route>
+      <Route exact path="/nav/admision/mensaje">
+        <MassiveNotification
+          sucursal_pk={sucursal_pk}
+          redirectTo={redirectTo} />
       </Route>
       <Route exact path="/nav/admision/:patient_pk/detalle">
         <AdmisionDetail
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo}
-          patient={props.data.patient} />
+          sucursal_pk={sucursal_pk}
+          redirectTo={redirectTo}
+          patient={data.patient} />
       </Route>
       <Route exact path="/nav/admision/:patient_pk/editar">
         <EditPatient
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo}
-          patient={props.data.patient} />
+          sucursal_pk={sucursal_pk}
+          redirectTo={redirectTo}
+          patient={data.patient} />
       </Route>
       <Route exact path="/nav/admision/:patient_pk/archivos">
         <ArchivosPaciente />
@@ -66,9 +71,8 @@ function Admision(props){
         <Redirect to="/nav/admision" />
       </Route>
     </Switch>
-  </>
-  )
-}
+  </div>
+)
 
 // General
 const AdmisionHome = props => {
@@ -289,9 +293,13 @@ const LinksHome = props => {
           <Icon type="new-patient" onClick={() => props.redirectTo("/nav/admision/nuevo")} />
           <span style={{fontSize: "0.9rem"}}>Nuevo</span>
         </div>
+        <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
+          <Icon type="letter" onClick={() => props.redirectTo("/nav/admision/mensaje")} />
+          <span style={{fontSize: "0.9rem"}}>Mensajes masivos</span>
+        </div>
       </div>
     </div>
-  );
+  )
 }
 // By patient
 const AdmisionDetail = props => {
