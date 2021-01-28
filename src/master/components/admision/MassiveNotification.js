@@ -57,15 +57,19 @@ const MassiveNotification = ({sucursal_pk}) => {
   const saveMassiveNotification = () => {
     if(__debug__) console.log("MassiveNotification saveMassiveNotification");
 
+    let _patients = window.$('#patients').select2('data').map(p => p.id)
+    if(_patients.length==0){
+      alert("Debe seleccionar al menos un paciente")
+      return
+    }
+
     let data = {
       message: window.document.getElementById('mn-msg').value.trim(),
       now: window.document.getElementById('mn-now').checked,
       fecha: window.document.getElementById('mn-fecha').value.split('T')[0],
       hora: window.document.getElementById('mn-fecha').value.split('T')[1],
-      patients: patients.map(p => p.pk)
+      patients: _patients
     }
-    // Add signature
-    data.message += '\n'+signature
 
     // Verificar valores
     if(data.message.length==0){
@@ -75,6 +79,8 @@ const MassiveNotification = ({sucursal_pk}) => {
       handleErrorResponse("custom", "Error", "El mensaje no puede contener tildes o ñ", "warning")
       return
     }
+    // Add signature
+    data.message += '\n'+signature
 
     console.log("data", data)
     // Enviar data al API
@@ -92,6 +98,9 @@ const MassiveNotification = ({sucursal_pk}) => {
     window.document.getElementsByClassName('select2-container')[0].style.display = _on?"block":"none"
     window.document.getElementById('patients-show-button').innerText = !_on?"Mostrar":"Ocultar"
     show_patients.current = _on
+  }
+  const updateSelectedCounter = () => {
+    window.document.getElementById('selected_counter').innerText = window.$("#patients").select2('data').length
   }
 
   useEffect(() => {
@@ -120,17 +129,19 @@ const MassiveNotification = ({sucursal_pk}) => {
       select2_script.id = "select2_script"
       select2_script.onload = ()=>{
         // Set select2 to patients
-        window.$("#patients").select2()
+        window.$("#patients").select2().on('change.select2', ()=>updateSelectedCounter())
         selectAll()
         changeViewPacientes(false)
+        updateSelectedCounter()
       }
       select2_script.src = "/js/formplugins/select2/select2.bundle.js"
       document.body.appendChild(select2_script)
     }else{
       // Set select2 to patients
-      window.$("#patients").select2()
+      window.$("#patients").select2().on('change.select2', ()=>updateSelectedCounter())
       selectAll()
       changeViewPacientes(false)
+      updateSelectedCounter()
     }
   }, [patients])
 
@@ -144,12 +155,12 @@ const MassiveNotification = ({sucursal_pk}) => {
 
       <div className="form-group">
         <label className="form-label" htmlFor="programado">Pacientes: </label>
-        <i id="patients-show-button" onClick={() => changeViewPacientes(!show_patients.current)} style={{paddingLeft: "10px", textDecoration: "underline"}}></i>
+        <i id="patients-show-button" onClick={() => changeViewPacientes(!show_patients.current)} style={{paddingLeft: "10px", textDecoration: "underline", userSelect: "none"}}></i>
         <br />
         <select className="custom-select form-control" id="patients" multiple style={{display: "none"}}>
-          {patients.map(p => <option key={p.pk} value={p.procedimiento}>{p.fullname.toUpperCase()}</option>)}
+          {patients.map(p => <option key={p.pk} value={p.pk}>{p.fullname.toUpperCase()}</option>)}
         </select>
-        <b>{patients.length} pacientes seleccionados</b>
+        <b><span id="selected_counter"></span> pacientes seleccionados</b>
       </div>
       {/* Filters */}
       <div className="row">

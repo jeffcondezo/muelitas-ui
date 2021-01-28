@@ -748,7 +748,7 @@ const PatientForm = props => {
         </div>
         <div className="col-3 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
           <input type="checkbox" className="custom-control-input" id="permiso_sms" defaultChecked={patient&&patient.permiso_sms} />
-          <label className="custom-control-label" htmlFor="permiso_sms">Permitir envio de mensajes?</label>
+          <label className="custom-control-label" htmlFor="permiso_sms">Permitir envio de mensajes</label>
         </div>
       </div>
       <div className="form-group">
@@ -1230,8 +1230,6 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
       fecha: window.document.getElementById('in-fecha').value.split('T')[0],
       hora: window.document.getElementById('in-fecha').value.split('T')[1],
     }
-    // Add signature
-    data.message += '\n'+signature
 
     // Verificar valores
     if(data.message.length==0){
@@ -1241,6 +1239,8 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
       alert("El mensaje no puede contener tildes o ñ")
       return
     }
+    // Add signature
+    data.message += '\n'+signature
 
     console.log("data", data)
     // Enviar data al API
