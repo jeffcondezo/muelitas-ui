@@ -98,7 +98,7 @@ const AddMedicine = props => {
       _medicines.map(m => {
         _medicine.push(
           <option key={m.pk} value={m.pk}>
-            {m.nombre.toUpperCase()}
+            {m.nombre} - {m.concentracion} - {m.presentacion}
           </option>
         );
       });
