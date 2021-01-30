@@ -1203,8 +1203,11 @@ const ModalFormatos = ({patient_pk, sucursal_pk}) => {
       _title={"Generar formato"}
       _body={
         <div>
-          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/1/${sucursal_pk}/${patient_pk}/`, '_blank')}>
             Cuidados de la ortodoncia
+          </button>
+          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/101/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+            Certificado de atencion
           </button>
         </div>
       } />

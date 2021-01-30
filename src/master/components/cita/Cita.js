@@ -182,43 +182,6 @@ class Cita extends React.Component {
     clone.calendar = calendar  // Change attribute's value
     this.setState(clone, this.getPersonal)  // Save change (re-render)
   }
-  // Errors
-  handleBadRequest(response){
-    switch(response){
-      case 'CRUCE_DE_CITAS':
-        alert("Ya hay una cita programada para el personal en la hora indicada, por favor revise o actualice la lista de actividades por personal y escoja otro horario")
-        break;
-      default: return;
-    }
-  }
-  handleServerError(){
-    document.getElementById("cita-close").click()  // Cerrar formulario cita
-    document.getElementById('alert-server').style.display = "block"
-    document.getElementById('alert-server').classList.remove("fade")
-    setTimeout(function(){
-      if(document.getElementById('alert-server'))
-        document.getElementById('alert-server').classList.add("fade")
-    }, 2500)
-    setTimeout(function(){
-      if(document.getElementById('alert-server'))
-        document.getElementById('alert-server').style.display = "none"
-    }, 2700)
-  }
-  handlePermissionError(){
-    // No permission
-    document.getElementById("cita-close").click()  // Cerrar formulario cita
-    document.getElementById('alert-permission').style.display = "block";
-    document.getElementById('alert-permission').classList.remove("fade");
-    setTimeout(function(){
-      if(document.getElementById('alert-permission'))
-        document.getElementById('alert-permission').classList.add("fade");
-    }, 2500);
-    setTimeout(function(){
-      if(document.getElementById('alert-permission'))
-        document.getElementById('alert-permission').style.display = "none";
-    }, 2700);
-    return;
-  }
   /* Arrow function
   * When a function is fired for an DOM event, we should declare 'em with arrow function
   * so we can access 'this' class propertie
@@ -460,19 +423,16 @@ class Cita extends React.Component {
         document.getElementById("cita-close").click()  // Cerrar formulario cita
         this.getCitas()  // Re render fullcalendar
       },
-      error => {
-        // The next function is a solution to a UB (at least idk what does cause it)
-        error.then((er) => {
-          console.log(er)
-          if(er.hasOwnProperty("length") && er[0]==="CRUCE_DE_CITAS"){
-            //this.handleBadRequest("CRUCE_DE_CITAS");
+      res => {
+        // We expect an error bc of CRUCE_DE_CITAS
+        // the simpleFetch functions are standar in the system and when error it returns the response itself
+        // er = Response || we need to use er.json() to acces the info inside the response
+        res.text().then(er => {
+          if(er == '["CRUCE_DE_CITAS"]')
             handleErrorResponse("custom", "ERROR: ", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "danger")
-            return;
-          }else{
-            handleErrorResponse("custom", "", "Ha ocurrido un error", "danger")
-          }
+          else handleErrorResponse("custom", "", "Ha ocurrido un error", "danger")
+          document.getElementById("cita-close").click()  // Cerrar formulario cita
         })
-        document.getElementById("cita-close").click()  // Cerrar formulario cita
       }
     )
   }
