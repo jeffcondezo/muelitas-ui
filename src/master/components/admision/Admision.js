@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
   Switch,
   Route,
@@ -96,12 +96,41 @@ const AdmisionHome = props => {
   );
 }
 const SearchPatient = props => {
-  const [patients, setPatients] = useState(false);
+  const patients_ref = useRef([])
+  const [patients, setPatients] = useState([]);
   const [datatable, setDatatable] = useState(false);
 
   const getAllPatients = (_sucursal_pk=props.sucursal_pk) => {
-    simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/`)
-    .then(res => setPatients(res.map(pxs => pxs.paciente)))
+    // Function to build lot filter
+    let filtro_lote = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
+    // Lot params
+    let lot_length = 50
+    // Init lot request
+    loteRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_lote, lot_length, 1, patients)
+  }
+  const loteRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
+    // Max number of requests
+    if(_next_lot_number==10) return Promise.reject(null)
+    return Promise.resolve(
+      // Request next lot of queries
+      simpleGet(_ep+_filtro_fn(_lot_length, _next_lot_number))
+      // Save new lot reponse
+      .then(res => handleLoteResponseState(res) || res)
+      // Debug log
+      .then(r => (__debug__ && console.log("loteRequest r"+_next_lot_number, r.length) || r))
+      // Handle nested function
+      .then(r => r.length==_lot_length
+        ? loteRequest(_ep, _filtro_fn, _lot_length, _next_lot_number+1, r)
+        : Promise.reject(null)
+      )
+    )
+  }
+  const handleLoteResponseState = _res => {
+    /* This function is called to store and preserve state's value
+    * lote responses can't be assigned to state right away bc state is asynchronous
+    */
+    patients_ref.current = patients_ref.current.concat( _res.map(r => r.paciente) )
+    setPatients(patients_ref.current)
   }
 
   useEffect(() => {
@@ -131,7 +160,7 @@ const SearchPatient = props => {
   }, []);
   // When patients are setted
   useEffect(() => {
-    if(!patients) return;  // Abort if it's false
+    if(!patients || patients.length == 0) return;  // Abort if it's false
 
     // Destroy previous DT if exists
     if(datatable) window.$('#search-patient').DataTable().clear().destroy();
@@ -207,7 +236,7 @@ const SearchPatient = props => {
     setDatatable(_tmp);  // Save DT in state
   }, [patients]);
 
-  return !patients
+  return patients.length == 0
     ? "loading"
     : (
       <div className="datatable-container col-12">
@@ -655,7 +684,6 @@ const RegisterPatient = props => {
     window.history.back()
   }
 
-  console.log("patient_pk", patient_pk);
   return (
     <div>
       <PatientForm setpatientpk={setPatientPK} />
@@ -715,8 +743,8 @@ const PatientForm = props => {
       <div className="form-group">
         <label className="form-label" htmlFor="dni">DNI: </label>
         <input type="text" id="dni" className="form-control" maxLength="8"
-        defaultValue={patient&&patient.dni||""} onChange={e => _getPaciente(e.target.value)}
-        />
+        defaultValue={patient&&patient.dni||""} disabled={patient}
+        onChange={e => _getPaciente(e.target.value)} />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
@@ -1314,6 +1342,11 @@ const getPaciente = (dni, setpatientpk) => {
     document.getElementById("alergias").value = ""
     document.getElementById("operaciones").value = ""
     document.getElementById("medicamentos").value = ""
+    // Enable inputs
+    document.getElementById("name-pric").disabled = false
+    document.getElementById("name-sec").disabled = false
+    document.getElementById("ape-p").disabled = false
+    document.getElementById("ape-m").disabled = false
     // Reset patient pk
     setpatientpk(-1)
     return
@@ -1357,6 +1390,22 @@ const getPaciente = (dni, setpatientpk) => {
       document.getElementById("operaciones").value = res.operaciones
       document.getElementById("medicamentos").value = res.medicamentos
     })
+  })
+  .then(() => simpleGet(`atencion/reniec/${dni}/`))
+  .then(res => {
+    if(__debug__) console.log("res", res);
+    // Handle errors
+    if(res.hasOwnProperty('error')) return
+    else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
+    // Set paciente data
+    document.getElementById("name-pric").value = res.nombres.slice(0, res.nombres.indexOf(' '))
+    document.getElementById("name-sec").value = res.nombres.slice(res.nombres.indexOf(' ')+1, res.nombres.length)
+    document.getElementById("ape-p").value = res.apellido_paterno
+    document.getElementById("ape-m").value = res.apellido_materno
+    document.getElementById("name-pric").disabled = true
+    document.getElementById("name-sec").disabled = true
+    document.getElementById("ape-p").disabled = true
+    document.getElementById("ape-m").disabled = true
   })
 }
 

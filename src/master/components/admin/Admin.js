@@ -59,7 +59,7 @@ const AdminMenu = ({redirectTo}) => {
 
   return (
     <div>
-      <PageTitle title={"Lista de deudas"} />
+      <PageTitle title={"Administrador"} />
       <div className="row">
         {/* procedimiento */}
         <div className="card" style={_style.card} onClick={() => redirectTo(`/nav/admin/procedimiento/`)}>
