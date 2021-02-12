@@ -29,7 +29,7 @@ const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
 
 
-const Admision = ({sucursal_pk, redirectTo, data}) => (
+const Admision = ({sucursal_pk, redirectTo}) => (
   <div>
     <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
       <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
@@ -51,19 +51,16 @@ const Admision = ({sucursal_pk, redirectTo, data}) => (
           sucursal_pk={sucursal_pk}
           redirectTo={redirectTo} />
       </Route>
-      <Route exact path="/nav/admision/:patient_pk/detalle">
+      <Route exact path="/nav/admision/:patient/detalle">
         <AdmisionDetail
           sucursal_pk={sucursal_pk}
           redirectTo={redirectTo}
-          patient={data.patient} />
+          />
       </Route>
-      <Route exact path="/nav/admision/:patient_pk/editar">
-        <EditPatient
-          sucursal_pk={sucursal_pk}
-          redirectTo={redirectTo}
-          patient={data.patient} />
+      <Route exact path="/nav/admision/:patient/editar">
+        <EditPatient />
       </Route>
-      <Route exact path="/nav/admision/:patient_pk/archivos">
+      <Route exact path="/nav/admision/:patient/archivos">
         <ArchivosPaciente />
       </Route>
 
@@ -75,32 +72,29 @@ const Admision = ({sucursal_pk, redirectTo, data}) => (
 )
 
 // General
-const AdmisionHome = props => {
-
-  return (
-    <div className="row">
-      <div className="col-lg-8">
-        <div style={{marginBottom: "25px"}}>
-          <SearchPatient sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
-        </div>
-      </div>
-      <div className="col-lg-4">
-        <div className="panel">
-          <LinksHome redirectTo={props.redirectTo} />
-        </div>
-        <div className="panel">
-          <LastAttendedPatients sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
-        </div>
+const AdmisionHome = ({sucursal_pk, redirectTo}) => (
+  <div className="row">
+    <div className="col-lg-8">
+      <div style={{marginBottom: "25px"}}>
+        <SearchPatient sucursal_pk={sucursal_pk} redirectTo={redirectTo} />
       </div>
     </div>
-  );
-}
-const SearchPatient = props => {
+    <div className="col-lg-4">
+      <div className="panel">
+        <LinksHome redirectTo={redirectTo} />
+      </div>
+      <div className="panel">
+        <LastAttendedPatients sucursal_pk={sucursal_pk} redirectTo={redirectTo} />
+      </div>
+    </div>
+  </div>
+)
+const SearchPatient = ({sucursal_pk, redirectTo}) => {
   const patients_ref = useRef([])
-  const [patients, setPatients] = useState([]);
-  const [datatable, setDatatable] = useState(false);
+  const [patients, setPatients] = useState([])
+  const [datatable, setDatatable] = useState(false)
 
-  const getAllPatients = (_sucursal_pk=props.sucursal_pk) => {
+  const getAllPatients = (_sucursal_pk=sucursal_pk) => {
     // Function to build lot filter
     let filtro_lote = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
     // Lot params
@@ -137,33 +131,33 @@ const SearchPatient = props => {
     // Add DataTable rel docs
     // JS
     if(!document.getElementById('dt_script')){
-      const dt_script = document.createElement("script");
-      dt_script.async = false;
-      dt_script.id = "dt_script";
-      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      const dt_script = document.createElement("script")
+      dt_script.async = false
+      dt_script.id = "dt_script"
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
       dt_script.onload = () => {
         // Run at first execution
-        getAllPatients();
-      };
-      document.body.appendChild(dt_script);
+        getAllPatients()
+      }
+      document.body.appendChild(dt_script)
     }else{
-      getAllPatients();
+      getAllPatients()
     }
     // CSS
     if(!document.getElementById('dt_style')){
-      const dt_style = document.createElement("link");
-      dt_style.rel = "stylesheet";
-      dt_style.id = "dt_style";
-      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-      document.head.appendChild(dt_style);
+      const dt_style = document.createElement("link")
+      dt_style.rel = "stylesheet"
+      dt_style.id = "dt_style"
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css"
+      document.head.appendChild(dt_style)
     }
-  }, []);
+  }, [])
   // When patients are setted
   useEffect(() => {
-    if(!patients || patients.length == 0) return;  // Abort if it's false
+    if(!patients || patients.length == 0) return  // Abort if it's false
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#search-patient').DataTable().clear().destroy();
+    if(datatable) window.$('#search-patient').DataTable().clear().destroy()
     // Gen Datatable
     let _tmp = window.$('#search-patient').DataTable({
       data: patients,
@@ -182,7 +176,7 @@ const SearchPatient = props => {
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            props.redirectTo(`/nav/admision/${rowData.pk}/detalle`, {patient: rowData});
+            redirectTo(`/nav/admision/${rowData.pk}/detalle`, {patient: rowData})
           }
         }
       }, {
@@ -231,10 +225,10 @@ const SearchPatient = props => {
           colvis: "Visibilidad"
         }
       },
-    });
+    })
 
-    setDatatable(_tmp);  // Save DT in state
-  }, [patients]);
+    setDatatable(_tmp)  // Save DT in state
+  }, [patients])
 
   return patients.length == 0
     ? "loading"
@@ -242,38 +236,38 @@ const SearchPatient = props => {
       <div className="datatable-container col-12">
         <table id="search-patient" style={{width: "100%"}}></table>
       </div>
-    );
+    )
 }
-const LastAttendedPatients = props => {
-  const [lastPatients, setLastPatients] = useState(false);
-  const max_items = 5;
+const LastAttendedPatients = ({sucursal_pk, redirectTo}) => {
+  const [lastPatients, setLastPatients] = useState(false)
+  const max_items = 5
 
-  const getLastAttendedPatients = (_sucursal_pk=props.sucursal_pk, ndays=3) => {
+  const getLastAttendedPatients = (_sucursal_pk, ndays=3) => {
     // Get lastest attended patients within the last four days
-    let _day = new Date();
+    let _day = new Date()
     _day.setDate(_day.getDate()-ndays)
-    _day = _day.toDateInputValue();
+    _day = _day.toDateInputValue()
 
     simpleGet(`atencion/cita/?filtro={"sucursal":"${_sucursal_pk}", "estado":"5", "fecha_desde":"${_day}", "sort":"true"}`)
     .then(
       response_obj => {
-        let _fake_obj = [];
-        let _tmp1 = [];
+        let _fake_obj = []
+        let _tmp1 = []
         response_obj.map(cita => {  // Select only different patients
-          if(_tmp1.includes(cita.paciente_data.pk)) return;  // Abort
-          else _tmp1.push(cita.paciente_data.pk);  // Save patient's pk
+          if(_tmp1.includes(cita.paciente_data.pk)) return  // Abort
+          else _tmp1.push(cita.paciente_data.pk)  // Save patient's pk
 
-          _fake_obj.push(cita.paciente_data);  // Save patient's data
+          _fake_obj.push(cita.paciente_data)  // Save patient's data
         })
 
-        setLastPatients(_fake_obj);
+        setLastPatients(_fake_obj)
       }
     )
   }
 
   useEffect(() => {
-    getLastAttendedPatients(props.sucursal_pk);
-  }, []);
+    getLastAttendedPatients(sucursal_pk)
+  }, [])
 
   return !lastPatients
     ? (<div className="card"><div className="card-body">loading</div></div>)
@@ -290,7 +284,7 @@ const LastAttendedPatients = props => {
             : lastPatients.map((pat, inx) => ( inx>max_items-1?"":
               <div key={"pat-"+pat.pk}>
                 <li className="list-group-item d-flex" id={pat.pk}
-                  onClick={()=>{props.redirectTo(`/nav/admision/${pat.pk}/detalle`, {patient: pat})}}
+                  onClick={()=>{redirectTo(`/nav/admision/${pat.pk}/detalle`, {patient: pat})}}
                   data-toggle="collapse" data-target={"#pat-desc-"+pat.pk}
                   aria-expanded="true" aria-controls={"pat-desc-"+pat.pk}
                   style={{cursor: "pointer", borderBottom: "0"}}>
@@ -307,41 +301,37 @@ const LastAttendedPatients = props => {
             ))}
         </div>
       </div>
-    );
+    )
 }
-const LinksHome = props => {
-  return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Acciones
-        </div>
-      </div>
-      <div className="card-body">
-        <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="new-patient" onClick={() => props.redirectTo("/nav/admision/nuevo")} />
-          <span style={{fontSize: "0.9rem"}}>Nuevo</span>
-        </div>
-        <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="letter" onClick={() => props.redirectTo("/nav/admision/mensaje")} />
-          <span style={{fontSize: "0.9rem"}}>Mensajes masivos</span>
-        </div>
+const LinksHome = ({redirectTo}) => (
+  <div className="card col-12" style={{padding: "0px"}}>
+    <div className="card-header">
+      <div className="card-title">
+        Acciones
       </div>
     </div>
-  )
-}
+    <div className="card-body">
+      <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
+        <Icon type="new-patient" onClick={() => redirectTo("/nav/admision/nuevo")} />
+        <span style={{fontSize: "0.9rem"}}>Nuevo</span>
+      </div>
+      <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
+        <Icon type="letter" onClick={() => redirectTo("/nav/admision/mensaje")} />
+        <span style={{fontSize: "0.9rem"}}>Mensajes masivos</span>
+      </div>
+    </div>
+  </div>
+)
 // By patient
-const AdmisionDetail = props => {
-  let __params__ = useParams();
-  const [patient, setPatient] = useState(props.patient || false);
+const AdmisionDetail = ({sucursal_pk, redirectTo}) => {
+  let __params__ = useParams()
+  const [patient, setPatient] = useState(false)
+
+  const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
 
   useEffect(() => {
-    if(!patient){
-      // Get patient data by url
-      getDataByPK('atencion/paciente', __params__.patient_pk )
-      .then( data => setPatient(data) );
-    }
-  }, [patient]);
+    getPatientByID(__params__.patient)
+  }, [])
 
   return !patient
     ? "loading"
@@ -349,96 +339,79 @@ const AdmisionDetail = props => {
       <div className="row">
         <div className="col-lg-6">
           <div style={{marginBottom: "25px"}}>
-            <PatientData
-              patient={patient}
-              sucursal_pk={props.sucursal_pk}
-              redirectTo={props.redirectTo} />
+            <PatientData patient={patient} />
           </div>
-          {/*
-          <div>
-            <PatientDebts
-              patient={patient}
-              sucursal_pk={props.sucursal_pk}
-              redirectTo={props.redirectTo} />
-          </div>
-          */}
         </div>
         <div className="col-lg-6">
           <div className="panel">
             <LinksDetail
               patient={patient}
-              redirectTo={props.redirectTo} />
+              redirectTo={redirectTo} />
           </div>
           <div className="panel">
             <PatientPrescription
               patient={patient}
-              redirectTo={props.redirectTo} />
+              redirectTo={redirectTo} />
           </div>
         </div>
-        <ModalFormatos patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
-        <InstantNotification patient_pk={patient.pk} sucursal_pk={props.sucursal_pk} />
+        <ModalFormatos patient_pk={patient.pk} sucursal_pk={sucursal_pk} />
+        <InstantNotification patient_pk={patient.pk} sucursal_pk={sucursal_pk} />
       </div>
     )
 }
-const PatientData = props => {
-  // Receive {patient}
-  return (
-    <div className="card col-12" style={{padding: "0px"}}>
-      <div className="card-header">
-        <div className="card-title">
-          Paciente
-        </div>
+const PatientData = ({patient}) => (
+  <div className="card col-12" style={{padding: "0px"}}>
+    <div className="card-header">
+      <div className="card-title">
+        Paciente
       </div>
-      <PatientDataList patient={props.patient} />
     </div>
-  );
-}
-export const PatientDataList = props => {
-  // Receive {patient}
-  return (
-    <div className="card-body">
-      <h5>Nombres: <span style={{color:"black"}}>{cFL(props.patient.nombre_principal)+
-        (props.patient.nombre_secundario?" "+
-        cFL(props.patient.nombre_secundario):"")}</span>
-      </h5>
-      <h5>Apellidos: <span style={{color:"black"}}>{cFL(props.patient.ape_paterno)+" "+
-        cFL(props.patient.ape_materno)}</span>
-      </h5>
-      <h5>DNI: <span style={{color:"black"}}>{props.patient.dni}</span></h5>
-      <h5>Genero: <span style={{color:"black"}}>{props.patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
-      {!props.patient.fecha_nacimiento ? ""
-        : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{props.patient.fecha_nacimiento}</span></h5>
-      }
-      {!props.patient.celular ? ""
-        : <h5>Número de contacto: <span style={{color:"black"}}>{props.patient.celular}</span></h5>
-      }
-      {!props.patient.direccion ? ""
-        : <h5>Dirección: <span style={{color:"black"}}>{props.patient.direccion}</span></h5>
-      }
-      {!props.patient.procedencia ? ""
-        : <h5>Procedencia: <span style={{color:"black"}}>{props.patient.procedencia}</span></h5>
-      }
-      {!props.patient.residencia ? ""
-        : <h5>Residencia: <span style={{color:"black"}}>{props.patient.residencia}</span></h5>
-      }
-    </div>
-  )
-}
+    <PatientDataList patient={patient} />
+  </div>
+)
+export const PatientDataList = ({patient}) => (
+  <div className="card-body">
+    <h5>Nombres: <span style={{color:"black"}}>{cFL(patient.nombre_principal)+
+      (patient.nombre_secundario?" "+
+      cFL(patient.nombre_secundario):"")}</span>
+    </h5>
+    <h5>Apellidos: <span style={{color:"black"}}>{cFL(patient.ape_paterno)+" "+
+      cFL(patient.ape_materno)}</span>
+    </h5>
+    <h5>DNI: <span style={{color:"black"}}>{patient.dni}</span></h5>
+    <h5>Genero: <span style={{color:"black"}}>{patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
+    {!patient.fecha_nacimiento ? ""
+      : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{patient.fecha_nacimiento}</span></h5>
+    }
+    {!patient.celular ? ""
+      : <h5>Número de contacto: <span style={{color:"black"}}>{patient.celular}</span></h5>
+    }
+    {!patient.direccion ? ""
+      : <h5>Dirección: <span style={{color:"black"}}>{patient.direccion}</span></h5>
+    }
+    {!patient.procedencia ? ""
+      : <h5>Procedencia: <span style={{color:"black"}}>{patient.procedencia}</span></h5>
+    }
+    {!patient.residencia ? ""
+      : <h5>Residencia: <span style={{color:"black"}}>{patient.residencia}</span></h5>
+    }
+  </div>
+)
 const PatientPrescription = props => {
   // Receive {patient}
-  const [prescription_list, setPrescriptionList] = useState(false);
+  const [prescription_list, setPrescriptionList] = useState(false)
 
   const removeMedicineFromList = _medc_pk => {
     // Remove medicine by index in array
-    let _tmp = prescription_list.filter(i => i.pk!=_medc_pk);
+    let _tmp = prescription_list.filter(i => i.pk!=_medc_pk)
 
-    setPrescriptionList(_tmp);
+    setPrescriptionList(_tmp)
   }
   const getPrescriptionMedicine = _patient_pk => simpleGet(`atencion/prescripcion/?filtro={"paciente":"${_patient_pk}"}`).then(setPrescriptionList)
 
   useEffect(() => {
     getPrescriptionMedicine(props.patient.pk)
-  }, []);
+  }, [])
 
   // ListSavedMedicine receive {medicine_list, removeMedicineFromList}
   return !prescription_list
@@ -494,7 +467,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* historia */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="clinic-history"
-            onClick={() => redirectTo(`/nav/historiaclinica/${patient.pk}/`, {patient_pk: patient.pk})} />
+            onClick={() => redirectTo(`/nav/historiaclinica/${patient.pk}/`)} />
           <span style={{fontSize: "0.9rem"}}>Historia</span>
         </div>
         {/* pdt */}
@@ -521,29 +494,29 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
         {/* Formatos */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="pdf" onClick={() => window.$(`#${html_format_id}`).modal('show')} />
+          <Icon type="pdf" onClick={() => window.$('#'+html_format_id).modal('show')} />
           <span style={{fontSize: "0.9rem"}}>Formatos</span>
         </div>
         {/* Notificacion instantanea */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="letter" onClick={() => window.$(`#${html_instant_notification_id}`).modal('show')} />
+          <Icon type="letter" onClick={() => window.$('#'+html_instant_notification_id).modal('show')} />
           <span style={{fontSize: "0.9rem"}}>Mensaje</span>
         </div>
       </div>
     </div>
-  );
+  )
 }
 // Extra
 const EditPatient = () => {
-  let __params__ = useParams();
+  let __params__ = useParams()
   // Receive {patient, redirectTo, sucursal_pk}
 
-  const [patient, updatePatientData] = useState(false);
-  const [antecedente, setAntecedente] = useState(false);
+  const [patient, updatePatientData] = useState(false)
+  const [antecedente, setAntecedente] = useState(false)
 
   const saveEdit = () => {
     let _data = validatePatientForm()
-    console.log("_data", _data);
+    console.log("_data", _data)
     if(!_data) return
 
     simplePostData(`atencion/paciente/${patient.pk}/`, _data, "PUT")
@@ -587,19 +560,19 @@ const EditPatient = () => {
 
   useEffect(() => {
     // Get patient by id
-    getDataByPK('atencion/paciente', __params__.patient_pk)
+    getDataByPK('atencion/paciente', __params__.patient)
     .then(
       res => {
         if(!res) getBack()
         updatePatientData(res)
       }
     )
-  }, []);
+  }, [])
   useEffect(() => {
     if(!patient) return
 
     // Get patients antecedent
-    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${__params__.patient_pk}"}`)
+    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${__params__.patient}"}`)
     .then(
       res => {
         // Antecedents doesn't exist
@@ -632,7 +605,7 @@ const EditPatient = () => {
 const RegisterPatient = props => {
   let [patient_pk, setPatientPK] = useState(-1)
   // Receive {sucursal_pk, redirectTo}
-  if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED");
+  if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED")
 
   const savePatient = () => {
     if(patient_pk!=-1){
@@ -654,7 +627,7 @@ const RegisterPatient = props => {
         savePatientAntecedents(paciente)
       },
       error => {
-        console.log("WRONG!", error);
+        console.log("WRONG!", error)
       }
     )
   }
@@ -676,9 +649,9 @@ const RegisterPatient = props => {
         props.redirectTo(`/nav/admision/${patient.pk}/detalle`, {patient: patient})
       },
       error => {
-        console.log("WRONG!", error);
+        console.log("WRONG!", error)
       }
-    );
+    )
   }
   const getBack = () => {
     window.history.back()
@@ -706,7 +679,7 @@ const RegisterPatient = props => {
 }
 const PatientForm = props => {
   // Receive {patient?, setpatientpk?}
-  const patient = props.patient || false;
+  const patient = props.patient || false
   const formatInputDate = date => {
     /* This only works with specific formats
     * date: "20/05/2000"
@@ -714,29 +687,29 @@ const PatientForm = props => {
     */
     return date.split("/").reverse().join("-")
   }
-  const _getPaciente = dni => {
-    if(!patient) getPaciente(dni, props.setpatientpk)
+  const _getPatiente = dni => {
+    if(!patient) getPatiente(dni, props.setpatientpk)
   }
 
   useEffect(() => {
     // CSS
     if(!document.getElementById('select2_link')){
-      const select2_link = document.createElement("link");
-      select2_link.rel = "stylesheet";
-      select2_link.id = "select2_link";
-      select2_link.media = "screen, print";
-      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
-      document.head.appendChild(select2_link);
+      const select2_link = document.createElement("link")
+      select2_link.rel = "stylesheet"
+      select2_link.id = "select2_link"
+      select2_link.media = "screen, print"
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css"
+      document.head.appendChild(select2_link)
     }
     // JS
     if(!document.getElementById('select2_script')){
-      const select2_script = document.createElement("script");
-      select2_script.async = false;
-      select2_script.id = "select2_script";
-      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
-      document.body.appendChild(select2_script);
+      const select2_script = document.createElement("script")
+      select2_script.async = false
+      select2_script.id = "select2_script"
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js"
+      document.body.appendChild(select2_script)
     }
-  }, []);
+  }, [])
 
   return (
     <div className="form-group col-md-12">  {/* Form */}
@@ -744,7 +717,7 @@ const PatientForm = props => {
         <label className="form-label" htmlFor="dni">DNI: </label>
         <input type="text" id="dni" className="form-control" maxLength="8"
         defaultValue={patient&&patient.dni||""} disabled={patient}
-        onChange={e => _getPaciente(e.target.value)} />
+        onChange={e => _getPatiente(e.target.value)} />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
@@ -794,22 +767,22 @@ const PatientAntecedentsForm = ({antecedente}) => {
   useEffect(() => {
     // CSS
     if(!document.getElementById('select2_link')){
-      const select2_link = document.createElement("link");
-      select2_link.rel = "stylesheet";
-      select2_link.id = "select2_link";
-      select2_link.media = "screen, print";
-      select2_link.href = "/css/formplugins/select2/select2.bundle.css";
-      document.head.appendChild(select2_link);
+      const select2_link = document.createElement("link")
+      select2_link.rel = "stylesheet"
+      select2_link.id = "select2_link"
+      select2_link.media = "screen, print"
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css"
+      document.head.appendChild(select2_link)
     }
     // JS
     if(!document.getElementById('select2_script')){
-      const select2_script = document.createElement("script");
-      select2_script.async = false;
-      select2_script.id = "select2_script";
-      select2_script.src = "/js/formplugins/select2/select2.bundle.js";
-      document.body.appendChild(select2_script);
+      const select2_script = document.createElement("script")
+      select2_script.async = false
+      select2_script.id = "select2_script"
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js"
+      document.body.appendChild(select2_script)
     }
-  }, []);
+  }, [])
   useEffect(() => {
     if(!antecedente) return
     if(antecedente){
@@ -871,85 +844,85 @@ const PatientAntecedentsForm = ({antecedente}) => {
 }
 function validatePatientForm(){
   // Values validation
-  let _tmp1;
-  _tmp1 = document.getElementById("name-pric");
+  let _tmp1
+  _tmp1 = document.getElementById("name-pric")
   if(!_tmp1 || _tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Nombre principal no especificado");
+    handleErrorResponse("custom", "Error", "Nombre principal no especificado")
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras")
     return false
   }
 
-  _tmp1 = document.getElementById("name-sec");
+  _tmp1 = document.getElementById("name-sec")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Nombre secundario no especificado");
+    handleErrorResponse("custom", "Error", "Nombre secundario no especificado")
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras")
     return false
   }
 
-  _tmp1 = document.getElementById("ape-p");
+  _tmp1 = document.getElementById("ape-p")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
+    handleErrorResponse("custom", "Error", "Apellido paterno no especificado")
     return false
   }
   if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio");
+    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio")
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras")
     return false
   }
 
-  _tmp1 = document.getElementById("ape-m");
+  _tmp1 = document.getElementById("ape-m")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido materno no especificado");
+    handleErrorResponse("custom", "Error", "Apellido materno no especificado")
     return false
   }
   if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio");
+    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio")
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras")
     return false
   }
 
-  _tmp1 = document.getElementById("dni");
+  _tmp1 = document.getElementById("dni")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "DNI no especificado");
+    handleErrorResponse("custom", "Error", "DNI no especificado")
     return false
   }
   if(_tmp1.value.trim().length!=8){
-    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos");
+    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos")
     return false
   }
   if(isNaN(parseInt(_tmp1.value.trim()))){
-    handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
+    handleErrorResponse("custom", "Error", "El DNI debe contener solo números")
     return false
   }
 
-  _tmp1 = document.getElementById("born-date");
+  _tmp1 = document.getElementById("born-date")
   if(_tmp1){
     if(_tmp1.value>=(new Date().toDateInputValue)){
-      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy");
+      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy")
       return false
     }
   }
 
-  _tmp1 = document.getElementById("phone");
+  _tmp1 = document.getElementById("phone")
   if(_tmp1 && !!_tmp1.value){
     if(_tmp1.value.length!=9){
-      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
+      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos")
       return false
     }
     if(isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
+      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos")
       return false
     }
   }
@@ -969,11 +942,11 @@ function validatePatientForm(){
   }
   // Add non-required fields
   if(document.getElementById('born-date').value)
-    _tmp.fecha_nacimiento = document.getElementById('born-date').value;
+    _tmp.fecha_nacimiento = document.getElementById('born-date').value
   if(document.getElementById('phone').value)
-    _tmp.celular = document.getElementById('phone').value;
+    _tmp.celular = document.getElementById('phone').value
   if(document.getElementById('address').value)
-    _tmp.direccion = document.getElementById('address').value;
+    _tmp.direccion = document.getElementById('address').value
   /*
   if(document.getElementById('select_provenance').value)
     _tmp.procedencia = document.getElementById('select_provenance').value;
@@ -1004,7 +977,7 @@ const ArchivosPaciente = () => {
 
   // Google drive API functions
   const getPatientFiles = pac_pk => {
-    if(!pac_pk) pac_pk = __params__.patient_pk
+    if(!pac_pk) pac_pk = __params__.patient
     // Get patient by id}
     simpleGet(`atencion/paciente/${pac_pk}/files/`)
     .then(
@@ -1019,23 +992,23 @@ const ArchivosPaciente = () => {
     /* Show modal */
     showLoadingDeleteModal()
 
-    simplePostData(`atencion/paciente/${__params__.patient_pk}/files/delete/`, {file_id: file_id})
+    simplePostData(`atencion/paciente/${__params__.patient}/files/delete/`, {file_id: file_id})
     .then(() => getPatientFiles())
     .then(hideLoadingDeleteModal)
   }
   // Modals
-  const showLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("show")
-  const hideLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
+  const showLoadingDeleteModal = () => window.$('#'+fileloadingdelete_modal_id).modal("show")
+  const hideLoadingDeleteModal = () => window.$('#'+fileloadingdelete_modal_id).modal("hide")
 
   // Run at first render
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${fileupload_modal_id}`).modal("hide")
-    window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
+    window.$('#'+fileupload_modal_id).modal("hide")
+    window.$('#'+fileloadingdelete_modal_id).modal("hide")
   }, [])
   // Files
   useEffect(() => {
-    if(!files) getPatientFiles(__params__.patient_pk)
+    if(!files) getPatientFiles(__params__.patient)
 
   }, [files])
 
@@ -1130,13 +1103,13 @@ const ArchivosPaciente = () => {
           </table>
         </div>
         <div className="card-footer">
-          <button className="btn btn-primary" data-toggle="modal" data-target={`#${fileupload_modal_id}`}>Subir archivo</button>
+          <button className="btn btn-primary" data-toggle="modal" data-target={'#'+fileupload_modal_id}>Subir archivo</button>
           <button className="btn btn-secondary" style={{marginLeft: "10px"}} onClick={()=>window.history.back()}>Regresar</button>
         </div>
 
         <ModalFileUpload
           modal_id={fileupload_modal_id}
-          patient_pk={__params__.patient_pk}
+          patient_pk={__params__.patient}
           refresFiles={() => setFiles(false)} />
         <ModalLoading
           _id={fileloadingdelete_modal_id}
@@ -1162,7 +1135,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
     data.append("fecha", input_fecha)
     if(atencion_pk) data.append("atencion", atencion_pk)
 
-    window.$(`#${modal_id}`).modal("hide")  // Hide file upload modal
+    window.$('#'+modal_id).modal("hide")  // Hide file upload modal
     showLoadingUploadModal()  // Show loading file upload modal
 
     return addRequestValidation(
@@ -1181,12 +1154,12 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
       .then(hideLoadingUploadModal)
   }
   const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
-  const showLoadingUploadModal = () => window.$(`#${gadriveloadingupload_modal_id}`).modal("show")
-  const hideLoadingUploadModal = () => window.$(`#${gadriveloadingupload_modal_id}`).modal("hide")
+  const showLoadingUploadModal = () => window.$('#'+gadriveloadingupload_modal_id).modal("show")
+  const hideLoadingUploadModal = () => window.$('#'+gadriveloadingupload_modal_id).modal("hide")
 
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${gadriveloadingupload_modal_id}`).modal("hide")
+    window.$('#'+gadriveloadingupload_modal_id).modal("hide")
   }, [])
 
   return (
@@ -1222,7 +1195,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
 const ModalFormatos = ({patient_pk, sucursal_pk}) => {
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${html_format_id}`).modal("hide")
+    window.$('#'+html_format_id).modal("hide")
   }, [])
 
   return (
@@ -1280,12 +1253,12 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
     .then(
       () => handleErrorResponse("custom", "Enviado", "El mensaje fue enviado exitosamente", "info")
     )
-    .then(() => window.$(`#${html_instant_notification_id}`).modal('hide'))
+    .then(() => window.$('#'+html_instant_notification_id).modal('hide'))
   }
 
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${html_format_id}`).modal("hide")
+    window.$('#'+html_format_id).modal("hide")
   }, [])
 
   return (
@@ -1322,7 +1295,7 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
       } />
   )
 }
-const getPaciente = (dni, setpatientpk) => {
+const getPatiente = (dni, setpatientpk) => {
   if(dni.length!=8){
     // Eliminar datos
     document.getElementById("name-pric").value = "";

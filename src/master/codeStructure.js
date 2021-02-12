@@ -167,3 +167,13 @@ const handleLoteResponseState = _res => {
   patients_ref.current = patients_ref.current.concat( _res.map(r => r.paciente) )
   setPatients(patients_ref.current)
 }
+
+
+/* state change
+// Array state change not firing
+Use 'drop memory reference trick' [...array]
+* React validates state changes by comparing memory direction of values
+* if we push f_cita into f_events and do setEvents(f_events)
+* there would be no re-render bc f_events stay the same memory allocation
+*/
+setEvents([...f_events, f_cita])

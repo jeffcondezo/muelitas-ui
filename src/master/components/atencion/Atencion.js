@@ -396,14 +396,14 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
     .then(hideLoadingDeleteModal)
   }
   // Modals
-  const showLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("show")
-  const hideLoadingDeleteModal = () => window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
+  const showLoadingDeleteModal = () => window.$('#'+fileloadingdelete_modal_id).modal("show")
+  const hideLoadingDeleteModal = () => window.$('#'+fileloadingdelete_modal_id).modal("hide")
 
   // Run at first render
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
-    window.$(`#${fileupload_modal_id}`).modal("hide")
-    window.$(`#${fileloadingdelete_modal_id}`).modal("hide")
+    window.$('#'+fileupload_modal_id).modal("hide")
+    window.$('#'+fileloadingdelete_modal_id).modal("hide")
   }, [])
   // Files
   useEffect(() => {
@@ -432,7 +432,7 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
           )) : "No hay archivos añadidos"}
         </div>
         <div className="card-footer">
-          <button className="btn btn-primary" data-toggle="modal" data-target={`#${fileupload_modal_id}`}>Subir archivo</button>
+          <button className="btn btn-primary" data-toggle="modal" data-target={'#'+fileupload_modal_id}>Subir archivo</button>
         </div>
 
         <ModalFileUpload

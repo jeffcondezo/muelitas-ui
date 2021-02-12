@@ -55,9 +55,9 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
     console.log("patientxpagos", patientxpagos);
 
     // Destroy previous DT if exists
-    if(datatable) window.$(`#${datatable_id}`).DataTable().clear().destroy();
+    if(datatable) window.$('#'+datatable_id).DataTable().clear().destroy();
     // Gen Datatable
-    let _tmp = window.$(`#${datatable_id}`).DataTable({
+    let _tmp = window.$('#'+datatable_id).DataTable({
       data: patientxpagos,
       columns: [
         {title: "Fecha y hora de pago", data: "fecha"},

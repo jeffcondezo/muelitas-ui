@@ -193,7 +193,7 @@ const ProcedimientoListTable = ({sucursal_pk, procedure_edit_modal_id}) => {
           defaultContent: "<button class='btn btn-sm btn-light btn-pills waves-effect'>Editar</button>",
           createdCell: (cell, _, row) => cell.children[0].onclick = () => {
             ctx_md.setModalData({data: row, action: 'edit'})
-            window.$(`#${procedure_edit_modal_id}`).modal('show')
+            window.$('#'+procedure_edit_modal_id).modal('show')
           }
         },
       ],
@@ -249,7 +249,7 @@ const ProcedimientoActions = ({procedure_edit_modal_id}) => {
   const modal_data = useContext(ProcedureModalContext)
   const openProcedureModal = () => {
     modal_data.setModalData({action: 'new'})
-    window.$(`#${procedure_edit_modal_id}`).modal('show')
+    window.$('#'+procedure_edit_modal_id).modal('show')
   }
   return (
     <div className="card col-12" style={{padding: "0px"}}>
@@ -289,13 +289,13 @@ const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
 
     if(ctx_md.modal_data.action=="new"){
       simplePostData(`maestro/procedimiento/sucursal/0/`, _data)
-      .then(() => window.$(`#${procedure_edit_modal_id}`).modal("hide"))
+      .then(() => window.$('#'+procedure_edit_modal_id).modal("hide"))
       .then(() => handleErrorResponse('custom', "Exito", "Procedimiento añadido exitosamente, actualice la pagina para ver los cambios", 'success'))
       .catch(() => handleErrorResponse('custom', "Error", "Ha ocurrido un error", 'danger'))
     }else{
       simplePostData(`maestro/procedimiento/sucursal/detalle/${ctx_md.modal_data.data.pk}/`, _data, "PATCH")
       .then(() => ctx_md.updateProcedure(ctx_md.modal_data.data.pk, _data))
-      .then(() => window.$(`#${procedure_edit_modal_id}`).modal("hide"))
+      .then(() => window.$('#'+procedure_edit_modal_id).modal("hide"))
       .then(() => handleErrorResponse('custom', "Exito", "Procedimiento editado exitosamente", 'success'))
       .catch(() => handleErrorResponse('custom', "Error", "Ha ocurrido un error", 'danger'))
     }
@@ -339,7 +339,7 @@ const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
     // .on('select2:select', ev => procedureChangePrice(ev.params.data))
   }, [procedures])
   // Assure modals will be closed before leaving current page
-  useEffect(() => () => window.$(`#${procedure_edit_modal_id}`).modal("hide"), [])
+  useEffect(() => () => window.$('#'+procedure_edit_modal_id).modal("hide"), [])
   /* Why to use React.Context explanation
   * By using context we can easily share values between children compontents
   * as well as value changing functions

@@ -3677,21 +3677,21 @@ function addBesideIncidence(_teeth, _tooth, _inc){
 }
 
 // Navigation
-function OdontogramaNavigation(props){
+function OdontogramaNavigation({redirectTo}){
   return(
     <Switch>
       <Route exact path="/nav/odontograma/:cita_pk/">
-        <Odontograma redirectTo={props.redirectTo} role="regular" />
+        <Odontograma redirectTo={redirectTo} role="regular" />
       </Route>
       <Route exact path="/nav/odontograma/:pac_pk/inicial/">
         {/* Agregar boton para ir al evolucion */}
-        <Odontograma redirectTo={props.redirectTo} role="init" />
+        <Odontograma redirectTo={redirectTo} role="init" />
       </Route>
       <Route exact path="/nav/odontograma/:pac_pk/evolucion/">
         {/* Mostrar odontograma evolucion
           * Si se quiere modificar el odontograma: crear Atender y enlazarlo
         */}
-        <Odontograma redirectTo={props.redirectTo} role="evol" />
+        <Odontograma redirectTo={redirectTo} role="evol" />
       </Route>
       {/* Suport: redirect */}
       <Route exact path="/nav/odontograma/redirect/:pac_pk/inicial/"

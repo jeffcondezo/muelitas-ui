@@ -21,73 +21,67 @@ import HistorialPagos from './HistorialPagos';
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const Cobranza = props => {
-  // Receive {data.patient, sucursal_pk, redirectTo}
-  return (
-    <Switch>
-      <Route exact path='/nav/cobranza/list/'>
-        <CobranzaList
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
-      </Route>
-      <Route path='/nav/cobranza/:patient/detalle'>
-        <CobranzaDetail
-          patient={props.data.patient}
-          attention_pk={props.data.attention_pk}
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
-      </Route>
-      <Route path='/nav/cobranza/:patient/pagos'>
-        <HistorialPagos
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
-      </Route>
+const Cobranza = ({sucursal_pk, redirectTo}) => (
+  <Switch>
+    <Route exact path='/nav/cobranza/list/'>
+      <CobranzaList
+        sucursal_pk={sucursal_pk}
+        redirectTo={redirectTo} />
+    </Route>
+    <Route path='/nav/cobranza/:patient/detalle'>
+      <CobranzaDetail
+        sucursal_pk={sucursal_pk}
+        redirectTo={redirectTo} />
+    </Route>
+    <Route path='/nav/cobranza/:patient/pagos'>
+      <HistorialPagos
+        sucursal_pk={sucursal_pk}
+        redirectTo={redirectTo} />
+    </Route>
 
-      <Route>
-        <Redirect to="/nav/cobranza/list/" />
-      </Route>
-    </Switch>
-  )
-}
-
-const CobranzaList = props => (
-  <DebtXPatientTable
-    redirectTo={props.redirectTo}
-    sucursal_pk={props.sucursal_pk} />
+    <Route>
+      <Redirect to="/nav/cobranza/list/" />
+    </Route>
+  </Switch>
 )
-const DebtXPatientTable = props => {
-  // Receive {sucursal_pk}
-  const [patientxdebt, setPxD] = useState(false);
-  const [datatable, setDatatable] = useState(false);
 
-  const getPxD = _sucursal_pk => simpleGet(`atencion/paciente/deuda/${_sucursal_pk}/`).then(setPxD);
+const CobranzaList = ({sucursal_pk, redirectTo}) => (
+  <DebtXPatientTable
+    redirectTo={redirectTo}
+    sucursal_pk={sucursal_pk} />
+)
+const DebtXPatientTable = ({sucursal_pk, redirectTo}) => {
+  const [patientxdebt, setPxD] = useState(false)
+  const [datatable, setDatatable] = useState(false)
+
+  const getPxD = _sucursal_pk => simpleGet(`atencion/paciente/deuda/${_sucursal_pk}/`).then(setPxD)
 
   useEffect(() => {
     // Add DataTable rel docs
     // JS
     if(!document.getElementById('dt_script')){
-      const dt_script = document.createElement("script");
-      dt_script.async = false;
-      dt_script.id = "dt_script";
-      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
-      dt_script.onload = () => getPxD(props.sucursal_pk);
-      document.body.appendChild(dt_script);
-    }else getPxD(props.sucursal_pk);
+      const dt_script = document.createElement("script")
+      dt_script.async = false
+      dt_script.id = "dt_script"
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
+      dt_script.onload = () => getPxD(sucursal_pk)
+      document.body.appendChild(dt_script)
+    }else getPxD(sucursal_pk)
     // CSS
     if(!document.getElementById('dt_style')){
-      const dt_style = document.createElement("link");
-      dt_style.rel = "stylesheet";
-      dt_style.id = "dt_style";
-      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-      document.head.appendChild(dt_style);
+      const dt_style = document.createElement("link")
+      dt_style.rel = "stylesheet"
+      dt_style.id = "dt_style"
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css"
+      document.head.appendChild(dt_style)
     }
-  }, []);
+  }, [])
   // When resource variable is setted
   useEffect(() => {
-    if(!patientxdebt) return;  // Abort if it's false
+    if(!patientxdebt) return  // Abort if it's false
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#patientxdebt-table').DataTable().clear().destroy();
+    if(datatable) window.$('#patientxdebt-table').DataTable().clear().destroy()
     // Gen Datatable
     let _tmp = window.$('#patientxdebt-table').DataTable({
       data: patientxdebt,
@@ -111,7 +105,7 @@ const DebtXPatientTable = props => {
         targets: 1,
         defaultContent: "<code style='font-size: 1em'>0</code>",
         createdCell: (cell, data) => {
-          cell.children[0].innerText = "S/. "+data.total_deuda;
+          cell.children[0].innerText = "S/. "+data.total_deuda
         },
       }, {
         // Fecha pago
@@ -131,7 +125,7 @@ const DebtXPatientTable = props => {
         defaultContent: "<button class='select-patient btn btn-light btn-pills waves-effect'>Cobrar</button>",
         createdCell: (cell, data) => {
           cell.children[0].onclick = () => {
-            props.redirectTo(`/nav/cobranza/${data.paciente.pk}/detalle`, {patient: data.paciente});
+            redirectTo(`/nav/cobranza/${data.paciente.pk}/detalle`, {patient: data.paciente})
           }
         }
       }],
@@ -187,20 +181,18 @@ const DebtXPatientTable = props => {
 }
 
 let production_nofe_default = true
-const CobranzaDetail = props => {
+const CobranzaDetail = ({sucursal_pk}) => {
   let __params__ = useParams();
-  // Receive {patient, sucursal_pk, redirectTo}
-  const [selected_attention_detail, setSelectedAD] = useState([]);
-  const [refresh, setRefresh] = useState(false);
-  const [patient, setPatient] = useState(props.patient);
+  const [selected_attention_detail, setSelectedAD] = useState([])
+  const [refresh, setRefresh] = useState(false)
+  const [patient, setPatient] = useState(false)
+
+  const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
 
   useEffect(() => {
-    if(props.patient) return;
-
-    // If patient is not in props, get from API
     // Get patient from url'pk
-    getDataByPK('atencion/paciente', __params__.patient).then(setPatient)
-  }, [props.patient])
+    getPatientByID(__params__.patient)
+  }, [])
 
   return !patient
     ? "loading"
@@ -211,11 +203,9 @@ const CobranzaDetail = props => {
       <div className="row">
         <div className="col-lg-4">
           <PaymentForm
-            redirectTo={props.redirectTo}
             setRefresh={setRefresh}
-            attention_pk={props.attention_pk}
             selected={selected_attention_detail}
-            sucursal_pk={props.sucursal_pk}
+            sucursal_pk={sucursal_pk}
             patient={patient} />
         </div>
         <div className="col-lg-8">
@@ -232,7 +222,7 @@ const CobranzaDetail = props => {
     </>
     )
 }
-const PaymentForm = ({patient, sucursal_pk, selected, attention_pk, setRefresh, redirectTo}) => {
+const PaymentForm = ({patient, sucursal_pk, selected, setRefresh}) => {
   // Receive {patient, selected, sucursal_pk, setRefresh}
   const [clienttype, setClientType] = useState(production_nofe_default?3:1);  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
@@ -579,24 +569,24 @@ const PaymentForm = ({patient, sucursal_pk, selected, attention_pk, setRefresh, 
     </div>
   )
 }
-const NewCustomerForm = props => {
+const NewCustomerForm = ({disabled}) => {
   return (
     <div>
       <div className="col-sm">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
-        <input type="text" id="name-pric" className="form-control" disabled={!!props.disabled} />
+        <input type="text" id="name-pric" className="form-control" disabled={!!disabled} />
       </div>
       <div className="col-sm">
         <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
-        <input type="text" id="name-sec" className="form-control" disabled={!!props.disabled} />
+        <input type="text" id="name-sec" className="form-control" disabled={!!disabled} />
       </div>
       <div className="col-sm">
         <label className="form-label" htmlFor="ape-p">Apellido paterno: </label>
-        <input type="text" id="ape-p" className="form-control" disabled={!!props.disabled} />
+        <input type="text" id="ape-p" className="form-control" disabled={!!disabled} />
       </div>
       <div className="col-sm">
         <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
-        <input type="text" id="ape-m" className="form-control" disabled={!!props.disabled} />
+        <input type="text" id="ape-m" className="form-control" disabled={!!disabled} />
       </div>
     </div>
   )

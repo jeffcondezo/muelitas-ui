@@ -118,8 +118,8 @@ function Navigation(props){
         </div>
         {/*
           <FloatShortcut />
+          <Messenger />
           */}
-        <Messenger />
         <Settings />
       </div>
     </NavigationContext.Provider>
@@ -142,26 +142,26 @@ function SelectComponent(props){
         </Route>
         <Route path="/nav/cita">
           <Cita
-            current_sucursal_pk={props.current_sucursal_pk}
-            data={_redirect_obj}
+            sucursal_pk={props.current_sucursal_pk}
+            redirect_data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/atencion">
           <Atencion
             sucursal_pk={props.current_sucursal_pk}
-            data={_redirect_obj}
+            redirect_data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/admision">
           <Admision
             sucursal_pk={props.current_sucursal_pk}
-            data={_redirect_obj}
+            redirect_data={_redirect_obj}
             redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/cobranza">
           <Cobranza
             sucursal_pk={props.current_sucursal_pk}
-            data={_redirect_obj} redirectTo={props.redirectTo} />
+            redirect_data={_redirect_obj} redirectTo={props.redirectTo} />
         </Route>
         <Route path="/nav/admin">
           <Admin
