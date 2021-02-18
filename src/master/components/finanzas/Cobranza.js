@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Switch,
   Route,
@@ -15,28 +15,23 @@ import {
 } from '../../functions';
 import { PageTitle } from '../bits';
 import HistorialPagos from './HistorialPagos';
+import { NavigationContext } from '../Navigation'
 
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const Cobranza = ({sucursal_pk, redirectTo}) => (
+const Cobranza = () => (
   <Switch>
     <Route exact path='/nav/cobranza/list/'>
-      <CobranzaList
-        sucursal_pk={sucursal_pk}
-        redirectTo={redirectTo} />
+      <DebtXPatientTable />
     </Route>
     <Route path='/nav/cobranza/:patient/detalle'>
-      <CobranzaDetail
-        sucursal_pk={sucursal_pk}
-        redirectTo={redirectTo} />
+      <CobranzaDetail />
     </Route>
     <Route path='/nav/cobranza/:patient/pagos'>
-      <HistorialPagos
-        sucursal_pk={sucursal_pk}
-        redirectTo={redirectTo} />
+      <HistorialPagos />
     </Route>
 
     <Route>
@@ -45,12 +40,8 @@ const Cobranza = ({sucursal_pk, redirectTo}) => (
   </Switch>
 )
 
-const CobranzaList = ({sucursal_pk, redirectTo}) => (
-  <DebtXPatientTable
-    redirectTo={redirectTo}
-    sucursal_pk={sucursal_pk} />
-)
-const DebtXPatientTable = ({sucursal_pk, redirectTo}) => {
+const DebtXPatientTable = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
   const [patientxdebt, setPxD] = useState(false)
   const [datatable, setDatatable] = useState(false)
 
@@ -64,9 +55,9 @@ const DebtXPatientTable = ({sucursal_pk, redirectTo}) => {
       dt_script.async = false
       dt_script.id = "dt_script"
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
-      dt_script.onload = () => getPxD(sucursal_pk)
+      dt_script.onload = () => getPxD(current_sucursal)
       document.body.appendChild(dt_script)
-    }else getPxD(sucursal_pk)
+    }else getPxD(current_sucursal)
     // CSS
     if(!document.getElementById('dt_style')){
       const dt_style = document.createElement("link")
@@ -181,8 +172,9 @@ const DebtXPatientTable = ({sucursal_pk, redirectTo}) => {
 }
 
 let production_nofe_default = true
-const CobranzaDetail = ({sucursal_pk}) => {
-  let __params__ = useParams();
+const CobranzaDetail = () => {
+  const {current_sucursal} = useContext(NavigationContext)
+  let __params__ = useParams()
   const [selected_attention_detail, setSelectedAD] = useState([])
   const [refresh, setRefresh] = useState(false)
   const [patient, setPatient] = useState(false)
@@ -205,7 +197,7 @@ const CobranzaDetail = ({sucursal_pk}) => {
           <PaymentForm
             setRefresh={setRefresh}
             selected={selected_attention_detail}
-            sucursal_pk={sucursal_pk}
+            current_sucursal={current_sucursal}
             patient={patient} />
         </div>
         <div className="col-lg-8">
@@ -222,9 +214,9 @@ const CobranzaDetail = ({sucursal_pk}) => {
     </>
     )
 }
-const PaymentForm = ({patient, sucursal_pk, selected, setRefresh}) => {
-  // Receive {patient, selected, sucursal_pk, setRefresh}
-  const [clienttype, setClientType] = useState(production_nofe_default?3:1);  // Natural && Empresa && Sin FE
+const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
+  // Receive {patient, selected, current_sucursal, setRefresh}
+  const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // Natural && Empresa && Sin FE
   const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
   const [knownclient, setNC] = useState(!production_nofe_default);  // Paciente es Cliente
 
@@ -482,13 +474,13 @@ const PaymentForm = ({patient, sucursal_pk, selected, setRefresh}) => {
       if(clienttype==3) return Promise.reject("No FE")
       return simplePostData('finanzas/comprobante/', {
         tipo: clienttype,
-        sucursal: sucursal_pk,
+        sucursal: current_sucursal,
         dcc_list: String(selected),
         cliente: _client.pk,  // Use parameter instead of client object 'cuz the state change may not be done before reaching this point
       })
     })
     .then(
-      res => window.open(process.env.REACT_APP_PROJECT_API+`finanzas/empresa/${sucursal_pk}/pdf/${res.pk}/`, "_blank"),
+      res => window.open(process.env.REACT_APP_PROJECT_API+`finanzas/empresa/${current_sucursal}/pdf/${res.pk}/`, "_blank"),
       er => console.log("ERROR", er)
     )
     .catch(er => console.log("ERROR", er))

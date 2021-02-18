@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Switch, Route, Redirect, useParams } from "react-router-dom";
+import React, { useState, useEffect, useRef, useContext } from 'react'
+import { Switch, Route, Redirect, useParams } from "react-router-dom"
 import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
@@ -7,72 +7,62 @@ import {
   simplePostData,
   simpleGet,
   simpleDelete,
-} from '../../functions';
-import { PageTitle, Icon, ModalLoading } from '../bits';
+} from '../../functions'
+import { Icon, ModalLoading } from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
-import { ModalFileUpload } from '../admision/Admision';
+import { ModalFileUpload } from '../admision/Admision'
+import { NavigationContext } from '../Navigation'
+
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-function Atencion(props){
-  // Receive {data.cita, sucursal_pk, redirectTo}
-  return(
-  <>
-    {/* <PageTitle title={"Atención"} />
-    */}
+const Atencion = () => (
+  <Switch>
+    <Route exact path="/nav/atencion">
+      <AttentionList />
+    </Route>
+    <Route exact path="/nav/atencion/:cita_pk/detalle">
+      <AttentionDetail />
+    </Route>
+    <Route exact path="/nav/atencion/:pac_pk/atender">
+      <AtenderPaciente />
+    </Route>
 
-    <Switch>
-      <Route exact path="/nav/atencion">
-        <AttentionList sucursal_pk={props.sucursal_pk} redirectTo={props.redirectTo} />
-      </Route>
-      <Route exact path="/nav/atencion/:cita_pk/detalle">
-        <AttentionDetail
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
-      </Route>
-      <Route exact path="/nav/atencion/:pac_pk/atender">
-        <AtenderPaciente
-          sucursal_pk={props.sucursal_pk}
-          redirectTo={props.redirectTo} />
-      </Route>
+    <Route>
+      <Redirect to="/nav/atencion" />
+    </Route>
+  </Switch>
+)
 
-      <Route>
-        <Redirect to="/nav/atencion" />
-      </Route>
-    </Switch>
-  </>
-  )
-}
+const AttentionList = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const [latest_attentions, setAttentions] = useState(false)
+  const [datatable, setDatatable] = useState(false)
+  const searchDate = useRef(false)
 
-const AttentionList = props => {
-  // Receive {sucursal_pk, redirectTo}
-  const [latest_attentions, setAttentions] = useState(false);
-  const [datatable, setDatatable] = useState(false);
-  const searchDate = useRef(false);
-
-  function getLatestAttentions(_date=false, _last_n=15, _sucursal_pk=props.sucursal_pk){
+  function getLatestAttentions(_date=false, _last_n=15, _sucursal_pk=current_sucursal){
     // Get today's finished citas
-    if(!_date) _date = (new Date().toDateInputValue());
-    else searchDate.current = _date;
+    if(!_date) _date = (new Date().toDateInputValue())
+    else searchDate.current = _date
 
     simpleGet(`atencion/cita/?filtro={"sucursal":"${_sucursal_pk}", "fecha": "${_date}"}`)
     .then(res => {
       // Remove duplicated attention
-      let _tmp = res;
-      let _tmp1 = [];  // Store attention's id
+      let _tmp = res
+      let _tmp1 = []  // Store attention's id
       if(_tmp.length>0){
         _tmp = res.filter(i => {
           if(_tmp1.includes(i.atencion)){  // If attention already in _tmp1
-            return false;  // Remove
+            return false  // Remove
           }
-          _tmp1.push(i.atencion);  // Save attention in _tmp1 array
-          return true;
-        });
+          _tmp1.push(i.atencion)  // Save attention in _tmp1 array
+          return true
+        })
       }
 
-      setAttentions(_tmp);
+      setAttentions(_tmp)
     })
   }
 
@@ -80,37 +70,33 @@ const AttentionList = props => {
     // Add DataTable rel docs
     // JS
     if(!document.getElementById('dt_script')){
-      const dt_script = document.createElement("script");
-      dt_script.async = false;
-      dt_script.id = "dt_script";
-      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      const dt_script = document.createElement("script")
+      dt_script.async = false
+      dt_script.id = "dt_script"
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
       dt_script.onload = () => {
         // Run at first execution
-        getLatestAttentions();
-      };
-      document.body.appendChild(dt_script);
+        getLatestAttentions()
+      }
+      document.body.appendChild(dt_script)
     }else{
-      getLatestAttentions();
+      getLatestAttentions()
     }
     // CSS
     if(!document.getElementById('dt_style')){
-      const dt_style = document.createElement("link");
-      dt_style.rel = "stylesheet";
-      dt_style.id = "dt_style";
-      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-      document.head.appendChild(dt_style);
+      const dt_style = document.createElement("link")
+      dt_style.rel = "stylesheet"
+      dt_style.id = "dt_style"
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css"
+      document.head.appendChild(dt_style)
     }
-
-    return () => {
-      // console.log("UNMOUNTING ATTENTION LIST");
-    }
-  }, []);
+  }, [])
   // When latest_attentions are setted
   useEffect(() => {
-    if(!latest_attentions) return;  // Abort if it's false
+    if(!latest_attentions) return  // Abort if it's false
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#last-attentions').DataTable().clear().destroy();
+    if(datatable) window.$('#last-attentions').DataTable().clear().destroy()
     // Gen Datatable
     let _tmp = window.$('#last-attentions').DataTable({
       data: latest_attentions,
@@ -127,16 +113,16 @@ const AttentionList = props => {
         orderable: false,
         width: "1px",
         defaultContent: "<button class='select-attention btn btn-light btn-pills waves-effect'>Seleccionar</button>",
-        createdCell: (cell, data, rowData) => {
+        createdCell: (cell, _, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            props.redirectTo(`/nav/atencion/${rowData.pk}/detalle`, {cita: rowData});
+            redirectTo(`/nav/atencion/${rowData.pk}/detalle`, {cita: rowData})
           }
         }
       }, {
         // Paciente
         targets: 2,
-        render: (data, type, row) => (
+        render: (_, __, row) => (
           row.paciente_data.ape_paterno.toUpperCase()+", "+
           cFL(row.paciente_data.nombre_principal)+" - "+
           row.paciente_data.dni
@@ -144,7 +130,7 @@ const AttentionList = props => {
       }, {
         // Hora
         targets: 1,
-        render: (data, type, row) => (row.hora.slice(0, 5)+" - "+row.hora_fin.slice(0, 5)),
+        render: (_, __, row) => (row.hora.slice(0, 5)+" - "+row.hora_fin.slice(0, 5)),
       }],
       pageLength: 10,
       language: {
@@ -176,20 +162,20 @@ const AttentionList = props => {
           colvis: "Visibilidad"
         }
       },
-    });
+    })
 
-    setDatatable(_tmp);  // Save DT in state
-  }, [latest_attentions]);
+    setDatatable(_tmp)  // Save DT in state
+  }, [latest_attentions])
   // Run after datatable is setted
   useEffect(() => {
-    if(!datatable) return;
+    if(!datatable) return
 
     // Change search type && set default value today
-    let _input = document.querySelector('#last-attentions_filter input[type=search]');
-    _input.type = "date";
-    _input.value = searchDate.current ? searchDate.current : (new Date().toDateInputValue());
-    _input.onchange = (e) => getLatestAttentions(e.target.value);
-  }, [datatable]);
+    let _input = document.querySelector('#last-attentions_filter input[type=search]')
+    _input.type = "date"
+    _input.value = searchDate.current ? searchDate.current : (new Date().toDateInputValue())
+    _input.onchange = (e) => getLatestAttentions(e.target.value)
+  }, [datatable])
 
   return (
     !latest_attentions
@@ -201,30 +187,24 @@ const AttentionList = props => {
         </div>
       </div>
     )
-  );
+  )
 }
 
-const AttentionDetail = (props) => {
-  // Receive {sucursal_pk, redirectTo}
-  let __params__ = useParams()
-  const [cita, setCita] = useState(false);
+const AttentionDetail = () => {
+  const {redirectTo} = useContext(NavigationContext)
+  const [cita, setCita] = useState(false)
+  const {cita_pk} = useParams()
 
-  const redirect = (url, data={cita: cita}) => {
-    props.redirectTo(url, data);
-  }
-
-  const getCita = cita_pk => {
-    getDataByPK('atencion/cita', cita_pk)
-    .then(setCita)
+  const getCita = _cita_pk => getDataByPK('atencion/cita', _cita_pk).then(setCita)
+  const fakeFinishCita = () => {
+    let fake_cita = Object.assign({}, cita)
+    fake_cita.estado = 5
+    setCita(fake_cita)
   }
 
   useEffect(() => {
-    // Si no se recibe cita en props, obtenerla del url
-    if(!props.cita) getCita(__params__.cita_pk)
-    else setCita(props.cita)  // Si se recibe cita, set cita from props
+    getCita(cita_pk)
   }, [])
-
-  if(cita && cita.pk != __params__.cita_pk) getCita(__params__.cita_pk)
 
   return !cita
     ? "loading"
@@ -232,24 +212,21 @@ const AttentionDetail = (props) => {
       <div className="row">
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
-            <CitaData cita={cita} redirectTo={props.redirectTo} />
+            <CitaData cita={cita} />
           </div>
           <div className="panel">
-            <AttentionProcedures cita={cita} redirectTo={props.redirectTo} />
+            <AttentionProcedures cita={cita} />
           </div>
           <div className="panel">
-            <PatientAttentionHistory
-              sucursal_pk={props.sucursal_pk}
-              cita={cita}
-              redirectTo={props.redirectTo} />
+            <PatientAttentionHistory cita_pk={cita.pk} patient_pk={cita.paciente_data.pk} />
           </div>
         </div>
         <div className="col-lg-6" style={{display: "inline-block"}}>
           <div className="panel">
             <Links
               cita={cita}
-              getCita={() => getCita(cita.pk)}
-              redirectTo={redirect} />
+              fakeFinishCita={fakeFinishCita}
+              redirectTo={redirectTo} />
           </div>
           <div className="panel">
             <ArchivosPaciente
@@ -260,10 +237,9 @@ const AttentionDetail = (props) => {
       </div>
     )
 }
-const CitaData = ({cita,  redirectTo}) => {
-  const redirectToPatient = () => {
-    redirectTo(`/nav/admision/${cita.paciente_data.pk}/detalle`)
-  }
+const CitaData = ({cita}) => {
+  const {redirectTo} = useContext(NavigationContext)
+  const redirectToPatient = () => redirectTo(`/nav/admision/${cita.paciente_data.pk}/detalle`)
 
   return (
     <div className="card col-12" style={{padding: "0px"}}>
@@ -315,29 +291,27 @@ const CitaData = ({cita,  redirectTo}) => {
         </h6>
       </div>
     </div>
-  );
+  )
 }
-const PatientAttentionHistory = props => {
-  // Receive {cita, redirectTo, sucursal_pk}
-  const [attention_list, setAttentionList] = useState(false);
+const PatientAttentionHistory = ({cita_pk, patient_pk}) => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const [attention_list, setAttentionList] = useState(false)
 
-  const getAttentionHistory = (_patient_pk) => {
-    simpleGet(`atencion/cita/?filtro={"sucursal":"${props.sucursal_pk}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`)
+  const getAttentionHistory = _patient_pk => {
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${current_sucursal}", "estado":"5", "paciente":"${_patient_pk}", "last":"5"}`)
     .then(res => {
-      // Remove current attention
-      let _tmp = res;
-      if(_tmp.length>0){
-        _tmp = res.filter(i => i.pk!=props.cita.pk);
-      }
+      // Remove current attention from attention history
+      let _tmp = res
+      if(_tmp.length>0) _tmp = res.filter(i => i.pk!=cita_pk)
 
-      setAttentionList(_tmp);
+      setAttentionList(_tmp)
     })
   }
 
   // Run at first render
   useEffect(() => {
-    getAttentionHistory(props.cita.paciente_data.pk);
-  }, []);
+    getAttentionHistory(patient_pk)
+  }, [])
 
   return !attention_list
     ? (<div className="card"><div className="card-body">loading</div></div>)
@@ -349,40 +323,37 @@ const PatientAttentionHistory = props => {
           </div>
         </div>
         <div className="card-body">
-          {/* attention_list */}
-          {attention_list.length>0 ? attention_list.map((i) => {return(
-            <div key={"inc_list_"+i.pk}
-              style={{cursor: "pointer"}}
-              >
+          {attention_list.length > 0
+            ? attention_list.map((i) => (
+              <div key={"inc_list_"+i.pk}>
                 <span>{i.fecha} <b>{i.programado}</b></span>
-            </div>
-          )}) : "No se encontraron otras atenciones"}
+              </div>
+            ))
+            : "No se encontraron otras atenciones"}
         </div>
         <div className="card-footer">
           Para más información revise el apartado de atenciones de paciente en&nbsp;
           <span style={{cursor: "pointer"}}
-            onClick={()=>{
-              props.redirectTo(`/nav/admision/${props.cita.paciente_data.pk}/detalle`, {patient: props.cita.paciente_data})
-            }}>
-              <b>Admision</b>
+          onClick={() => redirectTo(`/nav/admision/${patient_pk}/detalle`)}>
+            <b>Admision</b>
           </span>
         </div>
       </div>
-    );
+    )
 }
 const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
   const fileupload_modal_id = "gadrive_upload"
   const fileloadingdelete_modal_id = "gadrive_loadingdelete"
-  const [files, setFiles] = useState(false);
+  const [files, setFiles] = useState(false)
 
   // Google drive API functions
   const getPatientFiles = () => {
-    if(__debug__) console.log("ArchivosPaciente getPatientFiles");
+    if(__debug__) console.log("ArchivosPaciente getPatientFiles")
     // Get patient by id}
     simpleGet(`atencion/${atencion_pk}/files/`)
     .then(
       res => {
-        console.log("res", res);
+        console.log("res", res)
         if(res) setFiles(res)
       }
     )
@@ -447,36 +418,33 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
       </div>
     )
 }
-const AttentionProcedures = props => {
-  const [procedures, setProcedures] = useState(false);
-  const delete_proc_pk = useRef(-1);
+const AttentionProcedures = ({cita}) => {
+  const {redirectTo} = useContext(NavigationContext)
+  const [procedures, setProcedures] = useState(false)
+  const delete_proc_pk = useRef(-1)
 
-  // Add procedure to cita's attention
   const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setProcedures)
-
-  function modalConfirmDelete(_pk){
-    window.$('#modal_delete_procedure').modal('show');
-    delete_proc_pk.current = _pk;
+  const modalConfirmDelete = _pk => {
+    window.$('#modal_delete_procedure').modal('show')
+    delete_proc_pk.current = _pk
   }
-  function deleteProcedure(){
-    window.$('#modal_delete_procedure').modal('hide');  // Hide modal
-    if(delete_proc_pk.current==-1) return;
+  const deleteProcedure = () => {
+    window.$('#modal_delete_procedure').modal('hide')  // Hide modal
+    if(delete_proc_pk.current==-1) return
 
     simpleDelete(`atencion/detalle/${delete_proc_pk.current}/`)
     .then(() => {
       // Delete item from DOM
-      document.getElementById(delete_proc_pk.current).parentElement.remove();
+      document.getElementById(delete_proc_pk.current).parentElement.remove()
       // Reset delete_proc_pk val
-      delete_proc_pk.current = -1;
+      delete_proc_pk.current = -1
     })
   }
-  function editProcedure(proc){
-    props.redirectTo(`/nav/procedimiento/${proc.pk}/editar/`);
-  }
+  const editProcedure = _proc_pk => redirectTo(`/nav/procedimiento/${_proc_pk}/editar/`)
 
   useEffect(() => {
-    getProcedures(props.cita.atencion);
-  }, []);
+    getProcedures(cita.atencion)
+  }, [])
 
   return !procedures
     ? (<div className="card"><div className="card-body">loading</div></div>)
@@ -501,7 +469,7 @@ const AttentionProcedures = props => {
                     </span>
                     <button className="btn ml-auto"
                       style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                      onClick={()=>editProcedure(proc)}>
+                      onClick={()=>editProcedure(proc.pk)}>
                         <i className="fal fa-edit"></i>
                     </button>
                     {!proc.paid && (
@@ -524,9 +492,9 @@ const AttentionProcedures = props => {
         </div>
         <AlertModal func={deleteProcedure} />
       </div>
-    );
+    )
 }
-const AlertModal = props => {
+const AlertModal = ({func}) => {
   return (
     <div className="modal modal-alert" id="modal_delete_procedure" tabIndex="-1" role="dialog" style={{display: "none", paddingRight: "15px"}} aria-hidden="true">
       <div className="modal-dialog modal-dialog-centered" role="document">
@@ -544,26 +512,18 @@ const AlertModal = props => {
             <button type="button" data-dismiss="modal"
               className="btn btn-secondary waves-effect waves-themed">Cancelar</button>
             <button type="button" data-dismiss="modal"
-              className="btn btn-primary waves-effect waves-themed" onClick={props.func}>Eliminar</button>
+              className="btn btn-primary waves-effect waves-themed" onClick={func}>Eliminar</button>
           </div>
         </div>
       </div>
     </div>
   )
 }
-const Links = ({cita, getCita, redirectTo}) => {
+const Links = ({cita, fakeFinishCita, redirectTo}) => {
   const finishCita = () => {
-    let data = {estado: '5'}
-
-    simplePostData(`atencion/cita/anular/${cita.pk}/`, data, "PUT")
-    .then(
-      () => {
-        handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success")
-        // Actualizar registro de cita
-        getCita()
-      },
-      () => handleErrorResponse("custom", "Ups!","Un error ha ocurrido, por favor intentelo en unos minutos")
-    )
+    simplePostData(`atencion/cita/anular/${cita.pk}/`, {estado: '5'}, "PUT")
+    .then(() => handleErrorResponse("custom", "Exito", "La cita ha culminado exitosamente", "success"))
+    .then(fakeFinishCita)
   }
 
   return (
@@ -597,7 +557,7 @@ const Links = ({cita, getCita, redirectTo}) => {
         </div>
       </div>
     </div>
-  );
+  )
 }
 export const GDriveFile = ({file, deleteFile}) => {
   let last_dot_index = file.nombre_archivo.split("").lastIndexOf(".")
@@ -656,7 +616,8 @@ export const GDriveFile = ({file, deleteFile}) => {
   )
 }
 
-const AtenderPaciente = ({sucursal_pk, redirectTo}) => {
+const AtenderPaciente = () => {
+  const {current_sucursal} = useContext(NavigationContext)
   let __params__ = useParams()
   let [cita, setCita] = useState(false)
 
@@ -688,7 +649,7 @@ const AtenderPaciente = ({sucursal_pk, redirectTo}) => {
   useEffect(() => {
     if(__debug__) console.log("AtenderPaciente useEffect")
 
-    getUnfinishedANP(__params__.pac_pk, sucursal_pk)
+    getUnfinishedANP(__params__.pac_pk, current_sucursal)
   }, [])
 
   return !cita
@@ -696,7 +657,7 @@ const AtenderPaciente = ({sucursal_pk, redirectTo}) => {
     : <Redirect to={`/nav/atencion/${cita.pk}/detalle`} />
 }
 
-export default Atencion;
+export default Atencion
 
 /*
 Update debts after removing procedure

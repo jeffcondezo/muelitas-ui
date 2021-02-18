@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef , useCallback } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import {
   Switch,
   Route,
@@ -12,7 +12,8 @@ import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL
 } from '../../functions';
-import { ModalCancel, RegularModalCentered } from '../bits';
+import { RegularModalCentered } from '../bits';
+import { NavigationContext } from '../Navigation'
 
 
 // Constant
@@ -3677,7 +3678,9 @@ function addBesideIncidence(_teeth, _tooth, _inc){
 }
 
 // Navigation
-function OdontogramaNavigation({redirectTo}){
+function OdontogramaNavigation(){
+  const {redirectTo} = useContext(NavigationContext)
+
   return(
     <Switch>
       <Route exact path="/nav/odontograma/:cita_pk/">

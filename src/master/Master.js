@@ -66,7 +66,6 @@ function Master(){
           {logged ?
             <Redirect to="/nav/" /> :
             <Redirect to="/login" />
-            // <Home logged={logged} />
           }
         </Route>
         <Route path="/login">
@@ -79,7 +78,7 @@ function Master(){
         </Route>
         <Route path="/error/log">
           {error_log!==false ?
-            <Error log={error_log} setLog={setErrorLog} errorFlag={error_log}/> :
+            <Error log={error_log} /> :
             <Redirect to="/nav" />
           }
         </Route>
@@ -104,21 +103,13 @@ When generating url with params we should use double quotes ("),
 */
 
 /*** COMPONENTS ***/
-function Home(props){
-  return (
-    <div>
-      <h1>Home</h1>
-      <Link to={props.logged ? '/nav' : '/login'}>{props.logged ? 'Ingresar al sistema' : 'Iniciar sesión'}</Link>
-    </div>
-  )
-}
-function Error(props){
+function Error({log}){
   return (
     <div className="h-alt-hf d-flex flex-column align-items-center justify-content-center text-center">
       <h1 className="page-error color-fusion-500">
         ERROR <span className="text-gradient">404</span>
         <small className="fw-500">
-          {props.log ? props.log : "Algo salió mal!"}
+          {log ? log : "Algo salió mal!"}
         </small>
       </h1>
       <h3 className="fw-500 mb-5">

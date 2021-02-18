@@ -2,7 +2,7 @@ import React from 'react';
 import './Login.css';
 import { simplePostData, handleErrorResponse } from '../functions';
 
-function Login(props){
+function Login({logIn}){
   if(process.env.REACT_APP_DEBUG==="true") console.log(`%c --------- MOUNTING LOGIN ---------`, 'background: black; color: red');
 
   // Validate form
@@ -38,8 +38,8 @@ function Login(props){
           Authorization: localStorage.getItem('access_token'),  // Token
         */
         // Redirect
-        props.logIn()
-        /* Page will automatically redirect to home when calling props.logIn */
+        logIn()
+        /* Page will automatically redirect to home when calling logIn */
       },
       () => handleErrorResponse('login')
     )

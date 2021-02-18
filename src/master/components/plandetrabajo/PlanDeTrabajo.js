@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react'
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react'
 import ReactDOM from 'react-dom';
 import {
   Switch,
@@ -21,38 +21,36 @@ import {
   Icon,
   RegularModalCentered,
 } from '../bits';
+import { NavigationContext } from '../Navigation'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
-
 const PDTCreateCxt = createContext({
   pdt: false,
 })
 
 
-const PlanDeTrabajo = ({sucursal_pk, redirectTo}) => {
+const PlanDeTrabajo = () => (
+  <>
+  <PageTitle title="Plan de Trabajo" />
 
-  return (
-    <>
-    <PageTitle title="Plan de Trabajo" />
+  <Switch>
+    <Route exact path="/nav/plandetrabajo/:patient_pk/">
+      <PlanDeTrabajoHome />
+    </Route>
+    <Route exact path="/nav/plandetrabajo/:patient_pk/crear">
+      <CreatePDT />
+    </Route>
+    <Route exact path="/nav/plandetrabajo/:patient_pk/editar/:pdt_pk/">
+      <CreatePDT />
+    </Route>
+  </Switch>
+  </>
+)
 
-    <Switch>
-      <Route exact path="/nav/plandetrabajo/:patient_pk/">
-        <PlanDeTrabajoHome sucursal_pk={sucursal_pk} redirectTo={redirectTo} />
-      </Route>
-      <Route exact path="/nav/plandetrabajo/:patient_pk/crear">
-        <CreatePDT sucursal_pk={sucursal_pk} />
-      </Route>
-      <Route exact path="/nav/plandetrabajo/:patient_pk/editar/:pdt_pk/">
-        <CreatePDT sucursal_pk={sucursal_pk} />
-      </Route>
-    </Switch>
-    </>
-  )
-}
-
-const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
-  let {patient_pk} = useParams()
+const PlanDeTrabajoHome = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const {patient_pk} = useParams()
   // PDT List info
   const [pdt, setPDT] = useState(false)
   const [patient, setPatient] = useState(false)
@@ -104,7 +102,7 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
             marginBottom: "25px"
           }}>
             <PlanDeTrabajoList
-              sucursal_pk={sucursal_pk}
+              current_sucursal={current_sucursal}
               redirectTo={redirectTo}
               patient_pk={patient_pk}
               pdt={pdt}
@@ -158,7 +156,7 @@ const PlanDeTrabajoHome = ({sucursal_pk, redirectTo}) => {
     </div>
   )
 }
-const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT, pdt, setPDT}) => {
+const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT, pdt, setPDT}) => {
   const [pdts, setPdts] = useState(false)  // Planes de trabajo
   const [dpdts, setDpdts] = useState(false)  // Detalles de Plan de trabajo
   const [datatable, setDatatable] = useState(false)
@@ -325,7 +323,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
       let __pdt = pdts.filter(_pdt => _pdt.pk==pdt_pk)[0]
       // Handle error
       if(!__pdt){
-        handleErrorResponse('custom', "Ups!", "Ocurrio un error al cambiar el plan de trabajo")
+        handleErrorResponse('custom', "Ups!", "Ocurrio un error al cambiar el plan de trabajo", 'warning')
         return
       }
       // Set new PDT
@@ -356,7 +354,7 @@ const PlanDeTrabajoList = ({sucursal_pk, redirectTo, patient_pk, pdtDeleted, set
 const PDTActions = ({redirectTo, selected, patient, pdt}) => {
   const redirectToCita = () => {
     if(selected.length == 0){
-      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento")
+      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento", 'warning')
       return
     }
 
@@ -481,8 +479,9 @@ const PagoPDT = ({pdt, setPDTDeleted}) => {
   )
 }
 
-const CreatePDT = ({sucursal_pk}) => {
-  let {patient_pk, pdt_pk} = useParams()
+const CreatePDT = () => {
+  const {current_sucursal} = useContext(NavigationContext)
+  const {patient_pk, pdt_pk} = useParams()
   const ctx_pdt = useContext(PDTCreateCxt)
 
   const [pdt, setPdt] = useState(false);
@@ -493,15 +492,15 @@ const CreatePDT = ({sucursal_pk}) => {
     data.paciente = patient_pk;
     data.nombre = document.getElementById('proc-name').value;
     data.observaciones = document.getElementById('proc-observaciones').value;
-    data.sucursal = sucursal_pk;
+    data.sucursal = current_sucursal;
 
     // Dinamically change when pdt is already created update instead of create a new one
     simplePostData(`atencion/plantrabajo/${pdt?pdt.pk+'/':''}`, data, pdt?"PUT":"POST")
     .then(setPdt)
     .then(() => handleErrorResponse('custom', "Exito", "Guardado correctamente", 'info'))
   }
-  const getDptByPdt = (pdt_pk) => {
-    simpleGet(`atencion/plantrabajo/detalle/?pt=${pdt_pk}`)
+  const getDptByPdt = _pdt_pk => {
+    simpleGet(`atencion/plantrabajo/detalle/?pt=${_pdt_pk}`)
     .then(setProcList)
   }
   const refreshProcList = () => {
@@ -522,7 +521,6 @@ const CreatePDT = ({sucursal_pk}) => {
     ctx_pdt.pdt = pdt.pk
     refreshProcList()
   }, [pdt])
-
 
   return (
     <div>
@@ -547,7 +545,7 @@ const CreatePDT = ({sucursal_pk}) => {
       <br/>
       <div className="row">
         <div className="col-lg-8">
-          <CreatePDTForm sucursal_pk={sucursal_pk} refreshProcList={refreshProcList} />
+          <CreatePDTForm current_sucursal={current_sucursal} refreshProcList={refreshProcList} />
         </div>
         <div className="col-lg-4 position-relative">
           <div className="card">
@@ -563,14 +561,14 @@ const CreatePDT = ({sucursal_pk}) => {
     </div>
   )
 }
-const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
+const CreatePDTForm = ({current_sucursal, refreshProcList}) => {
   const ctx_pdt = useContext(PDTCreateCxt)
   const [procedures, setProcedures] = useState(false)
 
   const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
   const handleSubmitProc = () => {
     if(!ctx_pdt.pdt){
-      handleErrorResponse('custom', "Error", "Primero debe establecer un nombre para el plan de trabajo y guardarlo")
+      handleErrorResponse('custom', "Error", "Primero debe establecer un nombre para el plan de trabajo y guardarlo", 'warning')
       return
     }
     let data = {}
@@ -592,7 +590,7 @@ const CreatePDTForm = ({sucursal_pk, refreshProcList}) => {
   const getBack = () => window.history.back()
 
   useEffect(() => {
-    getProcedures(sucursal_pk);
+    getProcedures(current_sucursal);
   }, []);
   useEffect(() => {
     if(!procedures) return

@@ -20,8 +20,8 @@ import {
   RegularModalCentered
 } from '../bits';
 import { FileIcon, defaultStyles } from 'react-file-icon'
-import { NavigationContext } from '../Navigation';
 import MassiveNotification from './MassiveNotification';
+import { NavigationContext } from '../Navigation';
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -29,7 +29,7 @@ const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
 
 
-const Admision = ({sucursal_pk, redirectTo}) => (
+const Admision = () => (
   <div>
     <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
       <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
@@ -37,25 +37,16 @@ const Admision = ({sucursal_pk, redirectTo}) => (
 
     <Switch>
       <Route exact path="/nav/admision">
-        <AdmisionHome
-          sucursal_pk={sucursal_pk}
-          redirectTo={redirectTo} />
+        <AdmisionHome />
       </Route>
       <Route exact path="/nav/admision/nuevo">
-        <RegisterPatient
-          sucursal_pk={sucursal_pk}
-          redirectTo={redirectTo} />
+        <RegisterPatient />
       </Route>
       <Route exact path="/nav/admision/mensaje">
-        <MassiveNotification
-          sucursal_pk={sucursal_pk}
-          redirectTo={redirectTo} />
+        <MassiveNotification />
       </Route>
       <Route exact path="/nav/admision/:patient/detalle">
-        <AdmisionDetail
-          sucursal_pk={sucursal_pk}
-          redirectTo={redirectTo}
-          />
+        <AdmisionDetail />
       </Route>
       <Route exact path="/nav/admision/:patient/editar">
         <EditPatient />
@@ -72,29 +63,33 @@ const Admision = ({sucursal_pk, redirectTo}) => (
 )
 
 // General
-const AdmisionHome = ({sucursal_pk, redirectTo}) => (
-  <div className="row">
-    <div className="col-lg-8">
-      <div style={{marginBottom: "25px"}}>
-        <SearchPatient sucursal_pk={sucursal_pk} redirectTo={redirectTo} />
+const AdmisionHome = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+
+  return (
+    <div className="row">
+      <div className="col-lg-8">
+        <div style={{marginBottom: "25px"}}>
+          <SearchPatient current_sucursal={current_sucursal} redirectTo={redirectTo} />
+        </div>
+      </div>
+      <div className="col-lg-4">
+        <div className="panel">
+          <LinksHome redirectTo={redirectTo} />
+        </div>
+        <div className="panel">
+          <LastAttendedPatients current_sucursal={current_sucursal} redirectTo={redirectTo} />
+        </div>
       </div>
     </div>
-    <div className="col-lg-4">
-      <div className="panel">
-        <LinksHome redirectTo={redirectTo} />
-      </div>
-      <div className="panel">
-        <LastAttendedPatients sucursal_pk={sucursal_pk} redirectTo={redirectTo} />
-      </div>
-    </div>
-  </div>
-)
-const SearchPatient = ({sucursal_pk, redirectTo}) => {
+  )
+}
+const SearchPatient = ({current_sucursal, redirectTo}) => {
   const patients_ref = useRef([])
   const [patients, setPatients] = useState([])
   const [datatable, setDatatable] = useState(false)
 
-  const getAllPatients = (_sucursal_pk=sucursal_pk) => {
+  const getAllPatients = _sucursal_pk => {
     // Function to build lot filter
     let filtro_lote = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
     // Lot params
@@ -137,11 +132,11 @@ const SearchPatient = ({sucursal_pk, redirectTo}) => {
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
       dt_script.onload = () => {
         // Run at first execution
-        getAllPatients()
+        getAllPatients(current_sucursal)
       }
       document.body.appendChild(dt_script)
     }else{
-      getAllPatients()
+      getAllPatients(current_sucursal)
     }
     // CSS
     if(!document.getElementById('dt_style')){
@@ -176,7 +171,7 @@ const SearchPatient = ({sucursal_pk, redirectTo}) => {
         createdCell: (cell, data, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
-            redirectTo(`/nav/admision/${rowData.pk}/detalle`, {patient: rowData})
+            redirectTo(`/nav/admision/${rowData.pk}/detalle`)
           }
         }
       }, {
@@ -206,7 +201,6 @@ const SearchPatient = ({sucursal_pk, redirectTo}) => {
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
         sInfoPostFix:    "",
-        // "sSearch":         "Buscar:",
         sUrl:            "",
         sInfoThousands:  ",",
         sLoadingRecords: "Cargando...",
@@ -238,7 +232,7 @@ const SearchPatient = ({sucursal_pk, redirectTo}) => {
       </div>
     )
 }
-const LastAttendedPatients = ({sucursal_pk, redirectTo}) => {
+const LastAttendedPatients = ({current_sucursal, redirectTo}) => {
   const [lastPatients, setLastPatients] = useState(false)
   const max_items = 5
 
@@ -266,7 +260,7 @@ const LastAttendedPatients = ({sucursal_pk, redirectTo}) => {
   }
 
   useEffect(() => {
-    getLastAttendedPatients(sucursal_pk)
+    getLastAttendedPatients(current_sucursal)
   }, [])
 
   return !lastPatients
@@ -284,7 +278,7 @@ const LastAttendedPatients = ({sucursal_pk, redirectTo}) => {
             : lastPatients.map((pat, inx) => ( inx>max_items-1?"":
               <div key={"pat-"+pat.pk}>
                 <li className="list-group-item d-flex" id={pat.pk}
-                  onClick={()=>{redirectTo(`/nav/admision/${pat.pk}/detalle`, {patient: pat})}}
+                  onClick={()=>{redirectTo(`/nav/admision/${pat.pk}/detalle`)}}
                   data-toggle="collapse" data-target={"#pat-desc-"+pat.pk}
                   aria-expanded="true" aria-controls={"pat-desc-"+pat.pk}
                   style={{cursor: "pointer", borderBottom: "0"}}>
@@ -323,14 +317,15 @@ const LinksHome = ({redirectTo}) => (
   </div>
 )
 // By patient
-const AdmisionDetail = ({sucursal_pk, redirectTo}) => {
-  let __params__ = useParams()
+const AdmisionDetail = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const _params_ = useParams()
   const [patient, setPatient] = useState(false)
 
   const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
 
   useEffect(() => {
-    getPatientByID(__params__.patient)
+    getPatientByID(_params_.patient)
   }, [])
 
   return !patient
@@ -354,8 +349,8 @@ const AdmisionDetail = ({sucursal_pk, redirectTo}) => {
               redirectTo={redirectTo} />
           </div>
         </div>
-        <ModalFormatos patient_pk={patient.pk} sucursal_pk={sucursal_pk} />
-        <InstantNotification patient_pk={patient.pk} sucursal_pk={sucursal_pk} />
+        <ModalFormatos patient_pk={patient.pk} current_sucursal={current_sucursal} />
+        <InstantNotification patient_pk={patient.pk} current_sucursal={current_sucursal} />
       </div>
     )
 }
@@ -397,8 +392,7 @@ export const PatientDataList = ({patient}) => (
     }
   </div>
 )
-const PatientPrescription = props => {
-  // Receive {patient}
+const PatientPrescription = ({patient}) => {
   const [prescription_list, setPrescriptionList] = useState(false)
 
   const removeMedicineFromList = _medc_pk => {
@@ -410,10 +404,9 @@ const PatientPrescription = props => {
   const getPrescriptionMedicine = _patient_pk => simpleGet(`atencion/prescripcion/?filtro={"paciente":"${_patient_pk}"}`).then(setPrescriptionList)
 
   useEffect(() => {
-    getPrescriptionMedicine(props.patient.pk)
+    getPrescriptionMedicine(patient.pk)
   }, [])
 
-  // ListSavedMedicine receive {medicine_list, removeMedicineFromList}
   return !prescription_list
     ? "loading"
     : (
@@ -442,14 +435,12 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* editar */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="edit-patient"
-            onClick={() => redirectTo(`/nav/admision/${patient.pk}/editar`, {patient: patient})} />
+            onClick={() => redirectTo(`/nav/admision/${patient.pk}/editar`)} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
         {/* cita */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="add" onClick={() => redirectTo('/nav/cita/', {
-            patient_dni: patient.dni
-          })} />
+          <Icon type="add" onClick={() => redirectTo('/nav/cita/', {patient_dni: patient.dni})} />
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
         {/* odontograma */}
@@ -460,7 +451,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* cobrar */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="finance"
-            onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/detalle`, {patient: patient})} />
+            onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/detalle`)} />
           <span style={{fontSize: "0.9rem"}}>Cobrar</span>
         </div>
         {/* Separador*/} <div style={{width:"100%", height:"20px"}}></div>
@@ -473,7 +464,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* pdt */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="plandetrabajo"
-            onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/`, {patient: patient})} />
+            onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/`)} />
           <span style={{fontSize: "0.9rem"}}>Plan de trabajo</span>
         </div>
         {/* atender */}
@@ -489,7 +480,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* Separador*/} <div style={{width:"100%", height:"20px"}}></div>
         {/* Historial de pagos */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="finance" onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/pagos`, {patient: patient})} />
+          <Icon type="finance" onClick={() => redirectTo(`/nav/cobranza/${patient.pk}/pagos`)} />
           <span style={{fontSize: "0.9rem"}}>Historial de pagos</span>
         </div>
         {/* Formatos */}
@@ -508,9 +499,7 @@ const LinksDetail = ({patient, redirectTo}) => {
 }
 // Extra
 const EditPatient = () => {
-  let __params__ = useParams()
-  // Receive {patient, redirectTo, sucursal_pk}
-
+  const _params_ = useParams()
   const [patient, updatePatientData] = useState(false)
   const [antecedente, setAntecedente] = useState(false)
 
@@ -529,10 +518,10 @@ const EditPatient = () => {
       error => console.log("WRONG!", error)
     )
   }
-  const createPatientAntecedents = patient_pk => {
+  const createPatientAntecedents = _patient_pk => {
     if(__debug__) console.log("createPatientAntecedents")
     // Antecedent doesn't exist
-    simplePostData(`atencion/paciente/antecedentes/`, {paciente: patient_pk})
+    simplePostData(`atencion/paciente/antecedentes/`, {paciente: _patient_pk})
     .then(
       res => {
         if(__debug__) console.log("createPatientAntecedents res")
@@ -560,7 +549,7 @@ const EditPatient = () => {
 
   useEffect(() => {
     // Get patient by id
-    getDataByPK('atencion/paciente', __params__.patient)
+    getDataByPK('atencion/paciente', _params_.patient)
     .then(
       res => {
         if(!res) getBack()
@@ -572,7 +561,7 @@ const EditPatient = () => {
     if(!patient) return
 
     // Get patients antecedent
-    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${__params__.patient}"}`)
+    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${_params_.patient}"}`)
     .then(
       res => {
         // Antecedents doesn't exist
@@ -602,10 +591,10 @@ const EditPatient = () => {
       </div>
     )
 }
-const RegisterPatient = props => {
+const RegisterPatient = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
   let [patient_pk, setPatientPK] = useState(-1)
-  // Receive {sucursal_pk, redirectTo}
-  if(!props.sucursal_pk) console.error("FATAL ERROR, sucursal_pk PROPERTY NOT SPECIFIED")
+  if(!current_sucursal) console.error("FATAL ERROR, current_sucursal PROPERTY NOT SPECIFIED")
 
   const savePatient = () => {
     if(patient_pk!=-1){
@@ -621,10 +610,11 @@ const RegisterPatient = props => {
     .then(
       paciente => {
         if(__debug__) console.log("RegisterPatient savePatient", paciente)
-        // Create PacienteXSucursal register
-        createPacienteXSucursal(paciente.pk)
+        Promise.resolve()
         // Save patient's antecedents
-        savePatientAntecedents(paciente)
+        .then( () => savePatientAntecedents(paciente.pk) )
+        // Create PacienteXSucursal register
+        .then( () => createPacienteXSucursal(paciente.pk) )
       },
       error => {
         console.log("WRONG!", error)
@@ -632,12 +622,12 @@ const RegisterPatient = props => {
     )
   }
   const createPacienteXSucursal = pac_pk => {
-    simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: props.sucursal_pk})
-    .then(r => console.log('createPacienteXSucursal res:', r))
+    simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: current_sucursal})
+    .then(r => redirectTo(`/nav/admision/${pac_pk}/detalle`))
   }
-  const savePatientAntecedents = (patient) => {
+  const savePatientAntecedents = pac_pk => {
     let _data = validatePatientAntecedentsForm()
-    _data.paciente = patient.pk
+    _data.paciente = pac_pk
     if(__debug__) console.log("savePatientAntecedents _data", _data)
     if(!_data) return
 
@@ -646,7 +636,7 @@ const RegisterPatient = props => {
       response_obj => {
         if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
         // Redirect to AdmisionDetail
-        props.redirectTo(`/nav/admision/${patient.pk}/detalle`, {patient: patient})
+        redirectTo(`/nav/admision/${pac_pk}/detalle`)
       },
       error => {
         console.log("WRONG!", error)
@@ -677,9 +667,7 @@ const RegisterPatient = props => {
     </div>
   )
 }
-const PatientForm = props => {
-  // Receive {patient?, setpatientpk?}
-  const patient = props.patient || false
+const PatientForm = ({patient, setpatientpk}) => {
   const formatInputDate = date => {
     /* This only works with specific formats
     * date: "20/05/2000"
@@ -688,7 +676,7 @@ const PatientForm = props => {
     return date.split("/").reverse().join("-")
   }
   const _getPatiente = dni => {
-    if(!patient) getPatiente(dni, props.setpatientpk)
+    if(!patient) getPatiente(dni, setpatientpk)
   }
 
   useEffect(() => {
@@ -970,14 +958,14 @@ function validatePatientAntecedentsForm(){
 }
 // Archivos del paciente
 const ArchivosPaciente = () => {
-  let __params__ = useParams();
+  const _params_ = useParams()
   const fileupload_modal_id = "gadrive_upload"
   const fileloadingdelete_modal_id = "gadrive_loadingdelete"
   const [files, setFiles] = useState(false);
 
   // Google drive API functions
   const getPatientFiles = pac_pk => {
-    if(!pac_pk) pac_pk = __params__.patient
+    if(!pac_pk) pac_pk = _params_.patient
     // Get patient by id}
     simpleGet(`atencion/paciente/${pac_pk}/files/`)
     .then(
@@ -992,7 +980,7 @@ const ArchivosPaciente = () => {
     /* Show modal */
     showLoadingDeleteModal()
 
-    simplePostData(`atencion/paciente/${__params__.patient}/files/delete/`, {file_id: file_id})
+    simplePostData(`atencion/paciente/${_params_.patient}/files/delete/`, {file_id: file_id})
     .then(() => getPatientFiles())
     .then(hideLoadingDeleteModal)
   }
@@ -1008,7 +996,7 @@ const ArchivosPaciente = () => {
   }, [])
   // Files
   useEffect(() => {
-    if(!files) getPatientFiles(__params__.patient)
+    if(!files) getPatientFiles(_params_.patient)
 
   }, [files])
 
@@ -1109,7 +1097,7 @@ const ArchivosPaciente = () => {
 
         <ModalFileUpload
           modal_id={fileupload_modal_id}
-          patient_pk={__params__.patient}
+          patient_pk={_params_.patient}
           refresFiles={() => setFiles(false)} />
         <ModalLoading
           _id={fileloadingdelete_modal_id}
@@ -1192,7 +1180,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
   )
 }
 // Formatos
-const ModalFormatos = ({patient_pk, sucursal_pk}) => {
+const ModalFormatos = ({patient_pk, current_sucursal}) => {
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
     window.$('#'+html_format_id).modal("hide")
@@ -1204,10 +1192,10 @@ const ModalFormatos = ({patient_pk, sucursal_pk}) => {
       _title={"Generar formato"}
       _body={
         <div>
-          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/1/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/1/${current_sucursal}/${patient_pk}/`, '_blank')}>
             Cuidados de la ortodoncia
           </button>
-          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/101/${sucursal_pk}/${patient_pk}/`, '_blank')}>
+          <button className="btn btn-primary" onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/101/${current_sucursal}/${patient_pk}/`, '_blank')}>
             Certificado de atencion
           </button>
         </div>
@@ -1215,7 +1203,7 @@ const ModalFormatos = ({patient_pk, sucursal_pk}) => {
   )
 }
 // Send Instant Notification
-const InstantNotification = ({patient_pk, sucursal_pk}) => {
+const InstantNotification = ({patient_pk, current_sucursal}) => {
   let [checkbox_now, setCheckboxNow] = useState(true)
   // Current sucursal
   const ctx_nv = useContext(NavigationContext)
@@ -1248,7 +1236,7 @@ const InstantNotification = ({patient_pk, sucursal_pk}) => {
 
     console.log("data", data)
     // Enviar data al API
-    simplePostData(`atencion/notification/instant/paciente/${patient_pk}/sucursal/${sucursal_pk}/`, data)
+    simplePostData(`atencion/notification/instant/paciente/${patient_pk}/sucursal/${current_sucursal}/`, data)
     .then(r => console.log("r", r))
     .then(
       () => handleErrorResponse("custom", "Enviado", "El mensaje fue enviado exitosamente", "info")
@@ -1308,10 +1296,10 @@ const getPatiente = (dni, setpatientpk) => {
     document.getElementById("permiso_sms").checked = true
     document.getElementById("address").value = ""
     // Set antecedents values
-    document.getElementById("diabetes").value = false
-    document.getElementById("hepatitis").value = false
-    document.getElementById("hemorragia").value = false
-    document.getElementById("enf_cardiovascular").value = false
+    document.getElementById("diabetes").value = "0"
+    document.getElementById("hepatitis").value = "0"
+    document.getElementById("hemorragia").value = "0"
+    document.getElementById("enf_cardiovascular").value = "0"
     document.getElementById("alergias").value = ""
     document.getElementById("operaciones").value = ""
     document.getElementById("medicamentos").value = ""

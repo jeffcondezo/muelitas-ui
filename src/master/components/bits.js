@@ -2,16 +2,12 @@ import React from 'react';
 
 
 // Here there will be placed small components to be reused all over navigation
-export const Icon = props => {
-  const onClick = (ev) => {
-    if(props.onClick) props.onClick();
-  }
-
-  const el = [];
-  switch(props.type){
+export const Icon = ({type, onClick, data_dismiss}) => {
+  const el = []
+  switch(type){
     case "odontogram": el.push(  // Odontograma
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Odontograma" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Odontograma" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="tooth" className="svg-inline--fa fa-tooth fa-w-14" role="img" viewBox="0 0 448 512" style={{width: "80%"}}>
@@ -20,8 +16,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "procedure": el.push(  // Procedimiento
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Procedimiento Odontologico" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Procedimiento Odontologico" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-medical" className="svg-inline--fa fa-file-medical fa-w-12" role="img" viewBox="0 0 384 512" style={{width: "80%"}}>
@@ -30,8 +26,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "attention": el.push(  // Atención
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Atencion" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Atencion" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="id-card-alt" className="svg-inline--fa fa-id-card-alt fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style={{width: "100%"}}>
@@ -40,8 +36,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "admision": el.push(  // Admision
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Admision" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Admision" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user-md" className="svg-inline--fa fa-user-md fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style={{width: "70%"}}>
@@ -50,8 +46,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "finance": el.push(  // Finanzas
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Cobrar" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Cobrar" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="money-check-alt" className="svg-inline--fa fa-money-check-alt fa-w-20" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" style={{width: "90%"}}>
@@ -60,8 +56,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "prescription": el.push(  // Receta
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Receta" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Receta" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pills" className="svg-inline--fa fa-pills fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style={{width: "100%"}}>
@@ -70,8 +66,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "new-patient": el.push(  // New User
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Nuevo Usuario" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Nuevo Usuario" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="new-patient" className="svg-inline--fa fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" style={{width: "100%"}}>
@@ -80,8 +76,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "edit-patient": el.push(  // Edit User
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Editar Usuario" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Editar Usuario" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="edit-patient" className="svg-inline--fa fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" style={{width: "100%"}}>
@@ -90,8 +86,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "clinic-history": el.push(  // Clinic History
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Historia Clinica" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Historia Clinica" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="book-medical" className="svg-inline--fa fa-book-medical fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style={{width: "100%"}}>
@@ -100,8 +96,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "plandetrabajo": el.push(  // Plan de trabajo
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        title="Plan de trabajo" data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        title="Plan de trabajo" data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 512 512" enableBackground="new 0 0 512 512" style={{width: "100%"}}>
@@ -110,8 +106,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "add": el.push(  // Agregar
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg xmlns="http://www.w3.org/2000/svg" version="1.0" viewBox="0 0 512.000000 512.000000" style={{width: "100%"}}>
@@ -123,8 +119,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "edit": el.push(  // Edit
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg viewBox="0 0 24 24" style={{width: "100%"}}>
@@ -133,8 +129,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "trash": el.push(  // Trash
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px"}}>
           <svg viewBox="0 0 24 24" style={{width: "100%"}}>
@@ -143,24 +139,24 @@ export const Icon = props => {
       </a>
     ); break;
     case "check": el.push(  // Check
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px", fontSize: "2.1em"}}>
           <i className="fal fa-check-circle"></i>
       </a>
     ); break;
     case "files": el.push(  // Files
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px", fontSize: "2.5em"}}>
           <i className="fal fa-file-alt"></i>
       </a>
     ); break;
     case "pdf": el.push(  // PDF File
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px", fontSize: "2.5em"}}>
           <svg xmlns="http://www.w3.org/2000/svg" style={{width: "100%"}} viewBox="0 0 512 512">
@@ -176,8 +172,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "letter": el.push(  // Letter
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px", fontSize: "2.5em"}}>
         <svg xmlns="http://www.w3.org/2000/svg" style={{width: "100%"}} viewBox="0 0 512 512">
@@ -187,8 +183,8 @@ export const Icon = props => {
       </a>
     ); break;
     case "user": el.push(  // User
-      <a key={props.type+"icon"} onClick={(ev)=>onClick(ev)}
-        data-dismiss={props.data_dismiss ? props.data_dismiss : ""}
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
         className="btn btn-icon waves-effect waves-themed"
         style={{margin: "0 4px", fontSize: "2.5em"}}>
           <i className="fal fa-user"></i>
@@ -198,49 +194,46 @@ export const Icon = props => {
   }
 
   return (
-    <div className="">  {/* Links */}
+    <div>
       {el}
     </div>
-  );
-}
-export const PageTitle = props => {
-  // Receive {title}
-  return (
-    <>
-    {/* ALERTS */}
-      <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Error</strong> Ha ocurrido un error en el procesamiento.
-      </div>
-      <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
-          <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
-      </div>
-      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-      </div>
-
-      {/* HEADER */}
-      <div className="subheader">
-        <h1 className="subheader-title">
-          <i className="subheader-icon fal fa-chart-area"></i> {props.title}
-        </h1>
-      </div>
-    </>
   )
 }
-export const SelectOptions_Procedimiento = props => {
-  const procedimiento = [];
+export const PageTitle = ({title}) => (
+  <>
+  {/* ALERTS */}
+    <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
+        <strong>Error</strong> Ha ocurrido un error en el procesamiento.
+    </div>
+    <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
+        <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
+    </div>
+    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
+      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
+    </div>
 
-  if(props.procedimientos!==false){
-    props.procedimientos.map(p => {
-      procedimiento.push(
+    {/* HEADER */}
+    <div className="subheader">
+      <h1 className="subheader-title">
+        <i className="subheader-icon fal fa-chart-area"></i> {title}
+      </h1>
+    </div>
+  </>
+)
+export const SelectOptions_Procedimiento = ({procedimientos}) => {
+  const html_procedimiento = []
+
+  if(procedimientos!==false){
+    procedimientos.map(p => {
+      html_procedimiento.push(
         <option key={p.pk} value={p.pk}>
           {p.nombre.toUpperCase()}
         </option>
-      );
-    });
+      )
+    })
   }
 
-  return procedimiento;
+  return html_procedimiento
 }
 export const ModalCancel = ({_title, _id, _action_text, _cancel_text, _body_text, _action_func, _cancel_func}) => {
   const actionFunc = () => {

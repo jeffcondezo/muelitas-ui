@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams } from "react-router-dom";
 import {
   simpleGet,
 } from '../../functions';
 import { PageTitle, RegularModalCentered } from '../bits';
+import { NavigationContext } from '../Navigation'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const HistorialPagos = ({sucursal_pk, redirectTo}) => {
+const HistorialPagos = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
   let __params__ = useParams();
   const datatable_id = "patientxpagos-table"
 
@@ -21,7 +23,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
   const getPxP = () => {
     if(__debug__) console.log("HistorialPagos getPxP")
 
-    simpleGet(`finanzas/sucursal/${sucursal_pk}/paciente/${__params__.patient}/`)
+    simpleGet(`finanzas/sucursal/${current_sucursal}/paciente/${__params__.patient}/`)
     .then(setPxP);
   }
 
@@ -69,7 +71,6 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
         // Fecha y hora
         targets: 0,
         render: data => {
-          // console.log("data", data);
           let splited_data = data.split("-")
           let date = splited_data[0]
           let time = splited_data[1].split(":")
@@ -82,7 +83,7 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
       }, {
         // Origen del pago
         targets: 2,
-        createdCell: (cell, data, row) => {
+        createdCell: (cell, _, row) => {
           ReactDOM.render(
             <span
               className={`badge badge-${row.cita ? "success" : "info"} badge-pill`}
@@ -108,7 +109,6 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
       pageLength: 8,  // Default page length
       lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
       language: {
-        // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",
         sZeroRecords:    "No se encontraron resultados",
@@ -117,7 +117,6 @@ const HistorialPagos = ({sucursal_pk, redirectTo}) => {
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
         sInfoPostFix:    "",
-        // "sSearch":         "Buscar:",
         sUrl:            "",
         sInfoThousands:  ",",
         sLoadingRecords: "Cargando...",

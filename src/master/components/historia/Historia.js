@@ -1,39 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   simpleGet,
-  handleErrorResponse,
   capitalizeFirstLetter as cFL
 } from '../../functions';
 import { Icon, PageTitle } from '../bits';
 import { PatientDataList } from '../admision/Admision';
+import { NavigationContext } from '../Navigation'
 
 
-const HistoriaClinica = props => {
-  let __params__ = useParams()
-
-  // Receive {sucursal_pk, redirectTo}
-  const [patient_pk, setPatientPK] = useState(__params__.patient_pk);
-
-
+const HistoriaClinica = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const {patient_pk} = useParams()
   return (
     <>
       <PageTitle title={"Historia Clinica"} />
 
       <h5 style={{paddingBottom: "15px"}}>Fecha de generación de documento: {new Date().toDateInputValue()}</h5>
-      {/*<HistoriaPatientData patient_pk={patient_pk} />*/}
-      <HistoriaCitaList redirectTo={props.redirectTo} patient_pk={patient_pk} />
+      {/*
+        <HistoriaPatientData patient_pk={patient_pk} />
+        */}
+      <HistoriaCitaList redirectTo={redirectTo} patient_pk={patient_pk} />
     </>
   )
 }
-// They all receive {patient_pk}
-const HistoriaPatientData = props => {
+const HistoriaPatientData = ({patient_pk}) => {
   const [patient, setPatient] = useState(false);
 
   const getPatient = pac_pk => simpleGet(`atencion/paciente/${pac_pk}/`).then(setPatient)
 
   useEffect(() => {
-    getPatient(props.patient_pk);
+    getPatient(patient_pk);
   }, []);
 
   return (
@@ -46,7 +43,7 @@ const HistoriaPatientData = props => {
     </div>
   )
 }
-const HistoriaCitaList = props => {
+const HistoriaCitaList = ({patient_pk, redirectTo}) => {
   const [citaList, setCitaList] = useState(false);
 
   const getCitas = pac_pk => {
@@ -79,11 +76,11 @@ const HistoriaCitaList = props => {
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
       dt_script.onload = () => {
         // Run at first execution
-        getCitas(props.patient_pk);
+        getCitas(patient_pk);
       };
       document.body.appendChild(dt_script);
     }else{
-      getCitas(props.patient_pk);
+      getCitas(patient_pk);
     }
     // CSS
     if(!document.getElementById('dt_style')){
@@ -184,7 +181,7 @@ const HistoriaCitaList = props => {
                       }
                     </td>
                     <td>
-                      <Icon type="attention" onClick={() => props.redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})} />
+                      <Icon type="attention" onClick={() => redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})} />
                     </td>
                   </tr>
                 ))}

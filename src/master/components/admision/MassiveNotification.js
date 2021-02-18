@@ -12,14 +12,14 @@ import { NavigationContext } from '../Navigation';
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const MassiveNotification = ({sucursal_pk}) => {
+const MassiveNotification = () => {
   const [patients, setPatients] = useState(false)
   let [checkbox_now, setCheckboxNow] = useState(true)
   const age_options = useRef([]).current
   const show_patients = useRef(false)
   // Current sucursal
-  const ctx_nv = useContext(NavigationContext)
-  let cur_suc = ctx_nv.sucursales.find(s => s.pk==ctx_nv.current_sucursal)
+  const {current_sucursal, sucursales} = useContext(NavigationContext)
+  let cur_suc = sucursales.find(s => s.pk==current_sucursal)
   let signature = `- ${cur_suc.empresa_data.nombre_comercial.toUpperCase()}`
   // Current datetime
   let _dt = new Date()
@@ -35,7 +35,7 @@ const MassiveNotification = ({sucursal_pk}) => {
     .then(res => setPatients(res.map(pxs => pxs.paciente)))
   }
   const filterPatients = () => {
-    let _sucursal_pk = sucursal_pk
+    let _sucursal_pk = current_sucursal
     // Filter
     let _filter = ``
     let _tmp = null
@@ -90,7 +90,7 @@ const MassiveNotification = ({sucursal_pk}) => {
 
     console.log("data", data)
     // Enviar data al API
-    simplePostData(`atencion/notification/massive/sucursal/${sucursal_pk}/`, data)
+    simplePostData(`atencion/notification/massive/sucursal/${current_sucursal}/`, data)
     .then(
       () => handleErrorResponse("custom", "Enviado", "El mensaje fue enviado exitosamente", "info")
     )
@@ -124,7 +124,7 @@ const MassiveNotification = ({sucursal_pk}) => {
   }
 
   useEffect(() => {
-    getAllPatients(sucursal_pk)
+    getAllPatients(current_sucursal)
 
     age_options.push(<option key="opt-number-default" value="0">-</option>)  // Default option
     for(let i=1; i<100; i++) age_options.push(<option key={"opt-number-"+i} value={i}>{i}</option>)  // Regular 1-99 options

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 /* Calendar components
 * FullCalendar required @fullcalendar/react to provide the FullCalendar component
 * additionally it required a package for each plugin we want to include in the calendar
@@ -25,19 +25,22 @@ import {
   simpleGet,
   simplePostData,
 } from '../../functions'
+import { NavigationContext } from '../Navigation';
 
 // Static
 const __debug__ = process.env.REACT_APP_DEBUG
 
 
-const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
+const Cita = () => {
+  const {current_sucursal, redirectTo, redirect_data} = useContext(NavigationContext)
+  console.log("ctx_Cita", current_sucursal, redirect_data)
   const events_response_data = useRef([])  // Used to preserve events values after filters
   const [events, setEvents] = useState([])  // FullCalendar events
   const [personal, setPersonal] = useState(false)  // Sucursal's personal
   const [procedures, setProcedures] = useState(false)  // Sucursal's procedures
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
   const personal_color = ["#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"]
-  const usageHint = useRef(false)  // Allow to change dynamically the behaviour
+  // const usageHint = useRef(false)  // Allow to change dynamically the behaviour
   // HTML constant values
   const html_cita_form = "modal-crear_cita"
   const html_cita_detail = "modal-ver_cita"
@@ -45,12 +48,12 @@ const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
   const html_cita_repro = "modal-repro_cita"
 
   // initial requests
-  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${sucursal_pk}", "atencion":"true"}`).then(setPersonal)
-  const getProcedures = () => simpleGet(`maestro/procedimiento/sucursal/${sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
+  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
+  const getProcedures = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setProcedures)
   const getCitas = () => {
     if(__debug__) console.log("Cita getCitas")
 
-    simpleGet(`atencion/cita/?filtro={"estado":"1","programado":"1","sucursal":"${sucursal_pk}"}`)
+    simpleGet(`atencion/cita/?filtro={"estado":"1","programado":"1","sucursal":"${current_sucursal}"}`)
     .then(handleCitaResponse)
   }
   const handleCitaResponse = _citas => {
@@ -82,6 +85,7 @@ const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
     window.document.querySelector("td.fc-day-today div.fc-timegrid-now-indicator-container").classList.add("alert-info")
   }
   const fillPatienteByDNI = _dni => {
+    console.log("fillPatienteByDNI", _dni)
     // if dni is not 8 length
     if(_dni.length<8){
       // Reset paciente data
@@ -272,7 +276,7 @@ const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
     let _minutos = document.getElementById("cita-minute").value
     let _celular = document.getElementById("pac_celular").value
     let _permiso_sms = document.getElementById("pac_permiso_sms").value
-    let _sucursal = sucursal_pk
+    let _sucursal = current_sucursal
     let _origen_cita = "3"  // Origen Web
     let _estado = "1"  // Cita Pendiente
     let _programado = window.$("#select-procedimiento_programado").select2('data').map(i => i.text).join(", ")
@@ -322,14 +326,17 @@ const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
     return data
   }
   // events
-  const getCitaInfo = ev => selectCita(ev.event.extendedProps.cita)
+  const getCitaInfo = ev => {
+    if(ev.event.extendedProps.cita == cita_selected) openCitaDetail()
+    else selectCita(ev.event.extendedProps.cita)
+  }
   const selectRangoFecha = ev => {
     if(__debug__) console.log("Cita selectRangoFecha")
-    if(!usageHint.current){
-      alert("Ahora puedes crear una cita seleccionando un rango de tiempo en el calendario")
-      usageHint.current = true
-      return
-    }
+    // if(!usageHint.current){
+    //   alert("Ahora puedes crear una cita seleccionando un rango de tiempo en el calendario")
+    //   usageHint.current = true
+    //   return
+    // }
 
     // Assure selected range doesn't cross days
     if(ev.start.toDateInputValue() != ev.end.toDateInputValue()){
@@ -534,7 +541,7 @@ const Cita = ({sucursal_pk, redirectTo, redirect_data}) => {
     // Get data everytime sucursal changes
     getPersonal()
     getProcedures()
-  }, [sucursal_pk])
+  }, [current_sucursal])
   // TODO: Handle sucursal dynamic change
 
   return (
