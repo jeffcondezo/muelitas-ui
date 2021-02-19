@@ -32,15 +32,23 @@ const __debug__ = process.env.REACT_APP_DEBUG
 
 
 const Cita = () => {
-  const {current_sucursal, redirectTo, redirect_data} = useContext(NavigationContext)
-  console.log("ctx_Cita", current_sucursal, redirect_data)
   const events_response_data = useRef([])  // Used to preserve events values after filters
   const [events, setEvents] = useState([])  // FullCalendar events
   const [personal, setPersonal] = useState(false)  // Sucursal's personal
   const [procedures, setProcedures] = useState(false)  // Sucursal's procedures
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
+  /* fake_redirect_data: Workaround to fake redirect_data empty
+  * when it has already been fully used to create a Cita
+  * and therefore it is not longer needed
+  */
+  const [fake_redirect_data, setFakeRedirectData] = useState(false)
   const personal_color = ["#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"]
   // const usageHint = useRef(false)  // Allow to change dynamically the behaviour
+
+  // Redirect data
+  const {current_sucursal, redirectTo, redirect_data} = useContext(NavigationContext)
+  let _redirect_data = fake_redirect_data ? false : redirect_data
+
   // HTML constant values
   const html_cita_form = "modal-crear_cita"
   const html_cita_detail = "modal-ver_cita"
@@ -128,7 +136,7 @@ const Cita = () => {
     })
   }
   const cancelCitaForm = () => {
-    if(redirect_data) return
+    if(_redirect_data) return
 
     document.getElementById("pac_pk").value = ""
     document.getElementById("pac_dni").value = ""
@@ -161,22 +169,22 @@ const Cita = () => {
   }
   const fillDataFromRedirect = () => {
     if(__debug__) console.log("Cita fillDataFromRedirect")
-    /* redirect_data.selected
+    /* _redirect_data.selected
     * procedures are added through the SelectProcedure component
     * select patient through fillPatientByDNI
     */
     // Set patient data
-    fillPatienteByDNI(redirect_data.patient_dni)
+    fillPatienteByDNI(_redirect_data.patient_dni)
     // Open modal
     window.$('#'+html_cita_form).modal('show')
   }
   const redirectDataFinal = cita => {
-    if(!redirect_data?.selected) return
+    if(!_redirect_data?.selected) return
     // Compare procs sended and procs received
     let sended_ar = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
     // BUG: Execute it all in promise to avoid multiple instant execution (duplicity in DB objects)
-    // redirect_data.selected = [{proc_pk, dpdt}]
-    redirect_data.selected.reduce(
+    // _redirect_data.selected = [{proc_pk, dpdt}]
+    _redirect_data.selected.reduce(
       (promise_chain, obj) => {
         return sended_ar.indexOf(obj.proc_pk) == -1
           ? promise_chain
@@ -189,6 +197,10 @@ const Cita = () => {
           )
       }, Promise.resolve()
     )
+    .then(() => {
+      setFakeRedirectData(true)
+      document.getElementById("cita-close").click()  // Cerrar formulario cita
+    })
   }
   const getValidatedCitaFormData = () => {
     // VALIDATIONS
@@ -321,7 +333,7 @@ const Cita = () => {
     else if(typeof(_paciente)==='object')
       data['paciente_obj'] = _paciente
     // Add PDT reference if exist
-    if(redirect_data) data['pdt'] = redirect_data.pdt
+    if(_redirect_data) data['pdt'] = _redirect_data.pdt
 
     return data
   }
@@ -341,7 +353,6 @@ const Cita = () => {
     // Assure selected range doesn't cross days
     if(ev.start.toDateInputValue() != ev.end.toDateInputValue()){
       handleErrorResponse("custom", "", 'Por favor seleccione un rango de tiempo perteneciente al mismo día', 'info')
-
       return
     }
 
@@ -377,11 +388,9 @@ const Cita = () => {
     .then(
       cita => {
         // If there was data from redirect
-        if(redirect_data) redirectDataFinal(cita)
-
-        // In case it's ok
+        if(_redirect_data) redirectDataFinal(cita)
+        else document.getElementById("cita-close").click()  // Cerrar formulario cita
         handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info")
-        document.getElementById("cita-close").click()  // Cerrar formulario cita
         fakeCrearCita(cita)
       },
       res => {
@@ -510,8 +519,8 @@ const Cita = () => {
       })
     }
 
-    // Fill data from redirect_data
-    if(redirect_data) fillDataFromRedirect()
+    // Fill data from _redirect_data
+    if(_redirect_data) fillDataFromRedirect()
 
     // Will unmount
     return () => {
@@ -607,7 +616,7 @@ const Cita = () => {
         fillPatienteByDNI={fillPatienteByDNI}
         personal={personal}
         procedures={procedures}
-        redirect_data={redirect_data}
+        redirect_data={_redirect_data}
         />
 
       {/* INFO CITA (modal) */}
@@ -874,7 +883,7 @@ const SelectPersonal = ({personal}) => (
   </div>
 )
 const SelectProcedure = ({procedimientos, selected}) => {
-  /* Selected comes from redirect_data which is loaded at the very begining and never changes */
+  /* Selected comes from _redirect_data which is loaded at the very begining and never changes */
   const html_select_programed_procedure = "select-procedimiento_programado"
 
   useEffect(() => {
@@ -902,7 +911,7 @@ const ReprogramarCita = ({id, cita, fakeReprogramarCita}) => {
   const reprogramarCita = () => {
     if(!cita){
       window.$('#'+id).modal("hide")
-      handleErrorResponse('Error', 'No se selecciono una cita a programar. Por favor contacte con el administrador')
+      handleErrorResponse('Error', 'No se selecciono una cita a programar. Por favor contacte con el administrador', 'warning')
       return
     }
 

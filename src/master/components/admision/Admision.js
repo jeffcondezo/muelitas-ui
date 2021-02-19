@@ -513,7 +513,7 @@ const EditPatient = () => {
       response_obj => {
         updatePatientData(response_obj)
         saveEditAntecedents()
-        // handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
+        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info')
       },
       error => console.log("WRONG!", error)
     )
@@ -538,7 +538,7 @@ const EditPatient = () => {
     .then(
       response_obj => {
         setAntecedente(response_obj)
-        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente")
+        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info')
       },
       error => console.log("WRONG!", error)
     )
@@ -835,70 +835,70 @@ function validatePatientForm(){
   let _tmp1
   _tmp1 = document.getElementById("name-pric")
   if(!_tmp1 || _tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Nombre principal no especificado")
+    handleErrorResponse("custom", "Error", "Nombre principal no especificado", 'warning')
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras")
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
     return false
   }
 
   _tmp1 = document.getElementById("name-sec")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Nombre secundario no especificado")
+    handleErrorResponse("custom", "Error", "Nombre secundario no especificado", 'warning')
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras")
+    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
     return false
   }
 
   _tmp1 = document.getElementById("ape-p")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido paterno no especificado")
+    handleErrorResponse("custom", "Error", "Apellido paterno no especificado", 'warning')
     return false
   }
   if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio")
+    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio", 'warning')
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras")
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
     return false
   }
 
   _tmp1 = document.getElementById("ape-m")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido materno no especificado")
+    handleErrorResponse("custom", "Error", "Apellido materno no especificado", 'warning')
     return false
   }
   if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio")
+    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio", 'warning')
     return false
   }
   if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras")
+    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
     return false
   }
 
   _tmp1 = document.getElementById("dni")
   if(!_tmp1){
-    handleErrorResponse("custom", "Error", "DNI no especificado")
+    handleErrorResponse("custom", "Error", "DNI no especificado", 'warning')
     return false
   }
   if(_tmp1.value.trim().length!=8){
-    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos")
+    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
     return false
   }
   if(isNaN(parseInt(_tmp1.value.trim()))){
-    handleErrorResponse("custom", "Error", "El DNI debe contener solo números")
+    handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
     return false
   }
 
   _tmp1 = document.getElementById("born-date")
   if(_tmp1){
     if(_tmp1.value>=(new Date().toDateInputValue)){
-      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy")
+      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy", 'warning')
       return false
     }
   }
@@ -906,11 +906,11 @@ function validatePatientForm(){
   _tmp1 = document.getElementById("phone")
   if(_tmp1 && !!_tmp1.value){
     if(_tmp1.value.length!=9){
-      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos")
+      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
       return false
     }
     if(isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos")
+      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
       return false
     }
   }

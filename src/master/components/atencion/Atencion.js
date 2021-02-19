@@ -467,11 +467,13 @@ const AttentionProcedures = ({cita}) => {
                     <span style={{fontSize: "1.2em"}}>
                         {cFL(proc.procedimiento_data.nombre)}
                     </span>
-                    <button className="btn ml-auto"
-                      style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                      onClick={()=>editProcedure(proc.pk)}>
-                        <i className="fal fa-edit"></i>
-                    </button>
+                    {!proc.paid && (
+                      <button className="btn ml-auto"
+                        style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
+                        onClick={()=>editProcedure(proc.pk)}>
+                          <i className="fal fa-edit"></i>
+                      </button>
+                    )}
                     {!proc.paid && (
                       <button className="btn"
                         style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}

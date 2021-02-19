@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react'
 import {
   Switch,
   Route,
   Redirect,
   useParams,  // Get parameter from url
-} from "react-router-dom";  // https://reacttraining.com/react-router/web/api/
+} from "react-router-dom"  // https://reacttraining.com/react-router/web/api/
 import {
   handleErrorResponse,
   existInObjectArray,
@@ -12,9 +12,9 @@ import {
   simpleGet,
   simplePostData,
   getDataByPK,
-} from '../../functions';
-import { PageTitle } from '../bits';
-import HistorialPagos from './HistorialPagos';
+} from '../../functions'
+import { PageTitle } from '../bits'
+import HistorialPagos from './HistorialPagos'
 import { NavigationContext } from '../Navigation'
 
 
@@ -151,10 +151,10 @@ const DebtXPatientTable = () => {
           colvis: "Visibilidad"
         }
       },
-    });
+    })
 
-    setDatatable(_tmp);  // Save DT in state
-  }, [patientxdebt]);
+    setDatatable(_tmp)  // Save DT in state
+  }, [patientxdebt])
 
   return (
     <>
@@ -217,46 +217,46 @@ const CobranzaDetail = () => {
 const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
   // Receive {patient, selected, current_sucursal, setRefresh}
   const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // Natural && Empresa && Sin FE
-  const [client, setClient] = useState(-1);  // Current Client (default:paciente redirected)
-  const [knownclient, setNC] = useState(!production_nofe_default);  // Paciente es Cliente
+  const [client, setClient] = useState(-1)  // Current Client (default:paciente redirected)
+  const [knownclient, setNC] = useState(!production_nofe_default)  // Paciente es Cliente
 
   useEffect(() => {
-    if(__debug__) console.log("useEffect clienttype", clienttype);
+    if(__debug__) console.log("useEffect clienttype", clienttype)
     if(clienttype==1){
-      document.getElementById("client-dni").value = patient.dni;
-      setValues(patient);
-      setNC(true);  // Client is known 'cuz we're setting the patient client
+      document.getElementById("client-dni").value = patient.dni
+      setValues(patient)
+      setNC(true)  // Client is known 'cuz we're setting the patient client
     }else{
-      setValues(false);
+      setValues(false)
       if(document.getElementById('client-ruc'))
-        document.getElementById('client-ruc').value = "";
+        document.getElementById('client-ruc').value = ""
     }
-  }, [clienttype]);
+  }, [clienttype])
   useEffect(() => {
-    if(__debug__) console.log("useEffect client", client);
+    if(__debug__) console.log("useEffect client", client)
     if(clienttype==3) return
-    if(client==-1) getClient('dni', patient.dni);
+    if(client==-1) getClient('dni', patient.dni)
     if(client==false){
       setValues(patient)
       setNC(false)
-      return;
+      return
     }
 
     setNC(true)
-    setValues(client);  // Set values
-  }, [client]);
+    setValues(client)  // Set values
+  }, [client])
   useEffect(() => {
-    if(__debug__) console.log("useEffect knownclient", knownclient);
-    if(knownclient) return;
+    if(__debug__) console.log("useEffect knownclient", knownclient)
+    if(knownclient) return
 
-    setValues(false);
-  }, [knownclient]);
+    setValues(false)
+  }, [knownclient])
 
   // Extras
   const getBack = () => window.history.back()
   const inputChange_DNI = (val) => {
     if(val.trim().length==8) getClient('dni', val)
-    else setNC(false);
+    else setNC(false)
   }
   const inputChange_RUC = (val) => {
     if(val.trim().length==11) getClient('ruc', val)
@@ -269,30 +269,30 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
   const setValues = (values) => {
     if(clienttype==1){
       if(document.getElementById('name-pric'))
-        document.getElementById('name-pric').value = values?values.nombre_principal:"";
+        document.getElementById('name-pric').value = values?values.nombre_principal:""
       if(document.getElementById('name-sec'))
-        document.getElementById('name-sec').value = values?values.nombre_secundario:"";
+        document.getElementById('name-sec').value = values?values.nombre_secundario:""
       if(document.getElementById('ape-p'))
-        document.getElementById('ape-p').value = values?values.ape_paterno:"";
+        document.getElementById('ape-p').value = values?values.ape_paterno:""
       if(document.getElementById('ape-m'))
-        document.getElementById('ape-m').value = values?values.ape_materno:"";
+        document.getElementById('ape-m').value = values?values.ape_materno:""
     }else{
       if(document.getElementById('client-razon-social'))
-        document.getElementById('client-razon-social').value = values&&values.razon_social?values.razon_social:"";
+        document.getElementById('client-razon-social').value = values&&values.razon_social?values.razon_social:""
       if(document.getElementById('client-phone'))
-        document.getElementById('client-phone').value = values&&values.celular?values.celular:"";
+        document.getElementById('client-phone').value = values&&values.celular?values.celular:""
     }
   }
   // Form submit function
   const handleSubmit = () => {
     // Check selected attention detail
     if(selected.length==0){
-      handleErrorResponse("custom", "Error", "Debe seleccionar los elementos a cobrar en el panel de la derecha")
-      return;
+      handleErrorResponse("custom", "Error", "Debe seleccionar los elementos a cobrar en el panel de la derecha", 'warning')
+      return
     }
 
     // Client exists
-    if(__debug__) console.log("handleSubmit", knownclient, client, clienttype);
+    if(__debug__) console.log("handleSubmit", knownclient, client, clienttype)
     if(knownclient)
       if(client) savePayment(client)
       else handleSubmit_ClientRegular()  // Regular
@@ -303,42 +303,42 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
   }
   // Save form as client
   const handleSubmit_ClientEmpresa = () => {
-    console.log("Empresa");
+    console.log("Empresa")
     // Validate
-    let _tmp;
-    _tmp = document.getElementById("client-ruc");
+    let _tmp
+    _tmp = document.getElementById("client-ruc")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina");
-      return;
+      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina", 'warning')
+      return
     }
     if(_tmp.value.trim().length!=11){
-      handleErrorResponse("custom", "Error", "El ruc debe tener 11 digitos");
-      return;
+      handleErrorResponse("custom", "Error", "El ruc debe tener 11 digitos", 'warning')
+      return
     }
     if(isNaN(parseInt(_tmp.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
-      return;
+      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("client-razon-social");
+    _tmp = document.getElementById("client-razon-social")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina");
-      return;
+      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina", 'warning')
+      return
     }
     if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Debe especificar la razón social de la empresa");
-      return;
+      handleErrorResponse("custom", "Error", "Debe especificar la razón social de la empresa", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("client-phone");
+    _tmp = document.getElementById("client-phone")
     if(_tmp && !!_tmp.value){
       if(_tmp.value.length!=9){
-        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
-        return;
+        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
+        return
       }
       if(!/^\d+$/.test(_tmp.value)){
-        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
-        return;
+        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
+        return
       }
     }
 
@@ -348,84 +348,84 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
       ruc_: document.getElementById("client-ruc").value,  // Artifice to get_or_create
     }
     if(document.getElementById("client-phone").value.length!=0)
-      _tmp1.celular = document.getElementById("client-phone").value;
+      _tmp1.celular = document.getElementById("client-phone").value
 
     getOrCreateNewClient(_tmp1)
   }
   const handleSubmit_ClientRegular = () => {
     // Validate
-    let _tmp;
-    _tmp = document.getElementById("name-pric");
+    let _tmp
+    _tmp = document.getElementById("name-pric")
     if(!_tmp || _tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Nombre principal no especificado");
-      return;
+      handleErrorResponse("custom", "Error", "Nombre principal no especificado", 'warning')
+      return
     }
     if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
-      return;
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("name-sec");
+    _tmp = document.getElementById("name-sec")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "Nombre secundario no especificado");
-      return;
+      handleErrorResponse("custom", "Error", "Nombre secundario no especificado", 'warning')
+      return
     }
     if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras");
-      return;
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("ape-p");
+    _tmp = document.getElementById("ape-p")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "Apellido paterno no especificado");
-      return;
+      handleErrorResponse("custom", "Error", "Apellido paterno no especificado", 'warning')
+      return
     }
     if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio");
-      return;
+      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio", 'warning')
+      return
     }
     if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
-      return;
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("ape-m");
+    _tmp = document.getElementById("ape-m")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "Apellido materno no especificado");
-      return;
+      handleErrorResponse("custom", "Error", "Apellido materno no especificado", 'warning')
+      return
     }
     if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio");
-      return;
+      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio", 'warning')
+      return
     }
     if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras");
-      return;
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("client-dni");
+    _tmp = document.getElementById("client-dni")
     if(!_tmp){
-      handleErrorResponse("custom", "Error", "DNI no especificado");
-      return;
+      handleErrorResponse("custom", "Error", "DNI no especificado", 'warning')
+      return
     }
     if(_tmp.value.trim().length!=8){
-      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos");
-      return;
+      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
+      return
     }
     if(isNaN(parseInt(_tmp.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números");
-      return;
+      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
+      return
     }
 
-    _tmp = document.getElementById("client-phone");
+    _tmp = document.getElementById("client-phone")
     if(_tmp && !!_tmp.value){
       if(_tmp.value.length!=9){
-        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos");
-        return;
+        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
+        return
       }
       if(!/^\d+$/.test(_tmp.value)){
-        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos");
-        return;
+        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
+        return
       }
     }
 
@@ -438,7 +438,7 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
       dni_: document.getElementById('client-dni').value,  // Artifice to get_or_create
     }
     if(document.getElementById("client-phone").value.length!=0)
-      _tmp1.celular = document.getElementById("client-phone").value;
+      _tmp1.celular = document.getElementById("client-phone").value
 
     getOrCreateNewClient(_tmp1)
   }
@@ -447,15 +447,15 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
     simplePostData(`finanzas/cliente/`, data)
     .then(
       response_obj => savePayment(response_obj),
-      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado")
-    );
+      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado", 'warning')
+    )
   }
 
   // Save payment
   const savePayment = (_client) => {
     // BUG: LEFT TO OPTIMIZE AND CHECK BEHAVIOUR
-    if(__debug__) console.log("savePayment");
-    if(__debug__) console.log("selected", selected);
+    if(__debug__) console.log("savePayment")
+    if(__debug__) console.log("selected", selected)
     // setClient(_client)
 
     // Send payment
@@ -585,7 +585,7 @@ const NewCustomerForm = ({disabled}) => {
 }
 const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => {
   // Receive {patient, selected, select, refresh, setRefresh}
-  const [dccs, setDebts] = useState(false);
+  const [dccs, setDebts] = useState(false)
   const [total_to_pay, setTTP] = useState(0)
 
   const getCuentaCorrienteDebts = () => {
@@ -593,7 +593,7 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
     simpleGet(`finanzas/cuentacorriente/detalle/?filtro={"cliente_dni":"${patient.dni}", "estado_pago_not":"3"}`)
     .then(
       res => {
-        if(__debug__) console.log("getCuentaCorrienteDebts res", res);
+        if(__debug__) console.log("getCuentaCorrienteDebts res", res)
         setDebts(res)  // Save response as debts
 
         for(let r in res){
@@ -604,9 +604,9 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
         }
       },
       error => {
-        console.log("WRONG!", error);
+        console.log("WRONG!", error)
       }
-    );
+    )
   }
   const checkbox_addToSelectedOnes = dcc => {
     if(existInObjectArray(selected, dcc, 'pk')){
@@ -622,7 +622,7 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
     // Don't call calcNewTTP cuz select() update a state asynchronously
   }
   const onPayAmountChange = (input_el, dcc) => {
-    console.log("onPayAmountChange", input_el.value, input_el.min, input_el.max);
+    console.log("onPayAmountChange", input_el.value, input_el.min, input_el.max)
     // Pay amount out of range
     if(input_el.value == ""){
       input_el.value = input_el.min
@@ -642,7 +642,7 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
     calcNewTTP()  // Call this function cuz it's flat code (not update selected state)
   }
   const calcNewTTP = () => {
-    if(__debug__) console.log("calcNewTTP");
+    if(__debug__) console.log("calcNewTTP")
     setTTP(selected.reduce((t,i)=>t+i.monto, 0))
   }
 
@@ -653,20 +653,20 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
   }
 
   useEffect(() => {
-    if(__debug__) console.log("PatientDebtsTable useEffect");
+    if(__debug__) console.log("PatientDebtsTable useEffect")
     getCuentaCorrienteDebts()
-  }, []);
+  }, [])
   useEffect(() => {
-    if(__debug__) console.log("PatientDebtsTable useEffect refresh");
-    if(!refresh) return;
+    if(__debug__) console.log("PatientDebtsTable useEffect refresh")
+    if(!refresh) return
 
     // refresh values
-    select([]);
-    setRefresh(false);
+    select([])
+    setRefresh(false)
     getCuentaCorrienteDebts()
   } , [refresh])
   useEffect(() => {
-    if(__debug__) console.log("PatientDebtsTable useEffect selected");
+    if(__debug__) console.log("PatientDebtsTable useEffect selected")
 
     calcNewTTP()
   }, [selected])
@@ -724,4 +724,4 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
 }
 
 
-export default Cobranza;
+export default Cobranza

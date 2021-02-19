@@ -105,7 +105,7 @@ function Navigation({user, history}){
     history: history,
   }
   // Reset redirect data bc it has already been stored in context
-  // if(redirect.current) redirect.current = false
+  if(redirect.current) redirect.current = false
 
   return !current_sucursal_pk
   ? "loading"

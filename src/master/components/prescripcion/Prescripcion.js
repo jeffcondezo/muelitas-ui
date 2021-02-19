@@ -119,12 +119,12 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     let _tmp1
     _tmp1 = document.getElementById("amount")
     if(!_tmp1 || _tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Cantidad no especificada")
+      handleErrorResponse("custom", "Error", "Cantidad no especificada", 'warning')
       return
     }
     _tmp1 = document.getElementById("period")
     if(!_tmp1 || _tmp1.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Periodo no especificado")
+      handleErrorResponse("custom", "Error", "Periodo no especificado", 'warning')
       return
     }
 
