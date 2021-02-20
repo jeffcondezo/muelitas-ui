@@ -382,29 +382,27 @@ const Cita = () => {
     if(__debug__) console.log("Cita saveCita")
 
     let data = getValidatedCitaFormData()
+    if(!data) return
 
     // Generate promise
     simplePostData('atencion/cita/', data)
-    .then(
-      cita => {
-        // If there was data from redirect
-        if(_redirect_data) redirectDataFinal(cita)
-        else document.getElementById("cita-close").click()  // Cerrar formulario cita
-        handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info")
-        fakeCrearCita(cita)
-      },
-      res => {
-        // We expect an error bc of CRUCE_DE_CITAS
-        // the simpleFetch functions are standar in the system and when error it returns the response itself
-        // er = Response || we need to use er.json() to acces the info inside the response
-        res.text().then(er => {
-          if(er == '["CRUCE_DE_CITAS"]')
-            handleErrorResponse("custom", "ERROR: ", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "warning")
-          else handleErrorResponse("custom", "", "Ha ocurrido un error", "warning")
-          document.getElementById("cita-close").click()  // Cerrar formulario cita
-        })
-      }
-    )
+    .then(cita => {
+      // If there was data from redirect
+      if(_redirect_data) redirectDataFinal(cita)
+      handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info")
+      fakeCrearCita(cita)
+    })
+    .catch(res => {
+      // We expect an error bc of CRUCE_DE_CITAS
+      // the simpleFetch functions are standar in the system and when error it returns the response itself
+      // er = Response || we need to use er.json() to acces the info inside the response
+      res.text().then(er => {
+        if(er == '["CRUCE_DE_CITAS"]')
+          handleErrorResponse("custom", "", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "warning")
+        else handleErrorResponse("custom", "", "Ha ocurrido un error", "warning")
+      })
+    })
+    .finally( () => document.getElementById("cita-close").click() )
   }
   const openCitaForm = () => window.$('#'+html_cita_form).modal('show')
   const openCitaDetail = () => window.$('#'+html_cita_detail).modal('show')
@@ -769,7 +767,7 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, procedu
               <option value="240">4 horas</option>
             </select>
           </div>
-          <div id="alert-login" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
+          <div id="alert-cita-form" className="alert bg-danger-400 text-white fade" role="alert" style={{display:'none'}}>
             <strong>Ups!</strong> <span>Parece que los datos introducidos no son correctos.</span>
           </div>
         </div>
@@ -926,12 +924,16 @@ const ReprogramarCita = ({id, cita, fakeReprogramarCita}) => {
     }
 
     simplePostData(`atencion/cita/${cita.pk}/reprogramar/`, data)
-    .then(res => {
-      if( res.hasOwnProperty("reason") ) handleErrorResponse('custom', 'Ups!', res.reason, 'danger')
-      else handleErrorResponse('custom', 'Exito!', "Cita reprogramada exitosamente", 'info')
-    })
-    .then(() => window.$('#'+id).modal("hide"))
+    .then(() => handleErrorResponse('custom', 'Exito!', "Cita reprogramada exitosamente", 'info'))
     .then(() => fakeReprogramarCita(cita, data))
+    .catch(res => {
+      res.text().then(er => {
+        if(er == '["CRUCE_DE_CITAS"]')
+          handleErrorResponse("custom", "", "Ya hay una cita programada para el personal en la hora indicada, por favor escoja otro horario", "warning")
+        else handleErrorResponse("custom", "", "Ha ocurrido un error", "warning")
+      })
+    })
+    .finally( () => window.$('#'+id).modal("hide") )
   }
 
   return (
