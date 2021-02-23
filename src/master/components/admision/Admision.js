@@ -1359,15 +1359,37 @@ const getPatiente = (dni, setpatientpk) => {
     if(res.hasOwnProperty('error')) return
     else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
     // Set paciente data
-    document.getElementById("name-pric").value = res.nombres.slice(0, res.nombres.indexOf(' '))
-    document.getElementById("name-sec").value = res.nombres.slice(res.nombres.indexOf(' ')+1, res.nombres.length)
-    document.getElementById("ape-p").value = res.apellido_paterno
-    document.getElementById("ape-m").value = res.apellido_materno
+    let primer_nombre = res.nombres.split(" ")[0]
+    document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
+    document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre+" ", "") )
+    document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
+    document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
     document.getElementById("name-pric").disabled = true
     document.getElementById("name-sec").disabled = true
     document.getElementById("ape-p").disabled = true
     document.getElementById("ape-m").disabled = true
   })
+}
+const xhtmlDecode = _text => {
+  let xhtml_codes = [
+    {code: '&ntilde;', value: 'ñ'},
+    {code: '&Ntilde;', value: 'Ñ'},
+    {code: '&aacute;', value: 'á'},
+    {code: '&eacute;', value: 'é'},
+    {code: '&iacute;', value: 'í'},
+    {code: '&oacute;', value: 'ó'},
+    {code: '&uacute;', value: 'ú'},
+    {code: '&Aacute;', value: 'Á'},
+    {code: '&Eacute;', value: 'É'},
+    {code: '&Iacute;', value: 'Í'},
+    {code: '&Oacute;', value: 'Ó'},
+    {code: '&Uacute;', value: 'Ú'},
+  ]
+  let text = _text
+
+  xhtml_codes.map(v => text = text.replace(v.code, v.value))
+
+  return text
 }
 
 
