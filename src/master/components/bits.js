@@ -118,6 +118,16 @@ export const Icon = ({type, onClick, data_dismiss}) => {
           </svg>
       </a>
     ); break;
+    case "refresh": el.push(  // Refresh
+      <a key={type+"icon"} onClick={onClick}
+      data-dismiss={data_dismiss}
+      className="btn btn-icon waves-effect waves-themed"
+      style={{margin: "0 4px"}}>
+        <svg viewBox="0 0 16 16">
+          <path d="M13.6,2.4 C12.2,0.9 10.2,0 8,0 C3.6,0 0,3.6 0,8 C0,12.4 3.6,16 8,16 C11.7,16 14.8,13.4 15.7,10 L13.6,10 C12.8,12.3 10.6,14 8,14 C4.7,14 2,11.3 2,8 C2,4.7 4.7,2 8,2 C9.7,2 11.1,2.7 12.2,3.8 L9,7 L16,7 L16,0 L13.6,2.4 L13.6,2.4 Z"/>
+        </svg>
+      </a>
+    ); break;
     case "edit": el.push(  // Edit
       <a key={type+"icon"} onClick={onClick}
         data-dismiss={data_dismiss}

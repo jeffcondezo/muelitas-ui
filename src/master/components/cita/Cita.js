@@ -37,6 +37,7 @@ const Cita = () => {
   const [personal, setPersonal] = useState(false)  // Sucursal's personal
   const [procedures, setProcedures] = useState(false)  // Sucursal's procedures
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
+  const [show_past_citas, setShowPastCitas] = useState(false)  // Show past citas
   /* fake_redirect_data: Workaround to fake redirect_data empty
   * when it has already been fully used to create a Cita
   * and therefore it is not longer needed
@@ -59,9 +60,14 @@ const Cita = () => {
   const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
   const getProcedures = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setProcedures)
   const getCitas = () => {
-    if(__debug__) console.log("Cita getCitas")
+    if(__debug__) console.log("Cita getCitas", show_past_citas)
 
-    simpleGet(`atencion/cita/?filtro={"estado":"1","programado":"1","sucursal":"${current_sucursal}"}`)
+    let dt = new Date()
+    dt.setTime(dt.getTime() - (14*24*60*60*1000))  // get back time to 2 weeks ago
+    let filter = show_past_citas
+      ? `"fecha_desde":"${dt.toDateInputValue()}","estado":"-1"`
+      : `"estado":"1"`
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${current_sucursal}","programado":"1",${filter}}`)
     .then(handleCitaResponse)
   }
   const handleCitaResponse = _citas => {
@@ -476,6 +482,7 @@ const Cita = () => {
     setEvents([...f_events])
     events_response_data.current = f_events  // Save response in useRef variable (to use in filters)
   }
+  const showPastCitas = () => setShowPastCitas(!show_past_citas)
 
 
   useEffect(() => {
@@ -549,7 +556,11 @@ const Cita = () => {
     getPersonal()
     getProcedures()
   }, [current_sucursal])
-  // TODO: Handle sucursal dynamic change
+  useEffect(() => {
+    if(events.length == 0) return  // Do not call getCitas before events is set (it might break bc required data is async loading )
+
+    getCitas()
+  }, [show_past_citas])
 
   return (
     <div>
@@ -580,7 +591,7 @@ const Cita = () => {
         slotMaxTime="21:00:00"
         slotDuration='00:15:00'
         headerToolbar={{
-          start: 'prev,next today addCita refreshCita',
+          start: 'prev,today,next addCita,refreshCita,showPastCitas',
           center: 'title',
           end: 'timeGridWeek,timeGridDay,listWeek'
         }}
@@ -594,8 +605,9 @@ const Cita = () => {
         editable={false}
         eventClick={getCitaInfo}
         customButtons={{
-          addCita: { text: '+', click: openCitaForm },
-          refreshCita: { text: 'Actualizar', click: getCitas },
+          addCita: { click: openCitaForm, text: <b title="Crear cita">+</b> },
+          refreshCita: { click: getCitas, text: <RefreshIcon /> },
+          showPastCitas: { click: showPastCitas, text: <EyeIcon state={show_past_citas} /> },
         }}
         locale={esLocale}
         allDaySlot={false}
@@ -976,6 +988,24 @@ const ReprogramarCita = ({id, cita, fakeReprogramarCita}) => {
       } />
   )
 }
+// Icon Components
+const RefreshIcon = () => (
+  <svg viewBox="0 0 16 16" style={{width: "10px"}}>
+    <path d="M13.6,2.4 C12.2,0.9 10.2,0 8,0 C3.6,0 0,3.6 0,8 C0,12.4 3.6,16 8,16 C11.7,16 14.8,13.4 15.7,10 L13.6,10 C12.8,12.3 10.6,14 8,14 C4.7,14 2,11.3 2,8 C2,4.7 4.7,2 8,2 C9.7,2 11.1,2.7 12.2,3.8 L9,7 L16,7 L16,0 L13.6,2.4 L13.6,2.4 Z"/>
+  </svg>
+)
+const EyeIcon = ({state}) => state ? (
+  <svg viewBox="0 0 16 16" style={{width: "18px"}}>
+    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+  </svg>
+) : (
+  <svg viewBox="0 0 16 16" style={{width: "18px"}}>
+    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+    <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299l.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+    <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884l-12-12 .708-.708 12 12-.708.708z"/>
+  </svg>
+)
 
 export default Cita
 // eslint-disable-next-line react-hooks/exhaustive-deps
