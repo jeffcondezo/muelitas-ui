@@ -68,9 +68,9 @@ const PlanDeTrabajoHome = () => {
   const addOrRemoveFromList = _obj => {
     // BUG: ar_proc_selected's value is not tracking the value update from using setSelectPDT
     // FIX: use a useRef to update the value
-    let ar_copy = selected_list.current.map(i => i)  // Copy array with no memory reference
+    let ar_copy = [...selected_list.current]  // Copy array with no memory reference
     // Search if _obj is already in the array if so find its index
-    let _inx = ar_copy.findIndex(i => i.dpdt == _obj.dpdt)
+    let _inx = ar_copy.findIndex(i => i.pk == _obj.pk)
     if(_inx == -1) ar_copy.push(_obj)
     else ar_copy.splice(_inx, 1)
     // Set new array
@@ -92,6 +92,9 @@ const PlanDeTrabajoHome = () => {
   useEffect(() => {
     selected_list.current = ar_proc_selected
   }, [ar_proc_selected])
+  useEffect(() => {
+    if(pdtDeleted) setSelectPDT([])
+  }, [pdtDeleted])
 
   return (
     <div>
@@ -152,7 +155,10 @@ const PlanDeTrabajoHome = () => {
         _action_text={"Eliminar"}
         _action_func={deletePDT}
         _body_text={"Esta seguro que quiere eliminar este Plan de trabajo"} />
-      <ModalPagos pdt={pdt} setPDTDeleted={setPDTDeleted} />
+      <ModalPagos
+        pdt={pdt}
+        selected={ar_proc_selected}
+        refreshPDT={() => setPDTDeleted(true)} />
     </div>
   )
 }
@@ -229,6 +235,7 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
         {title: "Orden", data: 'orden'},
         {title: "Pago", data: 'dcc'},
         {title: "Cita", data: 'cita_relacionada'},
+        {title: "", data: null},
       ],
       columnDefs: [
         {
@@ -242,29 +249,40 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
           // Pago
           targets: 3,
           createdCell: (cell, dcc, rowData) => {
+            let badge_color = dcc
+              ? dcc.estado_pago=='1'
+                ? "danger"
+                : dcc.estado_pago=='2'
+                  ? "warning"
+                  : "info"
+              : "secondary"
             ReactDOM.render(
-              dcc ? (
-                <span className={"badge badge-"
-                  +(dcc.estado_pago=='1'?"danger":dcc.estado_pago=='2'?"warning":"info")
-                  +" badge-pill"}>{dcc.monto_pagado}/{dcc.precio}</span>
-              ) : "-"
+              <span className={`badge badge-${badge_color} badge-pill`}>
+                {dcc?dcc.monto_pagado:0}/{dcc?dcc.precio:rowData.precio}
+              </span>
               , cell
             )
+          }
+        }, {
+          // Cita
+          targets: 4,
+          orderable: false,
+          createdCell: (cell, data, _) => {
+            ReactDOM.render(data && <Icon type="attention" onClick={() => redirectTo(`/nav/atencion/${data}/detalle`)} />, cell)
+            cell.style.textAlign = "center"
+            if(data) cell.style.transform = "scale(.7)"
           }
         }, {
           // Checkbox
           targets: -1,
           orderable: false,
-          createdCell: (cell, data, rowData) => {
+          createdCell: (cell, _, rowData) => {
+            let finished = rowData.cita_relacionada && rowData.dcc && rowData.dcc.estado_pago == '3'
             // Render whether checkbox or link
             ReactDOM.render(
-              data
-              ? <Icon type="attention" onClick={() => redirectTo(`/nav/atencion/${data}/detalle`)} />
-              : <input type='checkbox' onChange={() => selectProc({dpdt: rowData.pk, proc_pk: rowData.procedimiento})} />,
+              !finished ? <input type='checkbox' id={"html_input_checkbox_dpdt_"+rowData.pk} onChange={() => selectProc(rowData)} /> : "",
               cell
             )
-            cell.style.textAlign = "center"
-            if(data) cell.style.transform = "scale(.7)"
           }
         }
       ],
@@ -353,18 +371,39 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
 }
 const PDTActions = ({redirectTo, selected, patient, pdt}) => {
   const redirectToCita = () => {
+    // Verify selected not empty
     if(selected.length == 0){
       handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento", 'warning')
+      return
+    }
+    // If any selected dpdt have a related cita already
+    let dpdt_er = selected.find(i => i.cita_relacionada)
+    if(dpdt_er){
+      alertInputRedSpark(dpdt_er)
       return
     }
 
     redirectTo('/nav/cita/', {
       patient_dni: patient.dni,
-      selected: selected,
+      selected: selected.map(i => {return {dpdt: i.pk, proc_pk: i.procedimiento}}),
       pdt: pdt.pk
     })
   }
-  const openPagosModal = () => window.$("#pdtpay_modal").modal('show')
+  const openPagosModal = () => {
+    // Verify selected not empty
+    if(selected.length == 0){
+      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento", 'warning')
+      return
+    }
+    // If any selected dpdt have been fully paid already
+    let dpdt_er = selected.find(i => i.dcc && i.dcc.estado_pago == "3")
+    if(dpdt_er){
+      alertInputRedSpark(dpdt_er)
+      return
+    }
+
+    window.$("#pdtpay_modal").modal('show')
+  }
 
   return (
     <div className="card col-12" style={{
@@ -443,33 +482,40 @@ const PDTInfo = ({pdt}) => {
     </div>
   ) : ""
 }
-const ModalPagos = ({pdt, setPDTDeleted}) => {
+const ModalPagos = ({pdt, selected, refreshPDT}) => {
   return pdt ? (
     <RegularModalCentered _title={"Pagos del Plan de trabajo"}
       _id={"pdtpay_modal"}
       _body={
-        <PagoPDT pdt={pdt} setPDTDeleted={setPDTDeleted} />
+        <PagoPDT pdt={pdt} selected={selected} refreshPDT={refreshPDT} />
       }
       _min_width={"600"} />
   ) : ""
 }
-const PagoPDT = ({pdt, setPDTDeleted}) => {
+const PagoPDT = ({pdt, selected, refreshPDT}) => {
+  let deuda = selected.reduce((sum, i) => sum+(i.dcc?i.dcc.deuda:i.precio), 0)
+  console.log("selected", selected)
+
   const doPay = () => {
     if(__debug__) console.log("PagoPDT doPay")
+
     let monto_pagado = window.document.getElementById('pdtpay-monto').value
-    simplePostData(`finanzas/plantrabajo/${pdt.pk}/`, {monto_pagado: monto_pagado})
+    simplePostData(`finanzas/plantrabajo/${pdt.pk}/`, {monto_pagado: monto_pagado, dpdt: selected.map(i => i.pk)})
     .then(() => window.$("#pdtpay_modal").modal('hide'))
     .then(() => handleErrorResponse('custom', "Exito", "Pago realizado correctamente", 'info'))
-    .then(() => setPDTDeleted(true))
+    .then(() => refreshPDT(true))
   }
+
+  useEffect(() => {
+    window.document.getElementById('pdtpay-monto').value = deuda
+  }, [selected])
 
   return (
     <div>
       <div className="" style={{marginBottom: "10px"}}>
         <label className="form-label" htmlFor="precio">Monto a pagar</label>
         <input type="number" className="form-control form-control-lg"
-          id="pdtpay-monto" min="0" defaultValue={"0"}
-        />
+        id="pdtpay-monto" min="0" max={deuda}/>
       </div>
 
       <button className="btn btn-primary" onClick={doPay}>
@@ -716,6 +762,17 @@ const ListSavedProc = ({proc_list, refreshProcList}) => {
       {el}
     </div>
   )
+}
+// General helper functions
+const alertInputRedSpark = dpdt => {
+  let html_input = window.document.getElementById("html_input_checkbox_dpdt_"+dpdt.pk)
+  if(!html_input) return
+  html_input.style.filter = "hue-rotate(140deg)"
+  setTimeout(a => a.style.filter = "hue-rotate(00deg)", 400, html_input)
+  setTimeout(a => a.style.filter = "hue-rotate(140deg)", 800, html_input)
+  setTimeout(a => a.style.filter = "hue-rotate(00deg)", 1200, html_input)
+  setTimeout(a => a.style.filter = "hue-rotate(140deg)", 1600, html_input)
+  setTimeout(a => a.style.filter = "hue-rotate(00deg)", 2000, html_input)
 }
 
 

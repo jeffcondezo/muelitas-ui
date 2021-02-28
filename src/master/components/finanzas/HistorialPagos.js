@@ -70,6 +70,7 @@ const HistorialPagos = () => {
       columnDefs: [{
         // Fecha y hora
         targets: 0,
+        orderable: false,
         render: data => {
           let splited_data = data.split("-")
           let date = splited_data[0]
@@ -105,7 +106,6 @@ const HistorialPagos = () => {
           )
         }
       }],
-      order: [[0, 'desc']],  // Default sort by newest
       pageLength: 8,  // Default page length
       lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
       language: {
