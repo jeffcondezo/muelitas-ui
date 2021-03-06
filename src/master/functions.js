@@ -1,41 +1,41 @@
 // Generics
 export function handleErrorResponse(type, ...data){
-  let _id = false;
-  let scape_time = 5000;  // Milliseconds
+  let _id = false
+  let scape_time = 5000  // Milliseconds
   if(type=='server'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-server')){
-      console.error("DOM 'alert-server' NOT FOUND");
-      return;
+      console.error("DOM 'alert-server' NOT FOUND")
+      return
     }
 
-    _id = 'alert-server';
+    _id = 'alert-server'
   }else if(type=='permission'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-permission')){
-      console.error("DOM 'alert-permission' NOT FOUND");
-      return;
+      console.error("DOM 'alert-permission' NOT FOUND")
+      return
     }
 
-    _id = 'alert-permission';
+    _id = 'alert-permission'
   }else if(type=='login'){
     // Check if element exist in DOM
     if(!document.getElementById('alert-login')){
-      console.error("DOM 'alert-login' NOT FOUND");
-      return;
+      console.error("DOM 'alert-login' NOT FOUND")
+      return
     }
 
-    _id = 'alert-login';
+    _id = 'alert-login'
   }else if(type=='custom'){
     // Check if element exist in DOM
-    let div_alert_custom = document.getElementById("alert-custom");
+    let div_alert_custom = document.getElementById("alert-custom")
     if(!div_alert_custom){
-      console.error("DOM 'alert-custom' NOT FOUND");
-      return;
+      console.error("DOM 'alert-custom' NOT FOUND")
+      return
     }
 
-    _id = 'alert-custom';
-    if(data.length<2) return;
+    _id = 'alert-custom'
+    if(data.length<2) return
 
     // Custom customization
     if(data[2]){
@@ -44,16 +44,16 @@ export function handleErrorResponse(type, ...data){
       )
     }else if(div_alert_custom.className.indexOf("bg-")==-1){
       div_alert_custom.className
-      = div_alert_custom.classList.add("bg-warning-700");
+      = div_alert_custom.classList.add("bg-warning-700")
     }
 
     // Set message to alert box
-    document.querySelector('#alert-custom #alert-headline').textContent = data[0];
-    document.querySelector('#alert-custom #alert-text').textContent = data[1];
+    document.querySelector('#alert-custom #alert-headline').textContent = data[0]
+    document.querySelector('#alert-custom #alert-text').textContent = data[1]
   }
 
 
-  if(!_id) return;  // If type wasn't found
+  if(!_id) return  // If type wasn't found
 
   document.getElementById(_id).style.display = "block"
   document.getElementById(_id).classList.remove("fade")
@@ -74,7 +74,7 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
     + (restLowerCase
       ? word.slice(1, word.length).toLowerCase()
       : word.slice(1, word.length)
-    );
+    )
 }
 export function isArray(_ar){
   return typeof _ar == "object" & _ar.hasOwnProperty("length")
@@ -128,12 +128,12 @@ export async function getDataByPK(end_point, _pk){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission') && Promise.reject()
+      ? handleErrorResponse('permission') || Promise.reject(response)
       : response.status==500
-      ? handleErrorResponse('server') && Promise.reject()
+      ? handleErrorResponse('server') || Promise.reject(response)
       : Promise.reject(response)
     ),
-    response => handleErrorResponse('server') && response
+    response => handleErrorResponse('server') || Promise.reject(response)
   )
 }
 export async function simpleGet(end_point){
@@ -149,13 +149,13 @@ export async function simpleGet(end_point){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission') && Promise.reject()
+      ? handleErrorResponse('permission') || Promise.reject(response)
       : response.status==500
-      ? handleErrorResponse('server') && Promise.reject()
+      ? handleErrorResponse('server') || Promise.reject(response)
       : Promise.reject(response)
     ),
-    response => handleErrorResponse('server') && response
-  );
+    response => handleErrorResponse('server') || Promise.reject(response)
+  )
 }
 export async function simplePostData(end_point, data={}, method="POST"){
   method = method.toUpperCase()
@@ -180,12 +180,12 @@ export async function simplePostData(end_point, data={}, method="POST"){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission') && Promise.reject()
+      ? handleErrorResponse('permission') || Promise.reject(response)
       : response.status==500
-      ? handleErrorResponse('server') && Promise.reject()
+      ? handleErrorResponse('server') || Promise.reject(response)
       : Promise.reject(response)
     ),
-    response => handleErrorResponse('server') && response
+    response => handleErrorResponse('server') || Promise.reject(response)
   )
 }
 export async function simpleDelete(end_point){
@@ -203,13 +203,13 @@ export async function simpleDelete(end_point){
       response.ok
       ? response
       : response.status==403
-      ? handleErrorResponse('permission') && Promise.reject()
+      ? handleErrorResponse('permission') || Promise.reject(response)
       : response.status==500
-      ? handleErrorResponse('server') && Promise.reject()
+      ? handleErrorResponse('server') || Promise.reject(response)
       : Promise.reject(response)
     ),
-    () => handleErrorResponse('server')
-  );
+    response => handleErrorResponse('server') || Promise.reject(response)
+  )
 }
 export function addRequestValidation(promise){
   return promise.then(
@@ -217,12 +217,12 @@ export function addRequestValidation(promise){
       response.ok
       ? response.json()
       : response.status==403
-      ? handleErrorResponse('permission') && Promise.reject()
+      ? handleErrorResponse('permission') || Promise.reject(response)
       : response.status==500
-      ? handleErrorResponse('server') && Promise.reject()
-      : Promise.reject()
+      ? handleErrorResponse('server') || Promise.reject(response)
+      : Promise.reject(response)
     ),
-    response => handleErrorResponse('server') && response
+    response => handleErrorResponse('server') || Promise.reject(response)
   )
 }
 // System handling

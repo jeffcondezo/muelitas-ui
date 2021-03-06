@@ -298,6 +298,7 @@ const Cita = () => {
     let _origen_cita = "3"  // Origen Web
     let _estado = "1"  // Cita Pendiente
     let _programado = window.$("#select-procedimiento_programado").select2('data').map(i => i.text).join(", ")
+    let ar_programado = window.$("#select-procedimiento_programado").select2('data').map(i => i.id)
 
     // Add personal to 'programado'
     if(_personal.length>1) _programado += `\nAtendido por ${_personal_atencion}`
@@ -330,7 +331,10 @@ const Cita = () => {
       origen_cita: _origen_cita,
       estado: _estado,
       permiso_sms: _permiso_sms,
+      programado_array: String(ar_programado),
     }
+
+    // Add non mandatory fields
     if(_celular != "") data['celular'] = _celular
     if(_programado.length != 0) data['programado'] = _programado
     // Handle paciente
