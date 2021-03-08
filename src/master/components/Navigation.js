@@ -328,7 +328,7 @@ const ChooseSucursal = ({sucursales, changeSucursal, current_sucursal}) => (
 const PageFooter = () => (
   <footer className="page-footer" role="contentinfo">
     <div className="d-flex align-items-center flex-1 text-muted">
-      <span className="hidden-md-down fw-700">2020 © Muelitas by&nbsp;<a href='http://datakrafthco.com/' className='text-primary fw-500' target='_blank'>DataKraft EIRL</a></span>
+      <span className="hidden-md-down fw-700">2021 © Muelitas by&nbsp;<a href='http://datakrafthco.com/' className='text-primary fw-500' target='_blank'>DataKraft EIRL</a></span>
     </div>
   </footer>
 )

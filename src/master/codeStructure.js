@@ -110,8 +110,8 @@ const getEvolutionLog = _pac_pk => {
   * res => (debug_status && console.log("your log here")) || res
   * this patter receive response (aka. "res")
   * then uses a boolean value group (debug_indicator(Bool) && log_function())
-  * finally uses a OR operator to always return res
-  * in a Boolean chain (no matter the previous values) if its last operator is OR (on 1st level of the chain), it will always return that value
+  * finally uses a OR operator to always return res (bc. console.log return undefined(false))
+  * in a Boolean chain with OR operator the first unfalse value will be returned
   * in a Boolean chain with AND operators if all the values are True it returns the last value
   */
   // Regular commentary

@@ -494,16 +494,15 @@ const ModalPagos = ({pdt, selected, refreshPDT}) => {
 }
 const PagoPDT = ({pdt, selected, refreshPDT}) => {
   let deuda = selected.reduce((sum, i) => sum+(i.dcc?i.dcc.deuda:i.precio), 0)
-  console.log("selected", selected)
 
   const doPay = () => {
     if(__debug__) console.log("PagoPDT doPay")
 
     let monto_pagado = window.document.getElementById('pdtpay-monto').value
     simplePostData(`finanzas/plantrabajo/${pdt.pk}/`, {monto_pagado: monto_pagado, dpdt: selected.map(i => i.pk)})
-    .then(() => window.$("#pdtpay_modal").modal('hide'))
     .then(() => handleErrorResponse('custom', "Exito", "Pago realizado correctamente", 'info'))
     .then(() => refreshPDT(true))
+    .finally(() => window.$("#pdtpay_modal").modal('hide'))
   }
 
   useEffect(() => {

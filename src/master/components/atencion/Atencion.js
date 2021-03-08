@@ -10,7 +10,7 @@ import {
 } from '../../functions'
 import { Icon, ModalLoading } from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
-import { ModalFileUpload } from '../admision/Admision'
+import { ModalFileUpload, tipo_documento } from '../admision/Admision'
 import { NavigationContext } from '../Navigation'
 
 
@@ -251,15 +251,13 @@ const CitaData = ({cita}) => {
       <div className="card-body">
         <h6>
           <b>Paciente: </b>
-          <span
-            onClick={redirectToPatient}
-            style={{cursor: "pointer", color: "blue"}}
-          >
-            {cFL(cita.paciente_data.ape_paterno)+" "+cFL(cita.paciente_data.ape_materno)
-            +", "+cFL(cita.paciente_data.nombre_principal)+
-            (cita.paciente_data.nombre_secundario?" "+cFL(cita.paciente_data.nombre_secundario):"")}
+          <span onClick={redirectToPatient} style={{cursor: "pointer", color: "blue"}} >
+            {cita.paciente_data.fullname}
           </span>
-          &nbsp;<code>{cita.paciente_data.dni}</code>
+        </h6>
+        <h6>
+          <b>{tipo_documento[cita.paciente_data.tipo_documento]}: </b>
+          <code>{cita.paciente_data.dni?cita.paciente_data.dni:cita.paciente_data.dni_otro}</code>
         </h6>
         <h6>
           <b>Programado: </b>

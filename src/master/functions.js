@@ -65,7 +65,6 @@ export function handleErrorResponse(type, ...data){
     if(document.getElementById(id))
       document.getElementById(id).style.display = "none"
   }, scape_time+200, _id)
-  return true
 }
 export function capitalizeFirstLetter(word, restLowerCase=true){
   if(!word || word.length==0) return ""  // If word is empty

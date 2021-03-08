@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
+import ReactDOM from 'react-dom';
 import {
   Switch,
   Route,
@@ -27,6 +28,11 @@ import { NavigationContext } from '../Navigation';
 const __debug__ = process.env.REACT_APP_DEBUG
 const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
+export const tipo_documento = {
+  1: "DNI",
+  2: "CARNET DE EXTRANJERIA",
+  3: "PASAPORTE",
+}
 
 
 const Admision = () => (
@@ -91,13 +97,14 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
 
   const getAllPatients = _sucursal_pk => {
     // Function to build lot filter
-    let filtro_lote = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
+    let filtro_batch = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
     // Lot params
     let lot_length = 50
     // Init lot request
-    loteRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_lote, lot_length, 1, patients)
+    batchRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_batch, lot_length, 1, patients)
+    .catch(() => console.log("data batch loaded"))
   }
-  const loteRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
+  const batchRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
     // Max number of requests
     if(_next_lot_number==10) return Promise.reject(null)
     return Promise.resolve(
@@ -106,17 +113,17 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
       // Save new lot reponse
       .then(res => handleLoteResponseState(res) || res)
       // Debug log
-      .then(r => (__debug__ && console.log("loteRequest r"+_next_lot_number, r.length) || r))
+      .then(r => (__debug__ && console.log("batchRequest r"+_next_lot_number, r.length) || r))
       // Handle nested function
       .then(r => r.length==_lot_length
-        ? loteRequest(_ep, _filtro_fn, _lot_length, _next_lot_number+1, r)
-        : Promise.reject(null)
+        ? batchRequest(_ep, _filtro_fn, _lot_length, _next_lot_number+1, r)
+        : Promise.reject()
       )
     )
   }
   const handleLoteResponseState = _res => {
     /* This function is called to store and preserve state's value
-    * lote responses can't be assigned to state right away bc state is asynchronous
+    * batch responses can't be assigned to state right away bc state is asynchronous
     */
     patients_ref.current = patients_ref.current.concat( _res.map(r => r.paciente) )
     setPatients(patients_ref.current)
@@ -159,35 +166,47 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
       columns: [
         {title: "Nombre", data: null},
         {title: "Apellidos", data: null},
-        {title: "DNI", data: 'dni'},
+        {title: "DNI", data: null},
         {title: "", data: null},
       ],
       columnDefs: [{
+        // Nombre
+        targets: 0,
+        render: (_, __, rowData) => (
+          cFL(rowData.nombre_principal)+
+          (rowData.nombre_secundario?" "+cFL(rowData.nombre_secundario):"")
+        ),
+      }, {
+        // Apellidos
+        targets: 1,
+        render: (_, __, rowData) => (
+          cFL(rowData.ape_paterno)+" "+
+          cFL(rowData.ape_materno)
+        ),
+      }, {
+        // DNI
+        targets: 2,
+        createdCell: (cell, _, rowData) => {
+          ReactDOM.render(
+            <span className={!rowData.dni && `badge badge-secondary badge-pill` || ""}
+            title={tipo_documento[rowData.tipo_documento]}>
+              {rowData.dni || rowData.dni_otro}
+            </span>
+            , cell
+          )
+        }
+      }, {
         // Button
         targets: -1,
         orderable: false,
         width: "1px",
         defaultContent: "<button class='select-patient btn btn-light btn-pills waves-effect'>Seleccionar</button>",
-        createdCell: (cell, data, rowData) => {
+        createdCell: (cell, _, rowData) => {
           // Add click listener to button (children[0])
           cell.children[0].onclick = () => {
             redirectTo(`/nav/admision/${rowData.pk}/detalle`)
           }
         }
-      }, {
-        // Nombre
-        targets: 0,
-        render: (data, type, row) => (
-          cFL(row.nombre_principal)+
-          (row.nombre_secundario?" "+cFL(row.nombre_secundario):"")
-        ),
-      }, {
-        // Apellidos
-        targets: 1,
-        render: (data, type, row) => (
-          cFL(row.ape_paterno)+" "+
-          cFL(row.ape_materno)
-        ),
       }],
       pageLength: 8,
       lengthMenu: [[8, 15, 25], [8, 15, 25]],
@@ -373,7 +392,9 @@ export const PatientDataList = ({patient}) => (
     <h5>Apellidos: <span style={{color:"black"}}>{cFL(patient.ape_paterno)+" "+
       cFL(patient.ape_materno)}</span>
     </h5>
-    <h5>DNI: <span style={{color:"black"}}>{patient.dni}</span></h5>
+
+    <h5>{tipo_documento[patient.tipo_documento]}: <span style={{color:"black"}}>{patient.dni?patient.dni:patient.dni_otro}</span></h5>
+
     <h5>Genero: <span style={{color:"black"}}>{patient.sexo=="1"?"Masculino":"Femenino"}</span></h5>
     {!patient.fecha_nacimiento ? ""
       : <h5>Fecha de nacimiento: <span style={{color:"black"}}>{patient.fecha_nacimiento}</span></h5>
@@ -667,7 +688,9 @@ const RegisterPatient = () => {
     </div>
   )
 }
-const PatientForm = ({patient, setpatientpk}) => {
+const PatientForm = ({patient, setpatientpk=(()=>{})}) => {
+  const [dni_otro, setOtroDNI] = useState(patient&&!patient.dni)
+
   const formatInputDate = date => {
     /* This only works with specific formats
     * date: "20/05/2000"
@@ -676,7 +699,18 @@ const PatientForm = ({patient, setpatientpk}) => {
     return date.split("/").reverse().join("-")
   }
   const _getPatiente = dni => {
-    if(!patient) getPatiente(dni, setpatientpk)
+    if(!patient && !dni_otro) getPatiente(dni, setpatientpk)
+  }
+  const otroDNI = ev => {
+    setOtroDNI(ev.target.checked)
+
+    if(!patient){
+      // Reset paciente data
+      if(ev.target.checked) getPatiente("", setpatientpk)
+      window.document.getElementById('dni').value = ""
+    }else{
+      window.document.getElementById('dni').value = ev.target.checked ? patient.dni_otro : patient.dni
+    }
   }
 
   useEffect(() => {
@@ -701,11 +735,27 @@ const PatientForm = ({patient, setpatientpk}) => {
 
   return (
     <div className="form-group col-md-12">  {/* Form */}
-      <div className="form-group">
-        <label className="form-label" htmlFor="dni">DNI: </label>
-        <input type="text" id="dni" className="form-control" maxLength="8"
-        defaultValue={patient&&patient.dni||""} disabled={patient}
-        onChange={e => _getPatiente(e.target.value)} />
+      <div className="row">
+        <div className="form-group col">
+          <label className="form-label" htmlFor="dni">{dni_otro?"Codigo":"DNI"}: </label>
+          <input type="text" id="dni" className="form-control"
+          defaultValue={patient && (patient.dni || patient.dni_otro) || ""}
+          maxLength={dni_otro?"30":"8"} dni_otro={Number(dni_otro)}
+          onChange={e => _getPatiente(e.target.value)} />
+        </div>
+        <div className="col-3 form-group" style={{display: dni_otro?"block":"none"}}>
+          <label className="form-label" htmlFor="dni_tipo">Tipo: </label>
+          <select id="dni_tipo" className="custom-select form-control" defaultValue={patient&&patient.tipo_documento}>
+            <option value="2">CARNET DE EXTRANJERIA</option>
+            <option value="3">PASAPORTE</option>
+            <option value="0">OTROS</option>
+          </select>
+        </div>
+        <div className="col-1 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
+          <input type="checkbox" className="custom-control-input" id="dni_otro"
+          defaultChecked={dni_otro} onChange={otroDNI} />
+          <label className="custom-control-label" htmlFor="dni_otro">Otro documento</label>
+        </div>
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
@@ -733,7 +783,8 @@ const PatientForm = ({patient, setpatientpk}) => {
       <div className="row">
         <div className="col form-group">
           <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
-          <input type="date" id="born-date" className="form-control" defaultValue={patient&&formatInputDate(patient.fecha_nacimiento)||""} />
+          <input type="date" id="born-date" className="form-control"
+          defaultValue={""||( patient&&patient.fecha_nacimiento&&formatInputDate(patient.fecha_nacimiento) )} />
         </div>
         <div className="col-3 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
           <input type="checkbox" className="custom-control-input" id="permiso_sms" defaultChecked={patient&&patient.permiso_sms} />
@@ -881,18 +932,23 @@ function validatePatientForm(){
     return false
   }
 
-  _tmp1 = document.getElementById("dni")
-  if(!_tmp1){
-    handleErrorResponse("custom", "Error", "DNI no especificado", 'warning')
-    return false
-  }
-  if(_tmp1.value.trim().length!=8){
-    handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
-    return false
-  }
-  if(isNaN(parseInt(_tmp1.value.trim()))){
-    handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
-    return false
+  let el_dni = document.getElementById('dni')
+  if(!Number(el_dni.getAttribute("dni_otro"))){
+    // DNI
+    if(el_dni.value.trim().length!=8){
+      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
+      return false
+    }
+    if(isNaN(parseInt(el_dni.value.trim()))){
+      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
+      return false
+    }
+  }else{
+    // DNI_OTRO
+    if(el_dni.value.trim().length<6){
+      handleErrorResponse("custom", "Error", "El documento debe tener al menos 6 digitos", 'warning')
+      return false
+    }
   }
 
   _tmp1 = document.getElementById("born-date")
@@ -924,10 +980,15 @@ function validatePatientForm(){
     nombre_secundario: document.getElementById('name-sec').value,
     ape_paterno: document.getElementById('ape-p').value,
     ape_materno: document.getElementById('ape-m').value,
-    dni: document.getElementById('dni').value,
     sexo: document.getElementById('sexo').value,
     permiso_sms: document.getElementById('permiso_sms').checked,
   }
+  // DNI or DNI_OTRO
+  let b_dni_otro = Number(el_dni.getAttribute("dni_otro"))  // Indicador
+  _tmp.dni = b_dni_otro ? null : el_dni.value
+  _tmp.dni_otro = b_dni_otro ? el_dni.value : null
+  if(b_dni_otro) _tmp.tipo_documento = window.document.getElementById("dni_tipo").value
+
   // Add non-required fields
   if(document.getElementById('born-date').value)
     _tmp.fecha_nacimiento = document.getElementById('born-date').value
@@ -935,12 +996,6 @@ function validatePatientForm(){
     _tmp.celular = document.getElementById('phone').value
   if(document.getElementById('address').value)
     _tmp.direccion = document.getElementById('address').value
-  /*
-  if(document.getElementById('select_provenance').value)
-    _tmp.procedencia = document.getElementById('select_provenance').value;
-  if(document.getElementById('select_residence').value)
-    _tmp.residencia = document.getElementById('select_residence').value;
-  */
 
   return _tmp
 }
