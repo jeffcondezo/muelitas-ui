@@ -26,6 +26,7 @@ import {
   simplePostData,
 } from '../../functions'
 import { NavigationContext } from '../Navigation';
+import { tipo_documento } from '../admision/Admision'
 
 // Static
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -99,46 +100,23 @@ const Cita = () => {
     window.document.querySelector("td.fc-day-today div.fc-timegrid-now-indicator-container").classList.add("alert-info")
   }
   const fillPatienteByDNI = _dni => {
-    console.log("fillPatienteByDNI", _dni)
-    // if dni is not 8 length
-    if(_dni.length<8){
-      // Reset paciente data
-      document.getElementById("pac_pk").value = ""
-      // Disable form fields
-      let _ = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
-      .map(i => document.getElementById(i).disabled = false)
-      return
-    }else{
-      let _ = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular"]
-      .map(i => document.getElementById(i).value = "")
-      document.getElementById("pac_permiso_sms").value = "1"
-      document.getElementById("pac_sex_m").checked = true
-    }
+    if(__debug__) console.log("fillPatienteByDNI", _dni)
+
+    // Reset values when dni changes
+    document.getElementById("pac_pk").value = ""
+    document.getElementById("pac_fullname").textContent = ""
+
+    if(_dni.length < 6) return
 
     // Generate promise
-    simpleGet(`atencion/paciente/?filtro={"dni":"${_dni}"}`)
+    simpleGet(`atencion/paciente/?filtro={"dni":"${_dni}","dni_otro":"true"}`)
     .then(res => {
       // If patient was not found, enable inputs
-      if(res.length<1){
-        let _ = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_sex_m", "pac_sex_f", "pac_celular"]
-        .map(i => document.getElementById(i).disabled = false)
-        return
-      }
+      if(res.length<1) return
 
       // Set paciente data
       document.getElementById("pac_pk").value = res[0].pk
-      document.getElementById("pac_dni").value = res[0].dni
-      document.getElementById("pac_nom_pri").value = res[0].nombre_principal
-      document.getElementById("pac_nom_sec").value = res[0].nombre_secundario
-      document.getElementById("pac_ape_pat").value = res[0].ape_paterno
-      document.getElementById("pac_ape_mat").value = res[0].ape_materno
-      document.getElementById("pac_celular").value = res[0].celular
-      document.getElementById("pac_sex_m").checked = res[0].sexo == '1'
-      document.getElementById("pac_sex_f").checked = res[0].sexo != '1'
-      document.getElementById("pac_permiso_sms").value = res[0].permiso_sms ? "1" : "0"
-      // Disable inputs
-      let _ = ["pac_pk", "pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular", "pac_sex_m", "pac_sex_f"]
-      .map(i => document.getElementById(i)).map(i => i.disabled = true)
+      document.getElementById("pac_fullname").textContent = res[0].fullname
     })
   }
   const cancelCitaForm = () => {
@@ -146,19 +124,14 @@ const Cita = () => {
 
     document.getElementById("pac_pk").value = ""
     document.getElementById("pac_dni").value = ""
+    document.getElementById("pac_fullname").textContent = ""
+
     document.getElementById("cita-date").value = new Date().toDateInputValue()
     document.getElementById("cita-hour").value = "08"
     document.getElementById("cita-minute").value = "00"
     document.getElementById("cita-duracion").value = "15"
     window.$("#select-filtro_personal").val(null).trigger('change')
-    window.$("#select-procedimiento_programado").val([]).trigger("change")  // Set personal to empty
-    // Reset values
-    let _
-    _ = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular"]
-    .map(i => document.getElementById(i).value = "")
-    // Enable inputs
-    _ = ["pac_nom_pri", "pac_nom_sec", "pac_ape_pat", "pac_ape_mat", "pac_celular"]
-    .map(i => document.getElementById(i).disabled = false)
+    window.$("#select-procedimiento_programado").val([]).trigger("change")
   }
   const errorForm = log => {
     document.querySelector('div#alert-cita-form span').innerText = log
@@ -177,15 +150,16 @@ const Cita = () => {
     if(__debug__) console.log("Cita fillDataFromRedirect")
     /* _redirect_data.selected
     * procedures are added through the SelectProcedure component
-    * select patient through fillPatientByDNI
+    * select patient are setted directly
     */
-    // Set patient data
-    fillPatienteByDNI(_redirect_data.patient_dni)
+    // Set paciente data
+    document.getElementById("pac_pk").value = _redirect_data.patient.pk
+    document.getElementById("pac_dni").value = _redirect_data.patient.dni ? _redirect_data.patient.dni : _redirect_data.patient.dni_otro
+    document.getElementById("pac_fullname").textContent = _redirect_data.patient.fullname
     // Open modal
     window.$('#'+html_cita_form).modal('show')
   }
   const redirectDataFinal = cita => {
-    if(!_redirect_data?.selected) return
     // Compare procs sended and procs received
     let sended_ar = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
     // BUG: Execute it all in promise to avoid multiple instant execution (duplicity in DB objects)
@@ -195,18 +169,23 @@ const Cita = () => {
         return sended_ar.indexOf(obj.proc_pk) == -1
           ? promise_chain
           : promise_chain.then(
-            // If proc was sended add cita as dpdt's reference
+            // If proc was sended, add cita as dpdt's reference
             () => simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`)
           ).then(
-            // Add DA from DPDT
+            // Create DA from DPDT data
             () => simplePostData(`atencion/${cita.atencion}/detalle/dpdt/${obj.dpdt}/`)
           )
       }, Promise.resolve()
+    ).then(() => setFakeRedirectData(true))
+  }
+  const createDACita = cita => {
+    // Create DA for every programado
+    let ar_programado = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
+    ar_programado.reduce(
+      (promise_chain, proc_pk) => promise_chain.then(  // Create DA
+        () => simplePostData(`atencion/detalle/`, {atencion: cita.atencion, procedimiento: proc_pk})
+      ), Promise.resolve()
     )
-    .then(() => {
-      setFakeRedirectData(true)
-      document.getElementById("cita-close").click()  // Cerrar formulario cita
-    })
   }
   const getValidatedCitaFormData = () => {
     // VALIDATIONS
@@ -218,18 +197,8 @@ const Cita = () => {
       return
     }
 
-    // Validate dni & time
-    let _dni = String(document.getElementById("pac_dni").value)
-    if(_dni.length!=8){
-      errorForm("El dni no contiene 8 digitos")  // Show form error
-      return
-    }
+    // Validate hour
     let _hora = Number(document.getElementById("cita-hour").value)
-    if(document.querySelector('input[name="sexo"]:checked') == null){
-      errorForm("Indique el sexo del paciente")
-      return
-    }
-    let _sexo = document.querySelector('input[name="sexo"]:checked').value
     // Get PERSONAL
     let personal_ = window.$("#select-filtro_personal").select2('data')
     if(personal_.length==0){
@@ -248,57 +217,14 @@ const Cita = () => {
       _personal_atencion += _personal_name
     })
 
-    // Get patient data
-    let _paciente
-    if(document.getElementById("pac_pk").value!==""){ // User is known
-      _paciente = parseInt(document.getElementById("pac_pk").value) // Set user id
-    }else{ // User is not known
-      // Validate paciente form
-      /* We use regular expression to check there is only letters and spaces
-      We also check that it does not start or end with a space
-      */
-      if(
-        // Check if second name is not empty
-        document.getElementById("pac_nom_sec").value !== "" &&
-        // Check if second name is wrong or is less than 3 characters
-        ((/[^a-zA-Z]/).test(document.getElementById("pac_nom_sec").value)
-        || document.getElementById("pac_nom_sec").value.length < 3)
-      ){
-        errorForm("El nombre secundario solo pueden contener letras y espacios")
-        return
-      }
-      // Check main values
-      let reg_expr = (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ][a-zA-ZáéíóúÁÉÍÓÚñÑ ]+[a-zA-ZáéíóúÁÉÍÓÚñÑ]$/)
-      if(
-        !reg_expr.test(document.getElementById("pac_nom_pri").value) ||
-        !reg_expr.test(document.getElementById("pac_ape_pat").value) ||
-        !reg_expr.test(document.getElementById("pac_ape_mat").value)
-      ){
-        errorForm("Los apellidos y nombres solo pueden contener letras y espacios, como minimo 3 caracteres")
-        return
-      }
-
-      _paciente = {
-        dni: _dni,
-        sexo: _sexo,
-        nombre_principal: document.getElementById("pac_nom_pri").value,
-        nombre_secundario: document.getElementById("pac_nom_sec").value,
-        ape_paterno: document.getElementById("pac_ape_pat").value,
-        ape_materno: document.getElementById("pac_ape_mat").value,
-        celular: document.getElementById("pac_celular").value,
-        permiso_sms: document.getElementById("pac_permiso_sms").value,
-      }
-    }
+    // Get patient
+    let _paciente = document.getElementById("pac_pk").value
 
     // Get META
     let _minutos = document.getElementById("cita-minute").value
-    let _celular = document.getElementById("pac_celular").value
-    let _permiso_sms = document.getElementById("pac_permiso_sms").value
     let _sucursal = current_sucursal
     let _origen_cita = "3"  // Origen Web
-    let _estado = "1"  // Cita Pendiente
     let _programado = window.$("#select-procedimiento_programado").select2('data').map(i => i.text).join(", ")
-    let ar_programado = window.$("#select-procedimiento_programado").select2('data').map(i => i.id)
 
     // Add personal to 'programado'
     if(_personal.length>1) _programado += `\nAtendido por ${_personal_atencion}`
@@ -320,30 +246,17 @@ const Cita = () => {
       return
     }
 
-
     // Generate data object
     let data = {
       sucursal: _sucursal,
+      paciente: _paciente,
       personal_array: String(_personal),
       fecha: _fecha,
       hora: _hora+":"+_minutos,
       hora_fin: _hora_fin,
       origen_cita: _origen_cita,
-      estado: _estado,
-      permiso_sms: _permiso_sms,
-      programado_array: String(ar_programado),
+      programado: _programado,
     }
-
-    // Add non mandatory fields
-    if(_celular != "") data['celular'] = _celular
-    if(_programado.length != 0) data['programado'] = _programado
-    // Handle paciente
-    if(typeof(_paciente)==='number')
-      data['paciente'] = _paciente
-    else if(typeof(_paciente)==='object')
-      data['paciente_obj'] = _paciente
-    // Add PDT reference if exist
-    if(_redirect_data) data['pdt'] = _redirect_data.pdt
 
     return data
   }
@@ -397,8 +310,7 @@ const Cita = () => {
     // Generate promise
     simplePostData('atencion/cita/', data)
     .then(cita => {
-      // If there was data from redirect
-      if(_redirect_data) redirectDataFinal(cita)
+      (_redirect_data?.selected ? redirectDataFinal : createDACita)(cita)  // If there was data from redirect
       handleErrorResponse("custom", "Exito", "La cita fue creada exitosamente", "info")
       fakeCrearCita(cita)
     })
@@ -412,7 +324,7 @@ const Cita = () => {
         else handleErrorResponse("custom", "", "Ha ocurrido un error", "warning")
       })
     })
-    .finally( () => document.getElementById("cita-close").click() )
+    .finally( () => document.getElementById("cita-cancel").click() )
   }
   const openCitaForm = () => window.$('#'+html_cita_form).modal('show')
   const openCitaDetail = () => window.$('#'+html_cita_detail).modal('show')
@@ -694,47 +606,16 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, procedu
         </div>
         <div className="modal-body" id="cita-form">
           <SelectPersonal personal={personal} />
-          <div className="form-group col-md-12">
-            <label className="form-label" htmlFor="pac_dni">Dni: </label>
-            <input type="text" id="pac_dni" required placeholder="Dni del paciente"
-              className="form-control form-control-lg" maxLength="8"
-              onChange={e => fillPatienteByDNI(e.target.value)} />
-          </div>
           {/* Paciente */}
-          <label className="form-label col-md-12">Paciente: </label>
-          <input type="text" id="pac_pk" style={{display:'none'}} defaultValue="" disable="true" />
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <input type="text" id="pac_nom_pri" className="form-control form-control-lg" placeholder="Nombre Principal" />
+          <input type="text" id="pac_pk" style={{display:'none'}} disable="true" />
+          <div className="form-group col-md-12" style={{marginBottom: 0}}>
+            <label className="form-label input-sm" htmlFor="pac_dni">Dni: </label>
+            <input type="text" id="pac_dni" placeholder="Dni del paciente" maxLength="30"
+            className="form-control form-control-lg" onChange={e => fillPatienteByDNI(e.target.value)} />
           </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <input type="text" id="pac_nom_sec" className="form-control form-control-lg" placeholder="Nombres secundarios" />
-          </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <input type="text" id="pac_ape_pat" className="form-control form-control-lg" placeholder="Apellido Paterno" />
-          </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <input type="text" id="pac_ape_mat" className="form-control form-control-lg" placeholder="Apellido Materno" />
-          </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <input type="text" id="pac_celular" className="form-control form-control-lg" maxLength="9" placeholder="Celular" />
-          </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-          <select id="pac_permiso_sms" className="form-control form-control-lg">
-            <option value="1" defaultValue>Permitir envío de SMS</option>
-            <option value="0">NO Permitir envío de SMS</option>
-          </select>
-          </div>
-          <div className="form-group col-md-6" style={{display:'inline-block'}}>
-            <div className="frame-wrap" style={{display:'flex', justifyContent:'center'}} id="radio">
-              <div className="custom-control custom-radio custom-control-inline">
-                <input type="radio" value="1" className="custom-control-input" id="pac_sex_m" name="sexo" defaultChecked />
-                <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="pac_sex_m">Masculino</label>
-              </div>
-              <div className="custom-control custom-radio custom-control-inline">
-                <input type="radio" value="2" className="custom-control-input" id="pac_sex_f" name="sexo" />
-                <label className="custom-control-label" style={{fontSize:'1rem'}} htmlFor="pac_sex_f">Femenino</label>
-              </div>
-            </div>
+          <div className="form-group col-12" style={{display:'inline-block'}}>
+            <span id="pac_fullname" className="form-control form-control-lg">
+            </span>
           </div>
           {/* Fin Paciente */}
           <SelectProcedure
@@ -790,7 +671,7 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, procedu
         {/* FIN FORMULARIO CITA */}
         <div className="modal-footer">
           <button type="button" data-dismiss="modal" onClick={cancelCitaForm}
-            className="btn btn-secondary waves-effect waves-themed" id="cita-close">Cancelar</button>
+            className="btn btn-secondary waves-effect waves-themed" id="cita-cancel">Cancelar</button>
           <button type="button" onClick={saveCita}
             className="btn btn-primary waves-effect waves-themed">Guardar</button>
         </div>
@@ -824,7 +705,7 @@ const InfoCita = ({id, cita, confirmAnnul, openReprogramarCitaModal, redirectTo}
               onClick={() => redirectTo(`/nav/admision/${cita.paciente_data.pk}/detalle`)}
               >{cita.paciente_data.fullname}</span>
             </h6>
-            <h6><b>DNI: </b>{cita.paciente_data.dni}</h6>
+            <h6><b>{tipo_documento[cita.paciente_data.tipo_documento]}: </b>{cita.paciente_data.dni?cita.paciente_data.dni:cita.paciente_data.dni_otro}</h6>
             <h6><b>Fecha: </b>{cita.fecha.split("-").reverse().join("/")}</h6>
             <h6><b>Hora: </b>{cita.hora} - {cita.hora_fin}</h6>
             <h6><b>Celular: </b>{cita.paciente_data.celular}</h6>
@@ -913,8 +794,8 @@ const SelectProcedure = ({procedimientos, selected}) => {
       <label className="form-label" htmlFor={html_select_programed_procedure}>Programado: </label>
       <select id={html_select_programed_procedure} className="custom-select form-control custom-select-lg" multiple>
         {procedimientos && procedimientos.map(p =>
-          <option key={p.procedimiento_data.pk} value={p.procedimiento_data.pk}>
-            {p.procedimiento_data.nombre.toUpperCase()}
+          <option key={"select_proc_"+p.pk} value={p.procedimiento_data.pk}>
+            {(p.alias?p.alias:p.procedimiento_data.nombre).toUpperCase()}
           </option>
         ) || "loading"}
       </select>

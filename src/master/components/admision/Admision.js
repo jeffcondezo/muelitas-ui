@@ -461,7 +461,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
         {/* cita */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="add" onClick={() => redirectTo('/nav/cita/', {patient_dni: patient.dni})} />
+          <Icon type="add" onClick={() => redirectTo('/nav/cita/', {patient: patient})} />
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
         </div>
         {/* odontograma */}
@@ -987,7 +987,7 @@ function validatePatientForm(){
   let b_dni_otro = Number(el_dni.getAttribute("dni_otro"))  // Indicador
   _tmp.dni = b_dni_otro ? null : el_dni.value
   _tmp.dni_otro = b_dni_otro ? el_dni.value : null
-  if(b_dni_otro) _tmp.tipo_documento = window.document.getElementById("dni_tipo").value
+  _tmp.tipo_documento = b_dni_otro ? window.document.getElementById("dni_tipo").value : "1"  // "1" DNI por defecto
 
   // Add non-required fields
   if(document.getElementById('born-date').value)

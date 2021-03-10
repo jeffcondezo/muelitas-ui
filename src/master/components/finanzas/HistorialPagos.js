@@ -106,8 +106,8 @@ const HistorialPagos = () => {
           )
         }
       }],
-      pageLength: 8,  // Default page length
-      lengthMenu: [[8, 15, 25], [8, 15, 25]],  // Show n registers select option
+      pageLength: 15,  // Default page length
+      lengthMenu: [[15, 30, 45], [15, 30, 45]],  // Show n registers select option
       language: {
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",

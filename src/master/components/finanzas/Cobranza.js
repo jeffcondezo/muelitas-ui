@@ -178,13 +178,23 @@ const CobranzaDetail = () => {
   const [selected_attention_detail, setSelectedAD] = useState([])
   const [refresh, setRefresh] = useState(false)
   const [patient, setPatient] = useState(false)
+  const [client, setClient] = useState(false)
 
   const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
+  const getClientByPatient = _pac => {
+    simpleGet(`finanzas/cliente/?filtro={"dni":"${_pac.dni?_pac.dni:_pac.dni_otro}","dni_otro":"true"}`)
+    .then(res => setClient(res.length!=0 ? res[0] : false))
+  }
 
   useEffect(() => {
     // Get patient from url'pk
     getPatientByID(__params__.patient)
   }, [])
+  useEffect(() => {
+    if(!patient) return
+
+    getClientByPatient(patient)
+  }, [patient])
 
   return !patient
     ? "loading"
@@ -207,7 +217,7 @@ const CobranzaDetail = () => {
               select={setSelectedAD}
               refresh={refresh}
               setRefresh={setRefresh}
-              patient={patient}/>
+              client={client}/>
           </div>
         </div>
       </div>
@@ -486,7 +496,6 @@ const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
     .catch(er => console.log("ERROR", er))
   }
 
-
   return (
     <div>
       <div style={{marginLeft: "20px"}} className="btn-group btn-group-toggle" data-toggle="buttons">
@@ -583,14 +592,14 @@ const NewCustomerForm = ({disabled}) => {
     </div>
   )
 }
-const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => {
-  // Receive {patient, selected, select, refresh, setRefresh}
+const PatientDebtsTable = ({client, selected, select, refresh, setRefresh}) => {
+  // Receive {client, selected, select, refresh, setRefresh}
   const [dccs, setDebts] = useState(false)
   const [total_to_pay, setTTP] = useState(0)
 
   const getCuentaCorrienteDebts = () => {
     // Get patient's not paid dccs
-    simpleGet(`finanzas/cuentacorriente/detalle/?filtro={"cliente_dni":"${patient.dni}", "estado_pago_not":"3"}`)
+    simpleGet(`finanzas/cuentacorriente/detalle/?filtro={"cliente":"${client.pk}", "estado_pago_not":"3"}`)
     .then(
       res => {
         if(__debug__) console.log("getCuentaCorrienteDebts res", res)
@@ -653,9 +662,10 @@ const PatientDebtsTable = ({patient, selected, select, refresh, setRefresh}) => 
   }
 
   useEffect(() => {
-    if(__debug__) console.log("PatientDebtsTable useEffect")
+    if(!client) return
+
     getCuentaCorrienteDebts()
-  }, [])
+  }, [client])
   useEffect(() => {
     if(__debug__) console.log("PatientDebtsTable useEffect refresh")
     if(!refresh) return

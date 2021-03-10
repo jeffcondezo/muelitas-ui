@@ -384,7 +384,7 @@ const PDTActions = ({redirectTo, selected, patient, pdt}) => {
     }
 
     redirectTo('/nav/cita/', {
-      patient_dni: patient.dni,
+      patient: patient,
       selected: selected.map(i => {return {dpdt: i.pk, proc_pk: i.procedimiento}}),
       pdt: pdt.pk
     })
