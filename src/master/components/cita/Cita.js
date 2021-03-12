@@ -92,12 +92,13 @@ const Cita = () => {
     if(__debug__) console.log("Cita fixFCStyles")
 
     // CSS changes for react's fullcalendar
-    window.document.querySelector("div.fc-scroller table.fc-col-header") &&
-    (window.document.querySelector("div.fc-scroller table.fc-col-header").style.backgroundImage = "linear-gradient(0deg,#f2f2f2 0,#fafafa)")
-    window.document.querySelector("div.fc-scroller") &&
-    (window.document.querySelector("div.fc-scroller").style.overflow = "hidden")
-    window.document.querySelector("td.fc-day-today div.fc-timegrid-now-indicator-container") &&
-    window.document.querySelector("td.fc-day-today div.fc-timegrid-now-indicator-container").classList.add("alert-info")
+    let style = document.head.appendChild(document.createElement("style"))
+    style.innerHTML = `
+      .fc-highlight {background-color: #c2c7cc!important}
+      div.fc-scroller table.fc-col-header {background-image: linear-gradient(0deg,#f2f2f2 0,#fafafa)}
+      div.fc-scroller {overflow: hidden}
+      td.fc-day-today div.fc-timegrid-now-indicator-container {background-color: #bbddf5}
+    `
   }
   const fillPatienteByDNI = _dni => {
     if(__debug__) console.log("fillPatienteByDNI", _dni)
@@ -255,8 +256,8 @@ const Cita = () => {
       hora: _hora+":"+_minutos,
       hora_fin: _hora_fin,
       origen_cita: _origen_cita,
-      programado: _programado,
     }
+    if(_programado.length != 0) data.programado = _programado
 
     return data
   }

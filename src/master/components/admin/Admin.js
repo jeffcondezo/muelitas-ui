@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import {
   Switch,
   Route,
-  Redirect,
-  useParams,
 } from "react-router-dom"
 import {
   handleErrorResponse,

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import ReactDOM from 'react-dom';
 import {
   Switch,
   Route,
@@ -186,15 +185,11 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
       }, {
         // DNI
         targets: 2,
-        createdCell: (cell, _, rowData) => {
-          ReactDOM.render(
-            <span className={!rowData.dni && `badge badge-secondary badge-pill` || ""}
-            title={tipo_documento[rowData.tipo_documento]}>
-              {rowData.dni || rowData.dni_otro}
-            </span>
-            , cell
-          )
-        }
+        render: (_, __, rowData) =>
+          `<span class="${!rowData.dni && `badge badge-secondary badge-pill`}"
+          title=${tipo_documento[rowData.tipo_documento]}>
+            ${rowData.dni || rowData.dni_otro}
+          </span>`
       }, {
         // Button
         targets: -1,

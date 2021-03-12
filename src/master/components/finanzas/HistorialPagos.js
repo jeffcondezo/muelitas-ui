@@ -70,17 +70,24 @@ const HistorialPagos = () => {
       columnDefs: [{
         // Fecha y hora
         targets: 0,
-        orderable: false,
-        render: data => {
+        createdCell: (cell, data, _) => {
+          /* Why to use createdCell in this case?
+          * We need to change date format after render bc this will be only stetic
+          * and datatable will keep sorting and searching values from the original rendered data ('fecha' field)
+          */
           let splited_data = data.split("-")
-          let date = splited_data[0]
+          let date = splited_data[0].split("/").reverse().join("/")
           let time = splited_data[1].split(":")
           let minute = time[1].padStart(2, "0")
           let hour = Number(time[0])
           let indicator = hour >= 12 ? "PM" : "AM"
           if(hour > 12) hour = hour-12  // Fix hour
-          return date+" - "+String(hour).padStart(2, "0")+":"+minute+" "+indicator
-        }
+          ReactDOM.render(
+            <span>
+              {date+" - "+String(hour).padStart(2, "0")+":"+minute+" "+indicator}
+            </span>, cell
+          )
+        },
       }, {
         // Origen del pago
         targets: 2,
@@ -106,6 +113,7 @@ const HistorialPagos = () => {
           )
         }
       }],
+      order: [[0, 'desc']],
       pageLength: 15,  // Default page length
       lengthMenu: [[15, 30, 45], [15, 30, 45]],  // Show n registers select option
       language: {
