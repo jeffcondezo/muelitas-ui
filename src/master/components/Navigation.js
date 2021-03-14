@@ -184,53 +184,34 @@ const PageContent = () => (
     <PageFooter />
   </div>
 )
-const PageHeader = () => {
-  const {user} = useContext(NavigationContext)
-
-  return (
-    <header className="page-header" style={{
-      backgroundColor: "#2b4c81",
-      backgroundImage: "linear-gradient(270deg,rgba(46,182,151,.18),transparent)"
-    }}>
-      {/* Logo */}
-      <div className="press-scale-down">
-        <div className="page-logo-link d-flex align-items-center position-relative">
-          <img src="/img/logo_muelitas_image.png" style={{
-            display: "inline-block",
-            width: "58px", height: "58px",
-          }} />
-          <img src="/img/logo_muelitas_text.png" style={{
-            display: "inline-block",
-            height: "50px",
-            filter: "invert(1)",
-          }} />
-        </div>
+const PageHeader = () => (
+  <header className="page-header" style={{
+    backgroundColor: "#2b4c81",
+    backgroundImage: "linear-gradient(270deg,rgba(46,182,151,.18),transparent)"
+  }}>
+    {/* Logo */}
+    <div className="press-scale-down">
+      <div className="page-logo-link d-flex align-items-center position-relative">
+        <img src="/img/logo_muelitas_image.png" style={{
+          display: "inline-block",
+          width: "58px", height: "58px",
+        }} />
+        <img src="/img/logo_muelitas_text.png" style={{
+          display: "inline-block",
+          height: "50px",
+          filter: "invert(1)",
+        }} />
       </div>
+    </div>
 
-      {/* User card */}
-      <div className="hidden-md-down ml-5">
-        <img className="rounded-circle mr-1" style={{width: "3.125rem", height: "3.125rem"}}
-        src={(user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg")} />
-        <div className="info-card-text text-white">
-          <b className="d-flex align-items-center">
-            <span className="text-truncate text-truncate-sm d-inline-block">
-              {user.personal ? cFL(user.personal.nombre_principal)+" "+cFL(user.personal.ape_paterno) : "Invitado"}
-            </span>
-          </b>
-          <span className="d-inline-block text-truncate text-truncate-sm">
-            {user.personal ? cFL(user.personal.especialidad) : "Administrador"}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="ml-auto d-flex">
-        <ActionApps />
-        <ActionSettings />
-      </div>
-    </header>
-  )
-}
+    {/* Actions */}
+    <div className="ml-auto d-flex">
+      <ActionApps />
+      <ActionSettings />
+      <ActionUser />
+    </div>
+  </header>
+)
 const ChooseSucursal = ({sucursales, changeSucursal, current_sucursal}) => (
   <div className="dropdown-multilevel dropdown-multilevel-left">
     <div className="dropdown-item">
@@ -260,8 +241,8 @@ function SPAHome(){
 }
 
 // Unused components
-const ActionSettings = () => {
-  const {current_sucursal, sucursales, changeSucursal} = useContext(NavigationContext)
+const ActionUser = () => {
+  const {user, current_sucursal, sucursales, changeSucursal} = useContext(NavigationContext)
   const userLogOut = () => {
     deleteUserLogIn()  // Delete token from localstorage
     window.location.replace("/")  // Reload page
@@ -270,9 +251,28 @@ const ActionSettings = () => {
   return (
     <div>
       <a href="#" data-toggle="dropdown" className="header-icon d-flex align-items-center justify-content-center">
-        <i className="fal fa-cog text-white"></i>
+        <img className="rounded-circle" style={{width: "2rem", height: "2rem"}}
+        src={(user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg")} />
       </a>
       <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
+        {/* User card */}
+        <div className="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
+          <div className="d-flex flex-row align-items-center mt-1 mb-1 color-white">
+            <span className="mr-2">
+              <img className="rounded-circle profile-image"
+              src={(user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg")} />
+            </span>
+            <div className="info-card-text">
+              <div className="fs-lg text-truncate text-truncate-lg">
+                {user.personal ? cFL(user.personal.nombre_principal)+" "+cFL(user.personal.ape_paterno) : "Invitado"}
+              </div>
+              <span className="text-truncate text-truncate-md opacity-80">
+                {user.personal ? cFL(user.personal.especialidad) : "Administrador"}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* CHOOSE SUCURSAL
         * We pass data as prop in order to ChooseSucursal be a reusable component
         */}
@@ -291,6 +291,40 @@ const ActionSettings = () => {
     </div>
   )
 }
+const ActionSettings = () => {
+  const {redirectTo} = useContext(NavigationContext)
+
+  return (
+    <div>
+      <a href="#" className="header-icon" data-toggle="dropdown">
+        <i className="fal fa-cog text-white"></i>
+      </a>
+      <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
+        <div className="dropdown-header d-flex justify-content-center align-items-center rounded-top" style={{backgroundColor: "#2b5d84"}}>
+          <h4 className="m-0 text-center color-white">
+            Configuración
+            <small className="mb-0 opacity-80">Herramientas de administración</small>
+          </h4>
+        </div>
+        <div className="custom-scroll h-100">
+          <ul className="app-list">
+            <li>
+              <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/admin/")}>
+                <span className="icon-stack">
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
+                  <i className="fal fa-list icon-stack-1x text-white"></i>
+                </span>
+                <span className="app-list-name">
+                  Admin
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
 const ActionApps = () => {
   const {redirectTo} = useContext(NavigationContext)
 
@@ -300,7 +334,7 @@ const ActionApps = () => {
         <i className="fal fa-chevron-double-down text-white"></i>
       </a>
       <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
-        <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
+        <div className="dropdown-header d-flex justify-content-center align-items-center rounded-top" style={{backgroundColor: "#2b5d84"}}>
           <h4 className="m-0 text-center color-white">
             Páginas
             <small className="mb-0 opacity-80">Vistas y funciones</small>
@@ -311,7 +345,7 @@ const ActionApps = () => {
             <li>
               <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/cita/")}>
                 <span className="icon-stack">
-                  <i className="base-5 icon-stack-3x color-info-600"></i>
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
                   <i className="fal fa-calendar-alt icon-stack-1x text-white"></i>
                 </span>
                 <span className="app-list-name">
@@ -322,7 +356,7 @@ const ActionApps = () => {
             <li>
               <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/admision/")}>
                 <span className="icon-stack">
-                  <i className="base-5 icon-stack-3x color-info-600"></i>
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
                   <i className="fal fa-user-md icon-stack-1x text-white"></i>
                 </span>
                 <span className="app-list-name">
@@ -333,7 +367,7 @@ const ActionApps = () => {
             <li>
               <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/atencion/")}>
                 <span className="icon-stack">
-                  <i className="base-5 icon-stack-3x color-info-600"></i>
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
                   <i className="fal fa-id-card-alt icon-stack-1x text-white"></i>
                 </span>
                 <span className="app-list-name">
@@ -344,7 +378,7 @@ const ActionApps = () => {
             <li>
               <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/admision/mensaje/")}>
                 <span className="icon-stack">
-                  <i className="base-5 icon-stack-3x color-info-600"></i>
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
                   <i className="fal fa-envelope icon-stack-1x text-white"></i>
                 </span>
                 <span className="app-list-name">
@@ -352,25 +386,6 @@ const ActionApps = () => {
                 </span>
               </a>
             </li>
-            <li>
-              <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/admin/")}>
-                <span className="icon-stack">
-                  <i className="base-5 icon-stack-3x color-info-600"></i>
-                  <i className="fal fa-list icon-stack-1x text-white"></i>
-                </span>
-                <span className="app-list-name">
-                  Admin
-                </span>
-              </a>
-            </li>
-            {/*
-              <i className="icon-stack-1x text-white" style={{padding: "0 20%"}}>
-                <svg viewBox="0 0 576 512">
-                  <path fill="currentColor" d="M528 64H384v96H192V64H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h480c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48zM288 224c35.3 0 64 28.7 64 64s-28.7 64-64 64-64-28.7-64-64 28.7-64 64-64zm93.3 224H194.7c-10.4 0-18.8-10-15.6-19.8 8.3-25.6 32.4-44.2 60.9-44.2h8.2c12.3 5.1 25.7 8 39.8 8s27.6-2.9 39.8-8h8.2c28.4 0 52.5 18.5 60.9 44.2 3.2 9.8-5.2 19.8-15.6 19.8zM352 32c0-17.7-14.3-32-32-32h-64c-17.7 0-32 14.3-32 32v96h128V32z"></path>
-                </svg>
-              </i>
-              */}
-
           </ul>
         </div>
       </div>
