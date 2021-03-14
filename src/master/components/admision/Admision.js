@@ -73,12 +73,12 @@ const AdmisionHome = () => {
 
   return (
     <div className="row">
-      <div className="col-lg-8">
+      <div className="col-lg-9">
         <div style={{marginBottom: "25px"}}>
           <SearchPatient current_sucursal={current_sucursal} redirectTo={redirectTo} />
         </div>
       </div>
-      <div className="col-lg-4">
+      <div className="col-lg-3">
         <div className="panel">
           <LinksHome redirectTo={redirectTo} />
         </div>

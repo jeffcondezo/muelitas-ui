@@ -16,32 +16,30 @@ import {
   SelectOptions_Procedimiento,
   RegularModalCentered,
 } from '../bits';
+import { NavigationContext } from '../Navigation';
 
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
 const ProcedureModalContext = createContext(false)
 
-const Admin = ({sucursal_pk, redirectTo}) => (
+const Admin = () => (
   <Switch>
     <Route exact path='/nav/admin/'>
-      <AdminMenu redirectTo={redirectTo} />
+      <AdminMenu />
     </Route>
 
     <Route exact path='/nav/admin/procedimiento/'>
-      <AdminProcedimiento
-        sucursal_pk={sucursal_pk}
-        redirectTo={redirectTo} />
+      <AdminProcedimiento />
     </Route>
     <Route exact path='/nav/admin/usuario/'>
-      <AdminUsuario
-        sucursal_pk={sucursal_pk}
-        redirectTo={redirectTo} />
+      <AdminUsuario />
     </Route>
   </Switch>
 )
 
-const AdminMenu = ({redirectTo}) => {
+const AdminMenu = () => {
+  const {redirectTo} = useContext(NavigationContext)
   let _style = {
     card: {
       display: "inline-flex",
@@ -74,7 +72,8 @@ const AdminMenu = ({redirectTo}) => {
   )
 }
 // Procedimiento
-const AdminProcedimiento = ({sucursal_pk, redirectTo}) => {
+const AdminProcedimiento = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
   let procedure_edit_modal_id = 'procedure_edit_modal_id'
   const [modal_data, setModalData] = useState(false)
   const updateProcedure = () => {}
@@ -91,7 +90,7 @@ const AdminProcedimiento = ({sucursal_pk, redirectTo}) => {
           <div style={{marginBottom: "25px"}}>
             <ProcedimientoListTable
               procedure_edit_modal_id={procedure_edit_modal_id}
-              sucursal_pk={sucursal_pk}
+              current_sucursal={current_sucursal}
               redirectTo={redirectTo} />
           </div>
         </div>
@@ -99,19 +98,19 @@ const AdminProcedimiento = ({sucursal_pk, redirectTo}) => {
           <div className="panel">
             <ProcedimientoActions
               procedure_edit_modal_id={procedure_edit_modal_id}
-              sucursal_pk={sucursal_pk}
+              current_sucursal={current_sucursal}
               redirectTo={redirectTo} />
           </div>
         </div>
         <ProcedimientoEdit
           procedure_edit_modal_id={procedure_edit_modal_id}
-          sucursal_pk={sucursal_pk}
+          current_sucursal={current_sucursal}
           redirectTo={redirectTo} />
       </div>
     </ProcedureModalContext.Provider>
   )
 }
-const ProcedimientoListTable = ({sucursal_pk, procedure_edit_modal_id}) => {
+const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => {
   const [procedures, setProcedures] = useState(false);
   const [datatable, setDatatable] = useState(false);
   const ctx_md = useContext(ProcedureModalContext)
@@ -141,11 +140,11 @@ const ProcedimientoListTable = ({sucursal_pk, procedure_edit_modal_id}) => {
       dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
       dt_script.onload = () => {
         // Run at first execution
-        getSucursalProcedures(sucursal_pk)
+        getSucursalProcedures(current_sucursal)
       }
       document.body.appendChild(dt_script)
     }else{
-      getSucursalProcedures(sucursal_pk)
+      getSucursalProcedures(current_sucursal)
     }
     // CSS
     if(!document.getElementById('dt_style')){
@@ -265,7 +264,7 @@ const ProcedimientoActions = ({procedure_edit_modal_id}) => {
     </div>
   )
 }
-const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
+const ProcedimientoEdit = ({current_sucursal, procedure_edit_modal_id}) => {
   const [procedures, setProcedures] = useState(false);
   const ctx_md = useContext(ProcedureModalContext)
 
@@ -318,12 +317,12 @@ const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
       select2_script.id = "select2_script";
       select2_script.onload = () => {
         // Continue execution here to avoid file not load error
-        getProcedures(sucursal_pk);
+        getProcedures(current_sucursal);
       }
       select2_script.src = "/js/formplugins/select2/select2.bundle.js";
       document.body.appendChild(select2_script);
     }else{
-      getProcedures(sucursal_pk);
+      getProcedures(current_sucursal);
     }
   }, [])
   // Set procedure input as select2
@@ -406,7 +405,7 @@ const ProcedimientoEdit = ({sucursal_pk, procedure_edit_modal_id}) => {
   )
 }
 // Usuario
-const AdminUsuario = ({sucursal_pk, redirectTo}) => {
+const AdminUsuario = () => {
   return "AdminUsuario"
 }
 
