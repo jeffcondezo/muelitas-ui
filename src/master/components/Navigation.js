@@ -177,11 +177,23 @@ const SelectComponent = () => (
   </main>
 )
 /*** PAGE ***/
-const Aside = () => {
-  const {user, current_sucursal} = useContext(NavigationContext)
+const PageContent = () => (
+  <div className="page-content-wrapper bg-brand-gradient">
+    <PageHeader />
+    <SelectComponent />
+    <PageFooter />
+  </div>
+)
+const PageHeader = () => {
+  const {user} = useContext(NavigationContext)
+
   return (
-    <aside className="page-sidebar">
-      <div className="page-logo">
+    <header className="page-header" style={{
+      backgroundColor: "#2b4c81",
+      backgroundImage: "linear-gradient(270deg,rgba(46,182,151,.18),transparent)"
+    }}>
+      {/* Logo */}
+      <div className="press-scale-down">
         <div className="page-logo-link d-flex align-items-center position-relative">
           <img src="/img/logo_muelitas_image.png" style={{
             display: "inline-block",
@@ -189,56 +201,36 @@ const Aside = () => {
           }} />
           <img src="/img/logo_muelitas_text.png" style={{
             display: "inline-block",
-            height: "40px",
+            height: "50px",
             filter: "invert(1)",
           }} />
         </div>
       </div>
 
-      <nav id="js-primary-nav" className="primary-nav" role="navigation">
-        <div className="info-card">
-          <img
-            src={current_sucursal!==-1 && (user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg")}
-            className="profile-image rounded-circle"
-            alt={current_sucursal!==-1 && user.first_name}
-          />
-          <div className="info-card-text">
-            <a href="#" className="d-flex align-items-center text-white">
-              <span className="text-truncate text-truncate-sm d-inline-block">
-                {user.personal?
-                  cFL(user.personal.nombre_principal)+" "+cFL(user.personal.ape_paterno) :
-                  "Invitado"
-                }
-              </span>
-            </a>
-            <span className="d-inline-block text-truncate text-truncate-sm"
-              title={user.personal ? user.personal.especialidad : "Administrador"}>
-              {user.personal ? cFL(user.personal.especialidad) : "Administrador"}
+      {/* User card */}
+      <div className="hidden-md-down ml-5">
+        <img className="rounded-circle mr-1" style={{width: "3.125rem", height: "3.125rem"}}
+        src={(user.personal.sexo == "1" ? "/img/unk_user_male.jpg" : "/img/unk_user_female.jpg")} />
+        <div className="info-card-text text-white">
+          <b className="d-flex align-items-center">
+            <span className="text-truncate text-truncate-sm d-inline-block">
+              {user.personal ? cFL(user.personal.nombre_principal)+" "+cFL(user.personal.ape_paterno) : "Invitado"}
             </span>
-          </div>
-          <img src="/img/card-backgrounds/cover-2-lg.png" className="cover" alt="cover"/>
+          </b>
+          <span className="d-inline-block text-truncate text-truncate-sm">
+            {user.personal ? cFL(user.personal.especialidad) : "Administrador"}
+          </span>
         </div>
+      </div>
 
-        <AsideLinks />
-      </nav>
-    </aside>
+      {/* Actions */}
+      <div className="ml-auto d-flex">
+        <ActionApps />
+        <ActionSettings />
+      </div>
+    </header>
   )
 }
-const PageContent = () => (
-  <div className="page-content-wrapper">
-    <PageHeader />
-    <SelectComponent />
-    <PageFooter />
-  </div>
-)
-const PageHeader = () => (
-  <header className="page-header" role="banner">
-    <div className="ml-auto d-flex">
-      <ActionApps />
-      <ActionSettings />
-    </div>
-  </header>
-)
 const ChooseSucursal = ({sucursales, changeSucursal, current_sucursal}) => (
   <div className="dropdown-multilevel dropdown-multilevel-left">
     <div className="dropdown-item">
@@ -278,7 +270,7 @@ const ActionSettings = () => {
   return (
     <div>
       <a href="#" data-toggle="dropdown" className="header-icon d-flex align-items-center justify-content-center">
-        <i className="fal fa-cog"></i>
+        <i className="fal fa-cog text-white"></i>
       </a>
       <div className="dropdown-menu dropdown-menu-animated dropdown-lg">
         {/* CHOOSE SUCURSAL
@@ -305,7 +297,7 @@ const ActionApps = () => {
   return (
     <div>
       <a href="#" className="header-icon" data-toggle="dropdown">
-        <i className="fal fa-chevron-double-down"></i>
+        <i className="fal fa-chevron-double-down text-white"></i>
       </a>
       <div className="dropdown-menu dropdown-menu-animated w-auto h-auto">
         <div className="dropdown-header bg-trans-gradient d-flex justify-content-center align-items-center rounded-top">
@@ -741,34 +733,6 @@ const ActionNotifications = () => {
             </div>
         </div>
     </div>
-  )
-}
-const AsideLinks = () => {
-  let _path = window.location.pathname
-  return (
-    <ul id="js-nav-menu" className="nav-menu">
-      <li className="nav-title" style={{color: "#CCC"}}>Paginas principales</li>
-      <li className={/^\/nav\/admision/.test(_path)?"active":""}>
-        <Link data-filter-tags="admision" to='/nav/admision'>
-          <span className="nav-link-text">ADMISION</span>
-        </Link>
-      </li>
-      <li className={/^\/nav\/cita/.test(_path)?"active":""}>
-        <Link data-filter-tags="cita" to='/nav/cita'>
-          <span className="nav-link-text">CITA</span>
-        </Link>
-      </li>
-      <li className={/^\/nav\/atencion/.test(_path)?"active":""}>
-        <Link data-filter-tags="atencion" to='/nav/atencion'>
-          <span className="nav-link-text">ATENCION</span>
-        </Link>
-      </li>
-      <li className={/^\/nav\/admin/.test(_path)?"active":""}>
-        <Link data-filter-tags="admin" to='/nav/admin'>
-          <span className="nav-link-text">ADMIN</span>
-        </Link>
-      </li>
-    </ul>
   )
 }
 

@@ -86,7 +86,7 @@ const AdminProcedimiento = () => {
       </div>
 
       <div className="row">
-        <div className="col-lg-8">
+        <div className="col-lg-9">
           <div style={{marginBottom: "25px"}}>
             <ProcedimientoListTable
               procedure_edit_modal_id={procedure_edit_modal_id}
@@ -94,7 +94,7 @@ const AdminProcedimiento = () => {
               redirectTo={redirectTo} />
           </div>
         </div>
-        <div className="col-lg-4">
+        <div className="col-lg-3">
           <div className="panel">
             <ProcedimientoActions
               procedure_edit_modal_id={procedure_edit_modal_id}
