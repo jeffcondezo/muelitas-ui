@@ -17,6 +17,7 @@ import esLocale from '@fullcalendar/core/locales/es'
 
 import {
   Icon,
+  PageTitle,
   RegularModalCentered
 } from '../bits'
 import {
@@ -36,7 +37,7 @@ const Cita = () => {
   const events_response_data = useRef([])  // Used to preserve events values after filters
   const [events, setEvents] = useState([])  // FullCalendar events
   const [personal, setPersonal] = useState(false)  // Sucursal's personal
-  const [procedures, setProcedures] = useState(false)  // Sucursal's procedures
+  const [pxss, setPXS] = useState(false)  // Sucursal's procedures
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
   const [show_past_citas, setShowPastCitas] = useState(false)  // Show past citas
   /* fake_redirect_data: Workaround to fake redirect_data empty
@@ -59,7 +60,7 @@ const Cita = () => {
 
   // initial requests
   const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
-  const getProcedures = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setProcedures)
+  const getPXS = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setPXS)
   const getCitas = () => {
     if(__debug__) console.log("Cita getCitas", show_past_citas)
 
@@ -164,10 +165,10 @@ const Cita = () => {
     // Compare procs sended and procs received
     let sended_ar = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
     // BUG: Execute it all in promise to avoid multiple instant execution (duplicity in DB objects)
-    // _redirect_data.selected = [{proc_pk, dpdt}]
+    // _redirect_data.selected = [{pxs_pk, dpdt}]
     _redirect_data.selected.reduce(
       (promise_chain, obj) => {
-        return sended_ar.indexOf(obj.proc_pk) == -1
+        return sended_ar.indexOf(obj.pxs_pk) == -1
           ? promise_chain
           : promise_chain.then(
             // If proc was sended, add cita as dpdt's reference
@@ -183,8 +184,8 @@ const Cita = () => {
     // Create DA for every programado
     let ar_programado = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
     ar_programado.reduce(
-      (promise_chain, proc_pk) => promise_chain.then(  // Create DA
-        () => simplePostData(`atencion/detalle/`, {atencion: cita.atencion, procedimiento: proc_pk})
+      (promise_chain, pxs_pk) => promise_chain.then(  // Create DA
+        () => simplePostData(`atencion/detalle/`, {atencion: cita.atencion, pxs: pxs_pk})
       ), Promise.resolve()
     )
   }
@@ -471,7 +472,7 @@ const Cita = () => {
   useEffect(() => {
     // Get data everytime sucursal changes
     getPersonal()
-    getProcedures()
+    getPXS()
   }, [current_sucursal])
   useEffect(() => {
     if(events.length == 0) return  // Do not call getCitas before events is set (it might break bc required data is async loading )
@@ -481,10 +482,7 @@ const Cita = () => {
 
   return (
     <div>
-      {/* ALERTS */}
-      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-      </div>
+      <PageTitle />
 
       {/* HEADER */}
       <div className="subheader">
@@ -542,7 +540,7 @@ const Cita = () => {
         cancelCitaForm={cancelCitaForm}
         fillPatienteByDNI={fillPatienteByDNI}
         personal={personal}
-        procedures={procedures}
+        pxss={pxss}
         redirect_data={_redirect_data}
         />
 
@@ -593,7 +591,7 @@ const FilterPersonal = ({personal, personal_color, filterByPersonal}) => {
     </div>
   )
 }
-const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, procedures, personal, redirect_data}) => (
+const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, personal, redirect_data}) => (
   <div className="modal fade" id={id} tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
     <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div className="modal-content">
@@ -620,7 +618,7 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, procedu
           </div>
           {/* Fin Paciente */}
           <SelectProcedure
-            procedimientos={procedures}
+            pxss={pxss}
             selected={redirect_data?.selected}
             />
           <div className="form-group col-md-6" style={{display:'inline-block'}}>
@@ -778,25 +776,25 @@ const SelectPersonal = ({personal}) => (
     </select>
   </div>
 )
-const SelectProcedure = ({procedimientos, selected}) => {
+const SelectProcedure = ({pxss, selected}) => {
   /* Selected comes from _redirect_data which is loaded at the very begining and never changes */
   const html_select_programed_procedure = "select-procedimiento_programado"
 
   useEffect(() => {
-    if(!procedimientos || !selected) return
+    if(!pxss || !selected) return
 
     // Select values when selected is setted
-    window.$('#'+html_select_programed_procedure).val( selected.map(i => i.proc_pk) )
+    window.$('#'+html_select_programed_procedure).val( selected.map(i => i.pxs_pk) )
     // window.$('#'+html_select_programed_procedure).trigger('change')
-  }, [procedimientos])
+  }, [pxss])
 
   return (
     <div className="form-group col-md-12">
       <label className="form-label" htmlFor={html_select_programed_procedure}>Programado: </label>
       <select id={html_select_programed_procedure} className="custom-select form-control custom-select-lg" multiple>
-        {procedimientos && procedimientos.map(p =>
-          <option key={"select_proc_"+p.pk} value={p.procedimiento_data.pk}>
-            {(p.alias?p.alias:p.procedimiento_data.nombre).toUpperCase()}
+        {pxss && pxss.map(pxs =>
+          <option key={"select_proc_"+pxs.pk} value={pxs.pk}>
+            {pxs.nombre.toUpperCase()}
           </option>
         ) || "loading"}
       </select>

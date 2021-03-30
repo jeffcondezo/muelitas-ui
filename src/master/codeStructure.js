@@ -177,3 +177,7 @@ Use 'drop memory reference trick' [...array]
 * there would be no re-render bc f_events stay the same memory allocation
 */
 setEvents([...f_events, f_cita])
+
+/* Dict
+* pxs: ProcedimientoXSucursal
+*/

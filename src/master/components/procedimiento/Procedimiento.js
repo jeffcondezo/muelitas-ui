@@ -34,7 +34,7 @@ const Procedimiento = () => {
   }
   function handleSubmit(){
     let data = {
-      procedimiento: document.getElementById('procedimiento').value,
+      pxs: document.getElementById('procedimiento').value,
       observaciones: document.getElementById('observaciones').value,
       precio: document.getElementById('cost').value,
       dues: document.getElementById('dues').value,
@@ -80,9 +80,9 @@ const Procedimiento = () => {
   )
 }
 const ProcedimientoForm = ({procedure, current_sucursal}) => {
-  const [procedures, setProcedures] = useState(false)
+  const [pxss, setPXS] = useState(false)
 
-  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setProcedures)
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setPXS)
   function handlePeriodChange(el){
     if(el.value=="0" || !el.value){
       document.getElementById("dues").value = "0"
@@ -101,18 +101,18 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
   }
   function handleProcedureChange(el){
     if(__debug__) console.log("handleProcedureChange el", el)
-    let inx = indexOfInObjectArray(procedures, 'procedimiento', el.value)
+    let inx = indexOfInObjectArray(pxss, 'procedimiento', el.value)
     if(inx==-1) return
 
     // Update coste
-    window.document.getElementById('cost').value = procedures[inx].precio
+    window.document.getElementById('cost').value = pxss[inx].precio
   }
 
   useEffect(() => {
     getProcedures(current_sucursal)
   }, [])
   useEffect(() => {
-    if(!procedures || procedures.length==0) return
+    if(!pxss || pxss.length==0) return
 
     if(procedure){
       document.getElementById("payment_period").value = procedure.payment_period
@@ -150,22 +150,22 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
       // Set select2 for procedimiento
       window.$("#procedimiento").select2().on('select2:select', ev => handleProcedureChange(ev.params.data.element))
     }
-  }, [procedures])
+  }, [pxss])
 
-  return !procedures
+  return !pxss
     ? "loading"
-    : procedures.length==0
+    : pxss.length==0
     ? "No hay procedimientos encontrados"
     : (
       <div>
         <div className="col-sm" style={{marginBottom: "10px"}}>
           <label className="form-label" htmlFor="programado">Procedimiento: </label>
           <select className="custom-select form-control custom-select-lg"
-            id="procedimiento" defaultValue={procedure?procedure.procedimiento:procedures[0].procedimiento}
+            id="procedimiento" defaultValue={procedure?procedure.pxs:pxss[0].pk}
           >
-            {procedures.map(p => (
-                <option key={p.pk} value={p.procedimiento}>
-                  {p.procedimiento_data.nombre.toUpperCase()}
+            {pxss.map(pxs => (
+                <option key={pxs.pk} value={pxs.pk}>
+                  {pxs.nombre.toUpperCase()}
                 </option>
               ))}
           </select>
@@ -178,7 +178,7 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
           <div className="col-md-6" style={{marginBottom: "10px"}}>
             <label className="form-label" htmlFor="cost">Coste</label>
             <input type="number" className="form-control custom-select-lg" id="cost"
-              min="0" defaultValue={procedure?procedure.precio_base:procedures[0].precio} />
+              min="0" defaultValue={procedure?procedure.precio_base:pxss[0].precio} />
           </div>
           <div className="col-md-6" style={{marginBottom: "10px"}}>
             <label className="form-label" htmlFor="dues">N° de cuotas</label>

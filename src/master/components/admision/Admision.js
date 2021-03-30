@@ -16,6 +16,7 @@ import {
 import { ListSavedMedicine } from '../prescripcion/Prescripcion';
 import {
   Icon,
+  PageTitle,
   ModalLoading,
   RegularModalCentered
 } from '../bits';
@@ -36,9 +37,7 @@ export const tipo_documento = {
 
 const Admision = () => (
   <div>
-    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-    </div>
+    <PageTitle />
 
     <Switch>
       <Route exact path="/nav/admision">
@@ -1258,7 +1257,7 @@ const InstantNotification = ({patient_pk, current_sucursal}) => {
   // Current sucursal
   const ctx_nv = useContext(NavigationContext)
   let cur_suc = ctx_nv.sucursales.find(s => s.pk==ctx_nv.current_sucursal)
-  let signature = `- ${cur_suc.empresa_data.nombre_comercial.toUpperCase()}`
+  let signature = `- ${cur_suc.empresa_data.razon_social.toUpperCase()}`
   // Current datetime
   let _dt = new Date()
   let datetime_now = _dt.toDateInputValue()+'T'+_dt.getHours()+":"+String(_dt.getMinutes()).padStart(2, "0")
@@ -1420,7 +1419,7 @@ const getPatiente = (dni, setpatientpk) => {
     document.getElementById("ape-m").disabled = true
   })
 }
-const xhtmlDecode = _text => {
+export const xhtmlDecode = _text => {
   let xhtml_codes = [
     {code: '&ntilde;', value: 'ñ'},
     {code: '&Ntilde;', value: 'Ñ'},

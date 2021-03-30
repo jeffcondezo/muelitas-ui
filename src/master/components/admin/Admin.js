@@ -80,10 +80,7 @@ const AdminProcedimiento = () => {
 
   return (
     <ProcedureModalContext.Provider value={{modal_data, setModalData, updateProcedure}}>
-      {/* ALERTS */}
-      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-      </div>
+      <PageTitle title={"Procedimientos Admin"} />
 
       <div className="row">
         <div className="col-lg-9">
@@ -111,23 +108,23 @@ const AdminProcedimiento = () => {
   )
 }
 const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => {
-  const [procedures, setProcedures] = useState(false);
+  const [pxss, setPXS] = useState(false);
   const [datatable, setDatatable] = useState(false);
   const ctx_md = useContext(ProcedureModalContext)
 
-  const getSucursalProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/`).then(setProcedures)
+  const getSucursalProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/`).then(setPXS)
   const changeProcedureActiveState = (_pk, state) => {
     simplePostData(`maestro/procedimiento/sucursal/detalle/${_pk}/`, {active: state}, "PATCH")
   }
   const updateProcedure = (_pk, _data) => {
     // Update procedure values locally only (avoid asking api again)
-    let _p = procedures.find(p => p.pk == ctx_md.modal_data.data.pk)
+    let _p = pxss.find(p => p.pk == ctx_md.modal_data.data.pk)
     _p.alias = _data.alias
     _p.precio = _data.precio
 
-    let _proc = procedures
-    _proc.splice(procedures.indexOf(_p), 1)
-    setProcedures([..._proc, _p])
+    let _proc = pxss
+    _proc.splice(pxss.indexOf(_p), 1)
+    setPXS([..._proc, _p])
   }
 
   // Add DataTable rel docs
@@ -157,13 +154,13 @@ const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => 
   }, [])
   // Procedures
   useEffect(() => {
-    if(!procedures) return;  // Abort if procedures aren't set
+    if(!pxss) return;  // Abort if pxss aren't set
 
     // Destroy previous DT if exists
     if(datatable) window.$('#procedure-list').DataTable().clear().destroy();
     // Gen Datatable
     let _tmp = window.$('#procedure-list').DataTable({
-      data: procedures,
+      data: pxss,
       columns: [
         {title: "Nombre", data: null},
         {title: "Precio", data: null},
@@ -172,7 +169,7 @@ const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => 
       ],
       columnDefs: [
         // Nombre
-        {targets: 0, render: (_, __, row) => cFL(row.alias?row.alias:row.procedimiento_data.nombre)},
+        {targets: 0, render: (_, __, row) => row.nombre.toUpperCase()},
         // Price
         {targets: 1, render: (_, __, row) => row.precio || 0},
         // State
@@ -195,7 +192,7 @@ const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => 
         },
       ],
       pageLength: 10,
-      lengthMenu: [[8, 15, 25], [8, 15, 25]],
+      lengthMenu: [[10, 20, 30], [10, 20, 30]],
       language: {
         sProcessing:     "Procesando...",
         sLengthMenu:     "Mostrar _MENU_ registros",
@@ -228,13 +225,13 @@ const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => 
     });
 
     setDatatable(_tmp);  // Save DT in state
-  }, [procedures])
+  }, [pxss])
   // ctx_md
   useEffect(() => {
     ctx_md.updateProcedure = updateProcedure
   }, [ctx_md])
 
-  return !procedures
+  return !pxss
     ? "loading"
     : (
       <div className="datatable-container col-12">

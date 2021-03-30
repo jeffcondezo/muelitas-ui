@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import ReactDOM from 'react-dom';
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect, useContext } from 'react'
+import ReactDOM from 'react-dom'
+import { useParams } from "react-router-dom"
 import {
   simpleGet,
-} from '../../functions';
-import { PageTitle, RegularModalCentered } from '../bits';
+} from '../../functions'
+import { PageTitle, RegularModalCentered } from '../bits'
 import { NavigationContext } from '../Navigation'
 
 // Constant
@@ -13,7 +13,7 @@ const __debug__ = process.env.REACT_APP_DEBUG
 
 const HistorialPagos = () => {
   const {current_sucursal, redirectTo} = useContext(NavigationContext)
-  let __params__ = useParams();
+  let __params__ = useParams()
   const datatable_id = "patientxpagos-table"
 
   const [patientxpagos, setPxP] = useState(false)
@@ -24,47 +24,47 @@ const HistorialPagos = () => {
     if(__debug__) console.log("HistorialPagos getPxP")
 
     simpleGet(`finanzas/sucursal/${current_sucursal}/paciente/${__params__.patient}/`)
-    .then(setPxP);
+    .then(setPxP)
   }
 
   // Add DataTable rel docs
   useEffect(() => {
     // JS
     if(!document.getElementById('dt_script')){
-      const dt_script = document.createElement("script");
-      dt_script.async = false;
-      dt_script.id = "dt_script";
-      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
-      dt_script.onload = () => getPxP();
-      document.body.appendChild(dt_script);
-    }else getPxP();
+      const dt_script = document.createElement("script")
+      dt_script.async = false
+      dt_script.id = "dt_script"
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
+      dt_script.onload = () => getPxP()
+      document.body.appendChild(dt_script)
+    }else getPxP()
     // CSS
     if(!document.getElementById('dt_style')){
-      const dt_style = document.createElement("link");
-      dt_style.rel = "stylesheet";
-      dt_style.id = "dt_style";
-      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-      document.head.appendChild(dt_style);
+      const dt_style = document.createElement("link")
+      dt_style.rel = "stylesheet"
+      dt_style.id = "dt_style"
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css"
+      document.head.appendChild(dt_style)
     }
 
     return () => {
       window.$("#pago-detalle").modal("hide")
     }
-  }, []);
+  }, [])
   // When patientxpagos variable is setted
   useEffect(() => {
-    if(!patientxpagos) return;  // Abort if it's false
-    console.log("patientxpagos", patientxpagos);
+    if(!patientxpagos) return  // Abort if it's false
+    console.log("patientxpagos", patientxpagos)
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#'+datatable_id).DataTable().clear().destroy();
+    if(datatable) window.$('#'+datatable_id).DataTable().clear().destroy()
     // Gen Datatable
     let _tmp = window.$('#'+datatable_id).DataTable({
       data: patientxpagos,
       columns: [
-        {title: "Fecha y hora de pago", data: "fecha"},
+        {title: "Realizado", data: "created"},
         {title: "Monto", data: "monto"},
-        {title: "Plan de trabajo", data: "pk"},
+        {title: "Origen", data: "plantrabajo"},
         {title: "Detalle", data: "detalle"},
       ],
       columnDefs: [{
@@ -73,9 +73,9 @@ const HistorialPagos = () => {
         createdCell: (cell, data, _) => {
           /* Why to use createdCell in this case?
           * We need to change date format after render bc this will be only stetic
-          * and datatable will keep sorting and searching values from the original rendered data ('fecha' field)
+          * and datatable will keep sorting and searching values from the original rendered data ('created' field)
           */
-          let splited_data = data.split("-")
+          let splited_data = data.split(" ")
           let date = splited_data[0].split("/").reverse().join("/")
           let time = splited_data[1].split(":")
           let minute = time[1].padStart(2, "0")
@@ -91,18 +91,16 @@ const HistorialPagos = () => {
       }, {
         // Origen del pago
         targets: 2,
-        createdCell: (cell, _, row) => {
+        createdCell: (cell, data, _) => {
           ReactDOM.render(
-            <span
-              className={`badge badge-${row.cita ? "success" : "info"} badge-pill`}
-              style={{cursor: "pointer"}}
-              onClick={()=>redirectTo(row.cita?`/nav/atencion/${row.cita}/detalle/`:`/nav/plandetrabajo/${__params__.patient}/`)}
-            >{row.cita ? "Atencion" : "Plan de trabajo"}</span>
+            <span className={`badge badge-${data?"info":"success"} badge-pill`} style={{cursor: "pointer"}}>
+              {data ? "Plan de trabajo" : "Atencion"}
+            </span>
             , cell
           )
         }
       }, {
-        // Origen del pago
+        // Detalle
         targets: 3,
         createdCell: (cell, _, row) => {
           ReactDOM.render(
@@ -143,10 +141,10 @@ const HistorialPagos = () => {
           colvis: "Visibilidad"
         }
       },
-    });
+    })
 
-    setDatatable(_tmp);  // Save DT in state
-  }, [patientxpagos]);
+    setDatatable(_tmp)  // Save DT in state
+  }, [patientxpagos])
 
   return (
     <>

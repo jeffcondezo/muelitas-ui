@@ -8,6 +8,7 @@ import {
   getDataByPK,
 } from '../../functions'
 import { NavigationContext } from '../Navigation';
+import { PageTitle } from '../bits';
 
 const __debug__ = process.env.REACT_APP_DEBUG
 
@@ -20,7 +21,7 @@ const MassiveNotification = () => {
   // Current sucursal
   const {current_sucursal, sucursales} = useContext(NavigationContext)
   let cur_suc = sucursales.find(s => s.pk==current_sucursal)
-  let signature = `- ${cur_suc.empresa_data.nombre_comercial.toUpperCase()}`
+  let signature = `- ${cur_suc.empresa_data.razon_social.toUpperCase()}`
   // Current datetime
   let _dt = new Date()
   let datetime_now = _dt.toDateInputValue()+'T'+_dt.getHours()+":"+String(_dt.getMinutes()).padStart(2, "0")
@@ -165,9 +166,7 @@ const MassiveNotification = () => {
   ? "loading"
   : (
     <div>
-      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-      </div>
+      <PageTitle title={"Mensajes masivos"} />
 
       <div className="form-group">
         <label className="form-label" htmlFor="programado">Pacientes: </label>

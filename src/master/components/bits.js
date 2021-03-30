@@ -209,7 +209,7 @@ export const Icon = ({type, onClick, data_dismiss}) => {
     </div>
   )
 }
-export const PageTitle = ({title}) => (
+export const PageTitle = ({title=null}) => (
   <>
   {/* ALERTS */}
     <div id="alert-server" className="alert bg-fusion-200 text-white fade" role="alert" style={{display:'none'}}>
@@ -218,16 +218,18 @@ export const PageTitle = ({title}) => (
     <div id="alert-permission" className="alert bg-primary-200 text-white fade" role="alert" style={{display:'none'}}>
         <strong>Ups!</strong> Parece que no posees permisos para realizar esta acción.
     </div>
-    <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-      <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
+    <div id="alert-custom" className="alert bg-warning-700 fade" role="alert" style={{display: "none"}}>
+      <strong id="alert-custom-headline">Error!</strong> <span id="alert-custom-text">Algo salió mal</span>.
     </div>
 
     {/* HEADER */}
-    <div className="subheader">
-      <h1 className="subheader-title">
-        <i className="subheader-icon fal fa-chart-area"></i> {title}
-      </h1>
-    </div>
+    {title && (
+      <div className="subheader">
+        <h1 className="subheader-title">
+          <i className="subheader-icon fal fa-chart-area"></i> {title}
+        </h1>
+      </div>
+    )}
   </>
 )
 export const SelectOptions_Procedimiento = ({procedimientos}) => {

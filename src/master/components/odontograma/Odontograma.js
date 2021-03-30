@@ -12,7 +12,7 @@ import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL
 } from '../../functions';
-import { RegularModalCentered } from '../bits';
+import { PageTitle, RegularModalCentered } from '../bits';
 import { NavigationContext } from '../Navigation'
 
 
@@ -2707,9 +2707,7 @@ function Odontograma({role, redirectTo}){
       </div>
       {/* ALERTS */}
       <br/>
-      <div id="alert-custom" className="alert bg-warning-700" role="alert" style={{display: "none"}}>
-        <strong id="alert-headline">Error!</strong> <span id="alert-text">Algo salió mal</span>.
-      </div>
+      <PageTitle />
       {/* MODALS */}
       {init_od!=-1 && init_od && odontogram.pk != init_od.pk
         // Check if odontogram and init_od are the same

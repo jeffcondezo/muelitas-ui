@@ -12,10 +12,14 @@ import {
   simpleGet,
   simplePostData,
   getDataByPK,
+  // Helper
+  UpdateContext,
+  UpdateComponentHelper,
 } from '../../functions'
 import { PageTitle } from '../bits'
 import HistorialPagos from './HistorialPagos'
 import { NavigationContext } from '../Navigation'
+import { xhtmlDecode } from '../admision/Admision'
 
 
 // Constant
@@ -28,7 +32,9 @@ const Cobranza = () => (
       <DebtXPatientTable />
     </Route>
     <Route path='/nav/cobranza/:patient/detalle'>
-      <CobranzaDetail />
+      <UpdateComponentHelper>
+        <CobranzaDetail />
+      </UpdateComponentHelper>
     </Route>
     <Route path='/nav/cobranza/:patient/pagos'>
       <HistorialPagos />
@@ -171,30 +177,22 @@ const DebtXPatientTable = () => {
   )
 }
 
-let production_nofe_default = true
 const CobranzaDetail = () => {
   const {current_sucursal} = useContext(NavigationContext)
   let __params__ = useParams()
   const [selected_attention_detail, setSelectedAD] = useState([])
-  const [refresh, setRefresh] = useState(false)
   const [patient, setPatient] = useState(false)
-  const [client, setClient] = useState(false)
+  // update_dcclist will re-execute this component so dcc_list is recalculated with its new .monto value
+  const [update_dcclist, updateDCCList] = useState(false)
+  let dcc_list = selected_attention_detail.map(i => {return {dcc: (i.pk||null), monto: i.monto}})
 
   const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
-  const getClientByPatient = _pac => {
-    simpleGet(`finanzas/cliente/?filtro={"dni":"${_pac.dni?_pac.dni:_pac.dni_otro}","dni_otro":"true"}`)
-    .then(res => setClient(res.length!=0 ? res[0] : false))
-  }
+  const updatedcclist = () => updateDCCList(!update_dcclist)
 
   useEffect(() => {
     // Get patient from url'pk
     getPatientByID(__params__.patient)
   }, [])
-  useEffect(() => {
-    if(!patient) return
-
-    getClientByPatient(patient)
-  }, [patient])
 
   return !patient
     ? "loading"
@@ -205,8 +203,7 @@ const CobranzaDetail = () => {
       <div className="row">
         <div className="col-lg-4">
           <PaymentForm
-            setRefresh={setRefresh}
-            selected={selected_attention_detail}
+            dcc_list={dcc_list}
             current_sucursal={current_sucursal}
             patient={patient} />
         </div>
@@ -215,394 +212,344 @@ const CobranzaDetail = () => {
             <PatientDebtsTable
               selected={selected_attention_detail}
               select={setSelectedAD}
-              refresh={refresh}
-              setRefresh={setRefresh}
-              client={client}/>
+              updateDCCList={updatedcclist}
+              patient={patient} />
           </div>
         </div>
       </div>
     </>
     )
 }
-const PaymentForm = ({patient, current_sucursal, selected, setRefresh}) => {
-  // Receive {patient, selected, current_sucursal, setRefresh}
-  const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // Natural && Empresa && Sin FE
-  const [client, setClient] = useState(-1)  // Current Client (default:paciente redirected)
-  const [knownclient, setNC] = useState(!production_nofe_default)  // Paciente es Cliente
+export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=false}) => {
+  // dcc_list = [{dcc: (i.dcc||null), monto: i.precio}]
 
-  useEffect(() => {
-    if(__debug__) console.log("useEffect clienttype", clienttype)
-    if(clienttype==1){
-      document.getElementById("client-dni").value = patient.dni
-      setValues(patient)
-      setNC(true)  // Client is known 'cuz we're setting the patient client
-    }else{
-      setValues(false)
-      if(document.getElementById('client-ruc'))
-        document.getElementById('client-ruc').value = ""
-    }
-  }, [clienttype])
-  useEffect(() => {
-    if(__debug__) console.log("useEffect client", client)
-    if(clienttype==3) return
-    if(client==-1) getClient('dni', patient.dni)
-    if(client==false){
-      setValues(patient)
-      setNC(false)
-      return
-    }
+  let production_nofe_default = false  // Sucursal have perms to use FE
+  const update_ctx = useContext(UpdateContext)
+  const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // BOLETA || FACTURA || SIN CLIENTE
+  const [ubigeos, setUbigeos] = useState(false)
+  const [client, setClient] = useState(false)
+  let html_btn_group_toggle_class = "btn btn-outline-info waves-effect waves-themed"
 
-    setNC(true)
-    setValues(client)  // Set values
-  }, [client])
-  useEffect(() => {
-    if(__debug__) console.log("useEffect knownclient", knownclient)
-    if(knownclient) return
-
-    setValues(false)
-  }, [knownclient])
-
+  // Initial
+  const getUbigeos = () => simpleGet('maestro/ubigeo').then(setUbigeos)
+  const getCliente = () => {
+    simpleGet(`finanzas/cliente/?filtro={"dni":"${patient.dni}"}`)
+    .then(i => i.length!=0 ? setClient(i[0]) : fillFromPatient())
+  }
   // Extras
+  const fillFromPatient = () => {
+    /* Initial fill of data when clienttype = 1
+    * Fill tipo_documento = DNI
+    * Fill dni = patient.dni
+    * Fill fullname = patient.fullname
+    */
+    if(clienttype != 1) return
+
+    window.document.getElementById('client-data-1').value = "1"  // DNI
+    window.document.getElementById('client-data-2').value = patient.dni
+    window.document.getElementById('fullname').value = patient.fullname.toUpperCase()
+  }
+  const fillFromClient = () => {
+    if(clienttype != 1 || !client) return
+
+    window.document.getElementById('client-data-1').value = client.tipo=='3'?'1':'2'
+    window.document.getElementById('client-data-2').value = client.tipo!='3'?client.ruc:client.ruc?client.ruc:client.dni
+    window.document.getElementById('fullname').value = client.tipo!='3'?client.razon_social:(getDataFromCloud(client.dni?client.dni:client.ruc)||"")
+    window.document.getElementById('form-ubigeo').value = client.ubigeo
+    window.document.getElementById('form-direccion').value = client.direccion
+  }
   const getBack = () => window.history.back()
-  const inputChange_DNI = (val) => {
-    if(val.trim().length==8) getClient('dni', val)
-    else setNC(false)
+  const inputChange = ev => {
+    let val = ev.target.value.trim()
+    getDataFromCloud(val)
   }
-  const inputChange_RUC = (val) => {
-    if(val.trim().length==11) getClient('ruc', val)
-    else setNC(false)
-  }
-  const getClient = (type, val) => {
-    simpleGet(`finanzas/cliente/?filtro={"${type}":"${val}"}`)
-    .then(res => setClient(res.length!=0 ? res[0] : false))
-  }
-  const setValues = (values) => {
+  const getDataFromCloud = val => {
+    // Two flux {1:BOLETA || 2:FACTURA}
     if(clienttype==1){
-      if(document.getElementById('name-pric'))
-        document.getElementById('name-pric').value = values?values.nombre_principal:""
-      if(document.getElementById('name-sec'))
-        document.getElementById('name-sec').value = values?values.nombre_secundario:""
-      if(document.getElementById('ape-p'))
-        document.getElementById('ape-p').value = values?values.ape_paterno:""
-      if(document.getElementById('ape-m'))
-        document.getElementById('ape-m').value = values?values.ape_materno:""
-    }else{
-      if(document.getElementById('client-razon-social'))
-        document.getElementById('client-razon-social').value = values&&values.razon_social?values.razon_social:""
-      if(document.getElementById('client-phone'))
-        document.getElementById('client-phone').value = values&&values.celular?values.celular:""
-    }
-  }
-  // Form submit function
-  const handleSubmit = () => {
-    // Check selected attention detail
-    if(selected.length==0){
-      handleErrorResponse("custom", "Error", "Debe seleccionar los elementos a cobrar en el panel de la derecha", 'warning')
-      return
-    }
-
-    // Client exists
-    if(__debug__) console.log("handleSubmit", knownclient, client, clienttype)
-    if(knownclient)
-      if(client) savePayment(client)
-      else handleSubmit_ClientRegular()  // Regular
-    else  // New client
-      if(clienttype==1) handleSubmit_ClientRegular()  // Regular
-      else if(clienttype==2) handleSubmit_ClientEmpresa()  // Enterprise
-      else if(clienttype==3) savePayment()  // No FE
-  }
-  // Save form as client
-  const handleSubmit_ClientEmpresa = () => {
-    console.log("Empresa")
-    // Validate
-    let _tmp
-    _tmp = document.getElementById("client-ruc")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina", 'warning')
-      return
-    }
-    if(_tmp.value.trim().length!=11){
-      handleErrorResponse("custom", "Error", "El ruc debe tener 11 digitos", 'warning')
-      return
-    }
-    if(isNaN(parseInt(_tmp.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("client-razon-social")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "Ha ocurrido un error, por favor actualice la pagina", 'warning')
-      return
-    }
-    if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Debe especificar la razón social de la empresa", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("client-phone")
-    if(_tmp && !!_tmp.value){
-      if(_tmp.value.length!=9){
-        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
+      // BOLETA
+      let tipo = window.document.getElementById('client-data-1').value
+      // Validar longitud de val
+      if(val.length != (tipo=="1"?8:11)){
+        window.document.getElementById('fullname').value = ""
         return
       }
-      if(!/^\d+$/.test(_tmp.value)){
-        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
+
+      if(tipo=="1"){
+        simpleGet(`atencion/reniec/${val}/`)
+        .then(p => {
+          if(clienttype != 1) return
+          window.document.getElementById('fullname').value = xhtmlDecode(p.nombres+" "+p.apellido_paterno+" "+p.apellido_materno)
+          handleErrorResponse('paymentform', "", "Datos del dni obtenidos de la reniec", 'info')
+        })
+      }else{
+        simpleGet(`atencion/sunat/${val}/`)
+        .then(p => {
+          if(clienttype != 1) return
+          // Validar respuesta
+          if(p.success){
+            window.document.getElementById('fullname').value = p.data.nombre_o_razon_social
+            window.document.getElementById('form-direccion').value = p.data.direccion
+            let _opt = window.document.querySelector(`option[data-ubigeo='${p.data.ubigeo[2]}']`)
+            window.$('#form-ubigeo').val(_opt.value).trigger('change')
+            handleErrorResponse('paymentform', "", "Datos del ruc obtenidos de la sunat", 'info')
+          }else handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
+        })
+      }
+    }else if(clienttype==2){
+      // FACTURA
+      // Validar longitud de val
+      if(val.length != 11){
+        window.document.getElementById('client-data-2').value = ""
         return
       }
-    }
-
-
-    let _tmp1 = {
-      razon_social: document.getElementById("client-razon-social").value,
-      ruc_: document.getElementById("client-ruc").value,  // Artifice to get_or_create
-    }
-    if(document.getElementById("client-phone").value.length!=0)
-      _tmp1.celular = document.getElementById("client-phone").value
-
-    getOrCreateNewClient(_tmp1)
-  }
-  const handleSubmit_ClientRegular = () => {
-    // Validate
-    let _tmp
-    _tmp = document.getElementById("name-pric")
-    if(!_tmp || _tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Nombre principal no especificado", 'warning')
-      return
-    }
-    if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("name-sec")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "Nombre secundario no especificado", 'warning')
-      return
-    }
-    if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("ape-p")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "Apellido paterno no especificado", 'warning')
-      return
-    }
-    if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio", 'warning')
-      return
-    }
-    if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("ape-m")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "Apellido materno no especificado", 'warning')
-      return
-    }
-    if(_tmp.value.trim().length==0){
-      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio", 'warning')
-      return
-    }
-    if(!isNaN(parseInt(_tmp.value))){
-      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("client-dni")
-    if(!_tmp){
-      handleErrorResponse("custom", "Error", "DNI no especificado", 'warning')
-      return
-    }
-    if(_tmp.value.trim().length!=8){
-      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
-      return
-    }
-    if(isNaN(parseInt(_tmp.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
-      return
-    }
-
-    _tmp = document.getElementById("client-phone")
-    if(_tmp && !!_tmp.value){
-      if(_tmp.value.length!=9){
-        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
-        return
-      }
-      if(!/^\d+$/.test(_tmp.value)){
-        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
-        return
-      }
-    }
-
-
-    let _tmp1 = {
-      nombre_principal: document.getElementById('name-pric').value,
-      nombre_secundario: document.getElementById('name-sec').value,
-      ape_paterno: document.getElementById('ape-p').value,
-      ape_materno: document.getElementById('ape-m').value,
-      dni_: document.getElementById('client-dni').value,  // Artifice to get_or_create
-    }
-    if(document.getElementById("client-phone").value.length!=0)
-      _tmp1.celular = document.getElementById("client-phone").value
-
-    getOrCreateNewClient(_tmp1)
-  }
-  // Get/Create client from API
-  const getOrCreateNewClient = (data) => {
-    simplePostData(`finanzas/cliente/`, data)
-    .then(
-      response_obj => savePayment(response_obj),
-      () => handleErrorResponse('custom', "Error", "Ha ocurrido un error inesperado", 'warning')
-    )
-  }
-
-  // Save payment
-  const savePayment = (_client) => {
-    // BUG: LEFT TO OPTIMIZE AND CHECK BEHAVIOUR
-    if(__debug__) console.log("savePayment")
-    if(__debug__) console.log("selected", selected)
-    // setClient(_client)
-
-    // Send payment
-    selected.reduce(
-      (promise_chain, dcc) => promise_chain.then(() => simplePostData(
-        'finanzas/cuentacorriente/pago/create/',
-        {
-          detallecuentacorriente: dcc.pk,
-          monto: dcc.monto?dcc.monto:dcc.deuda,
-        }
-      )), Promise.resolve()
-    )
-    .then(() => handleErrorResponse("custom", "Exito", "Se ha realizado el pago correctamente", "info"))
-    .then(() => setRefresh(true))
-    .then(() => {
-      if(clienttype==3) return Promise.reject("No FE")
-      return simplePostData('finanzas/comprobante/', {
-        tipo: clienttype,
-        sucursal: current_sucursal,
-        dcc_list: String(selected),
-        cliente: _client.pk,  // Use parameter instead of client object 'cuz the state change may not be done before reaching this point
+      // Consultar servicio de sunat
+      simpleGet(`atencion/sunat/${val}/`)
+      .then(p => {
+        if(clienttype != 2) return
+        // Validar respuesta
+        if(p.success){
+          window.document.getElementById('client-data-2').value = p.data.nombre_o_razon_social
+          window.document.getElementById('form-direccion').value = p.data.direccion
+          let _opt = window.document.querySelector(`option[data-ubigeo='${p.data.ubigeo[2]}']`)
+          window.$('#form-ubigeo').val(_opt.value).trigger('change')
+          handleErrorResponse('paymentform', "", "Se ha encontrado información relacionada al ruc en el servicio de sunat", 'info')
+        }else handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
       })
+    }
+  }
+  // Save payment
+  const getClient = () => {
+    let client = {
+      ubigeo: window.document.getElementById('form-ubigeo').value,
+      direccion: window.document.getElementById('form-direccion').value,
+    }
+    // Validate
+    if(clienttype==2 && client.direccion.trim().length<3){
+      handleErrorResponse("paymentform", "Error", "La direccion es obligatoria al emitir facturas", "warning")
+      return null
+    }
+    if(client.direccion.trim().length==0) client.direccion = null
+
+    if(clienttype==2){
+      client.ruc = window.document.getElementById('client-data-1').value
+      client.razon_social = window.document.getElementById('client-data-2').value
+      client.dni = null
+      // Validate
+      if(client.ruc.length!=11){
+        handleErrorResponse("paymentform", "Error", "El ruc debe tener 11 digitos", "warning")
+        return null
+      }
+    }else if(clienttype==1){
+      let _tipo = window.document.getElementById('client-data-1').value
+      if(_tipo=='1'){
+        // DNI
+        client.ruc = null
+        client.razon_social = window.document.getElementById('fullname').value
+        client.dni = window.document.getElementById('client-data-2').value
+        // Validate
+        if(client.dni.length!=8){
+          handleErrorResponse("paymentform", "Error", "El dni debe tener 8 digitos", "warning")
+          return null
+        }
+      }else if(_tipo=='2'){
+        // RUC
+        client.ruc = window.document.getElementById('client-data-2').value
+        client.razon_social = window.document.getElementById('fullname').value
+        client.dni = null
+        // Validate
+        if(client.ruc.length!=11){
+          handleErrorResponse("paymentform", "Error", "El ruc debe tener 11 digitos", "warning")
+          return null
+        }
+      }
+
+    }
+
+    return client
+  }
+  const handleSubmit = () => {
+    let _client = getClient()
+    if(!_client) return
+    sendData(dcc_list, _client)
+  }
+  const sendData = (_dcc_list, _client) => {
+    simplePostData('finanzas/pago/create/', {
+      paciente: patient.pk,
+      cliente: _client,
+      sucursal: current_sucursal,
+      tipo_pago: clienttype,
+      monto_pagado: _dcc_list.reduce((sum, i) => (sum+i.monto), 0),
+      dcc_list: _dcc_list,
     })
-    .then(
-      res => window.open(process.env.REACT_APP_PROJECT_API+`finanzas/empresa/${current_sucursal}/pdf/${res.pk}/`, "_blank"),
-      er => console.log("ERROR", er)
-    )
+    // Call EP to show comprobante in screen
+    .then(res => res && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
+    .then(() => handleErrorResponse("paymentform", "Exito", "Se ha realizado el pago correctamente", "info"))
+    .then(() => update_ctx.update(true))
     .catch(er => console.log("ERROR", er))
   }
 
+  useEffect(() => {
+    // Select2 for personal choose in Cita
+    // CSS
+    if(!document.getElementById('select2_link')){
+      const select2_link = document.createElement("link")
+      select2_link.rel = "stylesheet"
+      select2_link.id = "select2_link"
+      select2_link.media = "screen, print"
+      select2_link.href = "/css/formplugins/select2/select2.bundle.css"
+      document.head.appendChild(select2_link)
+    }
+    // JS
+    if(!document.getElementById('select2_script')){
+      const select2_script = document.createElement("script")
+      select2_script.async = false
+      select2_script.id = "select2_script"
+      select2_script.onload = ()=>{
+        window.$("#form-ubigeo").select2({dropdownParent: window.$("#form-ubigeo").parent()})
+      }
+      select2_script.src = "/js/formplugins/select2/select2.bundle.js"
+      document.body.appendChild(select2_script)
+    }else{
+      window.$("#form-ubigeo").select2({dropdownParent: window.$("#form-ubigeo").parent()})
+    }
+
+    getUbigeos()
+    getCliente()
+  }, [])
+  useEffect(() => {
+    if(__debug__) console.log("useEffect client", client)
+
+    if(clienttype==1) fillFromClient()
+  }, [client])
+  useEffect(() => {
+    if(__debug__) console.log("useEffect clienttype", clienttype)
+
+    if(clienttype==1) fillFromPatient()
+  }, [clienttype])
+
   return (
     <div>
+      <div id="alert-paymentform" className="alert bg-warning-700 fade" role="alert" style={{display: "none"}}>
+        <strong id="alert-paymentform-headline">Error!</strong> <span id="alert-paymentform-text">Algo salió mal</span>.
+      </div>
+
       <div style={{marginLeft: "20px"}} className="btn-group btn-group-toggle" data-toggle="buttons">
         {production_nofe_default?""
           : (
           <>
-            <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===1?'active':'')} onClick={()=>setClientType(1)}>
-              <input type="radio" name="odontogram_type" defaultChecked /> Boleta
+            <label className={html_btn_group_toggle_class+(clienttype==1?' active':'')} onClick={()=>setClientType(1)}>
+              <input type="radio" name="client_type" defaultChecked /> Boleta
             </label>
-            <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===2?'active':'')} onClick={()=>setClientType(2)}>
-              <input type="radio" name="odontogram_type" /> Factura
+            <label className={html_btn_group_toggle_class+(clienttype==2?' active':'')} onClick={()=>setClientType(2)}>
+              <input type="radio" name="client_type" /> Factura
             </label>
           </>
           )
         }
-        <label className={"btn btn-outline-info waves-effect waves-themed "+(clienttype===3?'active':'')} onClick={()=>setClientType(3)}>
-          <input type="radio" name="odontogram_type" /> Sin FE
+        <label className={html_btn_group_toggle_class+(clienttype==3?' active':'')} onClick={()=>setClientType(3)}>
+          <input type="radio" name="client_type" /> Sin FE
         </label>
       </div>
 
       <div style={{paddingTop: "20px"}}>
-        {clienttype==1
-          ? (
-            <div>
-              <div className="col-sm" style={{paddingBottom: "5px"}}>
-                <label className="form-label" htmlFor="client-dni">DNI: </label>
-                <input type="text" id="client-dni" className="form-control"
-                  maxLength="8" onChange={(e)=>inputChange_DNI(e.target.value)} />
-              </div>
-              <NewCustomerForm disabled={knownclient} />
-            </div>
-          ) : clienttype==2
-          ? (
-            <div>
-              <div className="col-sm" style={{paddingBottom: "5px"}}>
-                <label className="form-label" htmlFor="client-ruc">RUC: </label>
-                <input type="text" id="client-ruc" className="form-control"
-                  maxLength="11" onChange={(e)=>inputChange_RUC(e.target.value)} />
-              </div>
-              <div className="col-sm" style={{paddingBottom: "5px"}}>
-                <label className="form-label" htmlFor="client-razon-social">Razón Social: </label>
-                <input type="text" id="client-razon-social" className="form-control" disabled={knownclient && clienttype==2} />
-              </div>
-              <div className="col-sm" style={{paddingBottom: "5px"}}>
-                <label className="form-label" htmlFor="client-address">Dirección: </label>
-                <input type="text" id="client-address" className="form-control" disabled={knownclient && clienttype==2} />
-              </div>
-            </div>
-          ) : ""
-        }
-
-        {clienttype!=3
-          ? (
-            <div className="col-sm" style={{paddingBottom: "5px"}}>
-              <label className="form-label" htmlFor="client-phone">Número de contacto: </label>
-              <input type="text" id="client-phone" className="form-control" maxLength="9" disabled={knownclient} />
-            </div>
-          )
-          : <div className="card-body"><h5>Emitir comprobante manualmente</h5></div>
-        }
+        {clienttype==1 && <FormPayMethod1 inputChange={inputChange} />}
+        {clienttype==2 && <FormPayMethod2 inputChange={inputChange} />}
+        {clienttype==3 && <FormPayMethod3 />}
+        <FormPayLocation hidden={clienttype!=3} ubigeos={ubigeos} />
       </div>
 
-      <div className="col-sm d-flex" style={{paddingTop: "30px"}}>
-        <button className="btn btn-primary" onClick={() => handleSubmit()}>
-          Guardar
-        </button>
-
-        <button className="btn btn-light ml-auto" onClick={() => getBack()}>
-          Regresar
-        </button>
-      </div>
+      {footer_fn
+        ? footer_fn(getClient, clienttype)
+        : (
+        <div className="col-sm d-flex" style={{paddingTop: "30px"}}>
+          <button className="btn btn-primary" onClick={handleSubmit}>
+            Procesar
+          </button>
+          <button className="btn btn-light ml-auto" onClick={getBack}>
+            Regresar
+          </button>
+        </div>
+      )}
     </div>
   )
 }
-const NewCustomerForm = ({disabled}) => {
+const FormPayMethod1 = ({inputChange}) => {
+  const [client_doc, setClienteDoc] = useState(1)
+  // client_doc is related to client-data-1 select::option (1: dni, 2: ruc)
+  const handleChangeClienteDocumento = ev => setClienteDoc(ev.target.value)
+
+  useEffect(() => {
+    window.document.getElementById('client-data-2').value = ""
+    window.document.getElementById('fullname').value = ""
+  }, [client_doc])
+
   return (
     <div>
-      <div className="col-sm">
-        <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
-        <input type="text" id="name-pric" className="form-control" disabled={!!disabled} />
+      <div className="col-sm" style={{paddingBottom: "5px"}}>
+        <label className="form-label" htmlFor="client-data-1">Documento: </label>
+        <select id="client-data-1" className="custom-select form-control"
+        defaultValue={client_doc} onChange={handleChangeClienteDocumento}>
+          <option value="1">DNI</option>
+          <option value="2">RUC</option>
+        </select>
       </div>
       <div className="col-sm">
-        <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
-        <input type="text" id="name-sec" className="form-control" disabled={!!disabled} />
+        <label className="form-label" htmlFor="client-data-2">{client_doc==1?"DNI":"RUC"}: </label>
+        <input type="text" id="client-data-2" className="form-control"
+        maxLength={client_doc==1?8:11} onChange={inputChange} />
       </div>
       <div className="col-sm">
-        <label className="form-label" htmlFor="ape-p">Apellido paterno: </label>
-        <input type="text" id="ape-p" className="form-control" disabled={!!disabled} />
-      </div>
-      <div className="col-sm">
-        <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
-        <input type="text" id="ape-m" className="form-control" disabled={!!disabled} />
+        <input type="text" id="fullname" className="form-control" disabled={true} />
       </div>
     </div>
   )
 }
-const PatientDebtsTable = ({client, selected, select, refresh, setRefresh}) => {
-  // Receive {client, selected, select, refresh, setRefresh}
+const FormPayMethod2 = ({inputChange}) => (
+  <div>
+    <div className="col-sm" style={{paddingBottom: "5px"}}>
+      <label className="form-label" htmlFor="client-data-1">RUC: </label>
+      <input type="text" id="client-data-1" className="form-control"
+      maxLength="11" onChange={inputChange} />
+    </div>
+    <div className="col-sm" style={{paddingBottom: "5px"}}>
+      <label className="form-label" htmlFor="client-data-2">Razón Social: </label>
+      <input type="text" id="client-data-2" className="form-control" disabled={true} />
+    </div>
+  </div>
+)
+const FormPayMethod3 = () => (
+  <div className="card-body">
+    <h5>Emitir comprobante manualmente</h5>
+  </div>
+)
+const FormPayLocation = ({hidden, ubigeos}) => (
+  <div style={{display: hidden?"block":"none"}}>
+    <div className="col-sm">
+      <label className="form-label" htmlFor="form-ubigeo">Residencia: </label>
+      <select id="form-ubigeo" className="custom-select form-control custom-select-lg">
+        {ubigeos && ubigeos.map(u =>
+          <option key={"select_ubigeo_"+u.pk} value={u.pk} data-ubigeo={u.ubigeo}>
+            {u.provincia} - {u.distrito}
+          </option>
+        )}
+      </select>
+    </div>
+    <div className="col-sm" style={{paddingBottom: "5px"}}>
+      <label className="form-label" htmlFor="form-direccion">Dirección: </label>
+      <input type="text" id="form-direccion" className="form-control" />
+    </div>
+  </div>
+)
+const PatientDebtsTable = ({patient, selected, select, updateDCCList}) => {
+  const update_ctx = useContext(UpdateContext)
   const [dccs, setDebts] = useState(false)
   const [total_to_pay, setTTP] = useState(0)
 
   const getCuentaCorrienteDebts = () => {
     // Get patient's not paid dccs
-    simpleGet(`finanzas/cuentacorriente/detalle/?filtro={"cliente":"${client.pk}", "estado_pago_not":"3"}`)
+    simpleGet(`finanzas/cuentacorriente/detalle/?filtro={"paciente":"${patient.pk}", "estado_pago_not":"3"}`)
     .then(
       res => {
-        if(__debug__) console.log("getCuentaCorrienteDebts res", res)
         setDebts(res)  // Save response as debts
 
         for(let r in res){
@@ -649,6 +596,7 @@ const PatientDebtsTable = ({client, selected, select, refresh, setRefresh}) => {
     dcc.monto = Number(input_el.value)
 
     calcNewTTP()  // Call this function cuz it's flat code (not update selected state)
+    updateDCCList()
   }
   const calcNewTTP = () => {
     if(__debug__) console.log("calcNewTTP")
@@ -662,19 +610,17 @@ const PatientDebtsTable = ({client, selected, select, refresh, setRefresh}) => {
   }
 
   useEffect(() => {
-    if(!client) return
-
     getCuentaCorrienteDebts()
-  }, [client])
+  }, [])
   useEffect(() => {
-    if(__debug__) console.log("PatientDebtsTable useEffect refresh")
-    if(!refresh) return
+    if(__debug__) console.log("PatientDebtsTable useEffect update_ctx.status")
+    if(!update_ctx.status) return
 
-    // refresh values
+    // update values
     select([])
-    setRefresh(false)
+    update_ctx.update(false)
     getCuentaCorrienteDebts()
-  } , [refresh])
+  } , [update_ctx.status])
   useEffect(() => {
     if(__debug__) console.log("PatientDebtsTable useEffect selected")
 

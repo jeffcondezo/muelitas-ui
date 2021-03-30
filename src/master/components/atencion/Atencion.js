@@ -418,10 +418,10 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
 }
 const AttentionProcedures = ({cita}) => {
   const {redirectTo} = useContext(NavigationContext)
-  const [procedures, setProcedures] = useState(false)
+  const [das, setDA] = useState(false)
   const delete_proc_pk = useRef(-1)
 
-  const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setProcedures)
+  const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setDA)
   const modalConfirmDelete = _pk => {
     window.$('#modal_delete_procedure').modal('show')
     delete_proc_pk.current = _pk
@@ -444,7 +444,7 @@ const AttentionProcedures = ({cita}) => {
     getProcedures(cita.atencion)
   }, [])
 
-  return !procedures
+  return !das
     ? (<div className="card"><div className="card-body">loading</div></div>)
     : (
       <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
@@ -453,38 +453,38 @@ const AttentionProcedures = ({cita}) => {
             Procedimientos realizados
           </div>
         </div>
-        <div id="proc-list" className={procedures.length==0?"card-body":""}>
-          {procedures.length==0
+        <div id="proc-list" className={das.length==0?"card-body":""}>
+          {das.length==0
             ? "No se ha relizado ningún procedimiento"
-            : procedures.map(proc => (
-              <div key={"proc-"+proc.pk}>
-                <li className="list-group-item d-flex" id={proc.pk}
-                  data-toggle="collapse" data-target={"#proc-desc-"+proc.pk}
-                  aria-expanded="true" aria-controls={"proc-desc-"+proc.pk}
+            : das.map(da => (
+              <div key={"da-"+da.pk}>
+                <li className="list-group-item d-flex" id={da.pk}
+                  data-toggle="collapse" data-target={"#da-desc-"+da.pk}
+                  aria-expanded="true" aria-controls={"da-desc-"+da.pk}
                   style={{cursor: "pointer", borderBottom: "0"}}>
                     <span style={{fontSize: "1.2em"}}>
-                        {cFL(proc.procedimiento_data.nombre)}
+                        {cFL(da.pxs_data.nombre)}
                     </span>
-                    {!proc.paid && (
+                    {!da.pagado && (
                       <button className="btn ml-auto"
                         style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                        onClick={()=>editProcedure(proc.pk)}>
+                        onClick={()=>editProcedure(da.pk)}>
                           <i className="fal fa-edit"></i>
                       </button>
                     )}
-                    {!proc.paid && (
+                    {!da.pagado && (
                       <button className="btn"
                         style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                        onClick={()=>modalConfirmDelete(proc.pk)}>
+                        onClick={()=>modalConfirmDelete(da.pk)}>
                           <i className="fal fa-trash-alt"></i>
                       </button>
                     )}
                 </li>
-                <div id={"proc-desc-"+proc.pk} className="collapse"
-                  aria-labelledby={proc.pk} data-parent="#proc-list"
+                <div id={"da-desc-"+da.pk} className="collapse"
+                  aria-labelledby={da.pk} data-parent="#da-list"
                   style={{paddingLeft: "1.8rem", paddingTop: "0", paddingBottom: ".75rem"}}>
                     <span>
-                      {proc.observaciones}
+                      {da.observaciones}
                     </span>
                 </div>
               </div>

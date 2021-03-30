@@ -1,3 +1,5 @@
+import React, { useState, createContext } from 'react';
+
 // Generics
 export function handleErrorResponse(type, ...data){
   let _id = false
@@ -26,15 +28,15 @@ export function handleErrorResponse(type, ...data){
     }
 
     _id = 'alert-login'
-  }else if(type=='custom'){
+  }else{
     // Check if element exist in DOM
-    let div_alert_custom = document.getElementById("alert-custom")
+    let div_alert_custom = document.getElementById("alert-"+type)
     if(!div_alert_custom){
-      console.error("DOM 'alert-custom' NOT FOUND")
+      console.error("DOM 'alert-"+type+"' NOT FOUND")
       return
     }
 
-    _id = 'alert-custom'
+    _id = 'alert-'+type
     if(data.length<2) return
 
     // Custom customization
@@ -48,8 +50,8 @@ export function handleErrorResponse(type, ...data){
     }
 
     // Set message to alert box
-    document.querySelector('#alert-custom #alert-headline').textContent = data[0]
-    document.querySelector('#alert-custom #alert-text').textContent = data[1]
+    document.querySelector(`#${_id} #${_id}-headline`).textContent = data[0]
+    document.querySelector(`#${_id} #${_id}-text`).textContent = data[1]
   }
 
 
@@ -76,7 +78,7 @@ export function capitalizeFirstLetter(word, restLowerCase=true){
     )
 }
 export function isArray(_ar){
-  return typeof _ar == "object" & _ar.hasOwnProperty("length")
+  return typeof _ar == "object" && _ar.hasOwnProperty("length")
 }
 export function getUrlSearchAsObj(json=true){
   let search_text = window.location.search
@@ -229,4 +231,16 @@ export function deleteUserLogIn(){
   // Remove access token from localstorage
   localStorage.removeItem("access_token")
   localStorage.setItem("logged", false)  // Set logged as false from localstorage
+}
+
+// Update component helper by context
+export const UpdateContext = createContext({})
+export const UpdateComponentHelper = ({children}) => {
+  const [update_state, setUpdateState] = useState(false)
+
+  return (
+    <UpdateContext.Provider value={{status: update_state, update: setUpdateState}}>
+      {children}
+    </UpdateContext.Provider>
+  )
 }
