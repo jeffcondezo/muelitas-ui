@@ -667,11 +667,11 @@ const CreatePDTForm = ({current_sucursal, refreshProcList}) => {
     .then(() => refreshProcList())
   }
   const handleProcedureChange = el => {
-    let inx = indexOfInObjectArray(pxss, 'procedimiento', el.value)
-    if(inx==-1) return
+    let _pxs = pxss.find(i => i.pk == el.value)
+    if(!_pxs) return
 
     // Update coste
-    window.document.getElementById('precio').value = pxss[inx].precio
+    window.document.getElementById('precio').value = _pxs.precio
   }
   const getBack = () => window.history.back()
 
@@ -680,6 +680,7 @@ const CreatePDTForm = ({current_sucursal, refreshProcList}) => {
   }, []);
   useEffect(() => {
     if(!pxss) return
+    console.log("pxss", pxss)
 
     // Select2 for personal choose in Cita
     // CSS

@@ -370,6 +370,11 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   const handleSubmit = () => {
     let _client = getClient()
     if(!_client) return
+    // Validate dcc_list data doesn't have monto 0
+    if(dcc_list.some(i => i.monto == 0)){
+      handleErrorResponse("paymentform", "Error", "No se puede pagar 0 soles", "warning")
+      return
+    }
     sendData(dcc_list, _client)
   }
   const sendData = (_dcc_list, _client) => {

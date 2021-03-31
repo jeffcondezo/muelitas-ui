@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useParams } from "react-router-dom"
 import {
-  indexOfInObjectArray,
   simpleGet,
   getDataByPK,
-  simplePostData
+  simplePostData,
+  handleErrorResponse,
 } from '../../functions'
 import { PageTitle } from '../bits'
 import { NavigationContext } from '../Navigation'
@@ -100,12 +100,11 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
     }
   }
   function handleProcedureChange(el){
-    if(__debug__) console.log("handleProcedureChange el", el)
-    let inx = indexOfInObjectArray(pxss, 'procedimiento', el.value)
-    if(inx==-1) return
+    let _pxs = pxss.find(i => i.pk == el.value)
+    if(!_pxs) return
 
     // Update coste
-    window.document.getElementById('cost').value = pxss[inx].precio
+    window.document.getElementById('precio').value = _pxs.precio
   }
 
   useEffect(() => {
