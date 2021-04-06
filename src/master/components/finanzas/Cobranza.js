@@ -254,9 +254,9 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
 
     window.document.getElementById('client-data-1').value = client.tipo=='3'?'1':'2'
     window.document.getElementById('client-data-2').value = client.tipo!='3'?client.ruc:client.ruc?client.ruc:client.dni
-    window.document.getElementById('form-direccion').value = client.direccion
+    window.document.getElementById('form-direccion').value = client.direccion || patient.direccion
     // Set razon_social
-    window.document.getElementById('fullname').value = client.razon_social
+    window.document.getElementById('fullname').value = client.razon_social || patient.fullname
     getDataFromCloud(client.dni || client.ruc)  // Try to get data from 3rd party to confirm DB's data
     // Set ubigeo
     window.$('#form-ubigeo').val(client.ubigeo).trigger('change')

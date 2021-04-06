@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react'
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom'
 import {
   Switch,
   Route,
   useParams,
-} from "react-router-dom";
+} from "react-router-dom"
 import {
   indexOfInObjectArray,
   handleErrorResponse,
@@ -20,7 +20,7 @@ import {
   ModalCancel,
   Icon,
   RegularModalCentered,
-} from '../bits';
+} from '../bits'
 import { NavigationContext } from '../Navigation'
 import { PaymentForm } from '../finanzas/Cobranza'
 
@@ -181,52 +181,52 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
   useEffect(() => {
     // JS
     if(!document.getElementById('dt_script')){
-      const dt_script = document.createElement("script");
-      dt_script.async = false;
-      dt_script.id = "dt_script";
-      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js";
+      const dt_script = document.createElement("script")
+      dt_script.async = false
+      dt_script.id = "dt_script"
+      dt_script.src = "/js/datagrid/datatables/datatables.bundle.js"
       dt_script.onload = () => {
         // Run at first execution
-        getPdts();
-      };
-      document.body.appendChild(dt_script);
+        getPdts()
+      }
+      document.body.appendChild(dt_script)
     }else{
-      getPdts();
+      getPdts()
     }
     // CSS
     if(!document.getElementById('dt_style')){
-      const dt_style = document.createElement("link");
-      dt_style.rel = "stylesheet";
-      dt_style.id = "dt_style";
-      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css";
-      document.head.appendChild(dt_style);
+      const dt_style = document.createElement("link")
+      dt_style.rel = "stylesheet"
+      dt_style.id = "dt_style"
+      dt_style.href = "/css/datagrid/datatables/datatables.bundle.css"
+      document.head.appendChild(dt_style)
     }
-  }, []);
+  }, [])
   // When pdts are setted
   useEffect(() => {
-    if(__debug__) console.log("pdts", pdts);
+    if(__debug__) console.log("pdts", pdts)
     if(!pdts) return
     if(isArray(pdts) && pdts.length == 0){
       // There is no pdt
       setThereIsPDT(false)
-      return;
+      return
     }
 
     if(!thereIsPDT) setThereIsPDT(true)  // Fix state
     setPDT(pdts[0])
-  }, [pdts]);
+  }, [pdts])
   useEffect(() => {
-    if(__debug__) console.log("useEffect pdt", pdt);
+    if(__debug__) console.log("useEffect pdt", pdt)
     if(!pdt) return
 
     getDptByPdt(pdt.pk)
   }, [pdt])
   // When dpdts are setted
   useEffect(() => {
-    if(!dpdts) return;  // Abort if it's false
+    if(!dpdts) return  // Abort if it's false
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#show-dpdt').DataTable().clear().destroy();
+    if(datatable) window.$('#show-dpdt').DataTable().clear().destroy()
     // Generate Datatable
     let _tmp = window.$('#show-dpdt').DataTable({
       data: dpdts,
@@ -319,23 +319,23 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
           colvis: "Visibilidad"
         }
       },
-    });
+    })
 
-    setDatatable(_tmp);  // Save DT in state
-  }, [dpdts]);
+    setDatatable(_tmp)  // Save DT in state
+  }, [dpdts])
   // When datatable is setted
   useEffect(() => {
-    if(!datatable) return;
+    if(!datatable) return
 
     // Change search type && set default value today
-    let _input = document.querySelector('#show-dpdt_filter');
-    let _select = document.createElement("select");
-    _select.classList.add("form-control");
+    let _input = document.querySelector('#show-dpdt_filter')
+    let _select = document.createElement("select")
+    _select.classList.add("form-control")
     pdts.map(v => {
-      let opt = document.createElement("option");
-      opt.value = v.pk;
-      opt.label = v.nombre;
-      _select.options.add(opt);
+      let opt = document.createElement("option")
+      opt.value = v.pk
+      opt.label = v.nombre
+      _select.options.add(opt)
     })
     _select.onchange = (e) => {  // Add change listener
       let pdt_pk = e.target.value
@@ -349,13 +349,13 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
       setPDT(__pdt)
     }
     _select.value = pdt.pk
-    _input.replaceWith(_select);  // Replace previous input.text with new select element
+    _input.replaceWith(_select)  // Replace previous input.text with new select element
   }, [datatable])
   useEffect(() => {
     if(pdtDeleted){
       getPdts()
       setPDTDeleted(false)
-      if(datatable) window.$('#show-dpdt').DataTable().clear().destroy();
+      if(datatable) window.$('#show-dpdt').DataTable().clear().destroy()
     }
   }, [pdtDeleted])
 
@@ -505,11 +505,12 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
       if(monto_remain == 0) return false  // End loop
       // Calcular monto del dpdt que se pagara
       let monto = 0
-      if(i.precio > monto_remain){
+      let _precio = i.dcc ? i.dcc.deuda : i.precio
+      if(_precio > monto_remain){
         monto = monto_remain
         monto_remain = 0
       }else{
-        monto = i.precio
+        monto = _precio
         monto_remain -= monto
       }
       // Agregar al array
