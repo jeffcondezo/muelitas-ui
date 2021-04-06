@@ -222,7 +222,6 @@ const CobranzaDetail = () => {
 }
 export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=false}) => {
   // dcc_list = [{dcc: (i.dcc||null), monto: i.precio}]
-
   let production_nofe_default = false  // Sucursal have perms to use FE
   const update_ctx = useContext(UpdateContext)
   const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // BOLETA || FACTURA || SIN CLIENTE
@@ -248,15 +247,19 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
     window.document.getElementById('client-data-1').value = "1"  // DNI
     window.document.getElementById('client-data-2').value = patient.dni
     window.document.getElementById('fullname').value = patient.fullname.toUpperCase()
+    window.document.getElementById('form-direccion').value = patient.direccion
   }
   const fillFromClient = () => {
     if(clienttype != 1 || !client) return
 
     window.document.getElementById('client-data-1').value = client.tipo=='3'?'1':'2'
     window.document.getElementById('client-data-2').value = client.tipo!='3'?client.ruc:client.ruc?client.ruc:client.dni
-    window.document.getElementById('fullname').value = client.tipo!='3'?client.razon_social:(getDataFromCloud(client.dni?client.dni:client.ruc)||"")
-    window.document.getElementById('form-ubigeo').value = client.ubigeo
     window.document.getElementById('form-direccion').value = client.direccion
+    // Set razon_social
+    window.document.getElementById('fullname').value = client.razon_social
+    getDataFromCloud(client.dni || client.ruc)  // Try to get data from 3rd party to confirm DB's data
+    // Set ubigeo
+    window.$('#form-ubigeo').val(client.ubigeo).trigger('change')
   }
   const getBack = () => window.history.back()
   const inputChange = ev => {
@@ -370,11 +373,17 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   const handleSubmit = () => {
     let _client = getClient()
     if(!_client) return
-    // Validate dcc_list data doesn't have monto 0
+    if(dcc_list.length == 0){
+      // Validate dcc_list is not empty
+      handleErrorResponse("paymentform", "Error", "Debe seleccionar al menos 1 elemento", "warning")
+      return
+    }
     if(dcc_list.some(i => i.monto == 0)){
+      // Validate dcc_list data doesn't have monto 0
       handleErrorResponse("paymentform", "Error", "No se puede pagar 0 soles", "warning")
       return
     }
+
     sendData(dcc_list, _client)
   }
   const sendData = (_dcc_list, _client) => {
@@ -387,7 +396,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
       dcc_list: _dcc_list,
     })
     // Call EP to show comprobante in screen
-    .then(res => res && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
+    .then(res => res.comprobante && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
     .then(() => handleErrorResponse("paymentform", "Exito", "Se ha realizado el pago correctamente", "info"))
     .then(() => update_ctx.update(true))
     .catch(er => console.log("ERROR", er))
@@ -422,15 +431,14 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
     getCliente()
   }, [])
   useEffect(() => {
-    if(__debug__) console.log("useEffect client", client)
-
-    if(clienttype==1) fillFromClient()
-  }, [client])
-  useEffect(() => {
+    if(__debug__) console.log("useEffect client/ubigeos", client)
     if(__debug__) console.log("useEffect clienttype", clienttype)
 
-    if(clienttype==1) fillFromPatient()
-  }, [clienttype])
+    if(ubigeos && clienttype==1){
+      if(client) fillFromClient()
+      else fillFromPatient()
+    }
+  }, [client, ubigeos, clienttype])
 
   return (
     <div>

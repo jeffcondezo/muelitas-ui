@@ -104,7 +104,7 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
     if(!_pxs) return
 
     // Update coste
-    window.document.getElementById('precio').value = _pxs.precio
+    window.document.getElementById('cost').value = _pxs.precio
   }
 
   useEffect(() => {

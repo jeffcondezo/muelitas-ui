@@ -524,7 +524,7 @@ const NewEditPatient = () => {
   const getInitialData = () => {
     if(_params_.patient == '0') return  // Nuevo
     // Get patient by id if patient is setted in url
-    getDataByPK('atencion/paciente/admision', _params_.patient).then(setPatient)
+    getDataByPK('atencion/paciente/admision/pk', _params_.patient).then(setPatient)
   }
   const saveData = () => {
     if(__debug__) console.log("NewEditPatient saveData");  // ';' mandatory
@@ -766,6 +766,9 @@ const PatientAntecedentsForm = ({antecedente}) => {
       window.document.getElementById('hepatitis').value = Number(antecedente.hepatitis)
       window.document.getElementById('hemorragia').value = Number(antecedente.hemorragia)
       window.document.getElementById('enf_cardiovascular').value = Number(antecedente.enf_cardiovascular)
+      window.document.getElementById('alergias').value = antecedente.alergias
+      window.document.getElementById('operaciones').value = antecedente.operaciones
+      window.document.getElementById('medicamentos').value = antecedente.medicamentos
     }
   }, [antecedente])
 
@@ -803,15 +806,15 @@ const PatientAntecedentsForm = ({antecedente}) => {
 
       <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="alergias">Alergias</label>
-        <textarea className="form-control" id="alergias" rows="2" defaultValue={antecedente?antecedente.alergias:""} ></textarea>
+        <textarea className="form-control" id="alergias" rows="2"></textarea>
       </div>
       <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="operaciones">Operaciones</label>
-        <textarea className="form-control" id="operaciones" rows="2" defaultValue={antecedente?antecedente.operaciones:""} ></textarea>
+        <textarea className="form-control" id="operaciones" rows="2"></textarea>
       </div>
       <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="medicamentos">Medicamentos</label>
-        <textarea className="form-control" id="medicamentos" rows="2" defaultValue={antecedente?antecedente.medicamentos:""} ></textarea>
+        <textarea className="form-control" id="medicamentos" rows="2"></textarea>
       </div>
 
     </div>
@@ -1311,7 +1314,7 @@ const getPatiente = (dni, setPatient) => {
     // Si no se encontro al paciente en Muelitas
     if(res.status == 404){
       // Consultar reniec
-      // return personaFromReniec(dni)
+      return personaFromReniec(dni)
     }
   })
   .then(i => console.log("bypass getPatiente i:", i) && false || i)
