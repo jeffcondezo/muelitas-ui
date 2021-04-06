@@ -66,6 +66,7 @@ const HistorialPagos = () => {
         {title: "Monto", data: "monto"},
         {title: "Origen", data: "plantrabajo"},
         {title: "Detalle", data: "detalle"},
+        {title: "Comprobante", data: "comprobante"},
       ],
       columnDefs: [{
         // Fecha y hora
@@ -110,6 +111,19 @@ const HistorialPagos = () => {
             , cell
           )
         }
+      }, {
+        // Comprobante
+        targets: -1,
+        createdCell: (cell, data, _) => {
+          if(!data) return
+          ReactDOM.render(
+            <a className="btn btn-primary btn-sm btn-icon waves-effect waves-themed"
+            target='_blank' href={process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${data}/`}>
+              <i class="fal fa-print"></i>
+            </a>
+            , cell
+          )
+        }
       }],
       order: [[0, 'desc']],
       pageLength: 15,  // Default page length
@@ -146,6 +160,7 @@ const HistorialPagos = () => {
     setDatatable(_tmp)  // Save DT in state
   }, [patientxpagos])
 
+  console.log("patientxpagos", patientxpagos)
   return (
     <>
     <PageTitle title={"Historial de pagos del paciente"} />
