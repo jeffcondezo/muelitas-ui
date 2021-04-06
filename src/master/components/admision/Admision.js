@@ -43,17 +43,14 @@ const Admision = () => (
       <Route exact path="/nav/admision">
         <AdmisionHome />
       </Route>
-      <Route exact path="/nav/admision/nuevo">
-        <RegisterPatient />
+      <Route exact path="/nav/admision/editar/:patient">
+        <NewEditPatient />
       </Route>
       <Route exact path="/nav/admision/mensaje">
         <MassiveNotification />
       </Route>
       <Route exact path="/nav/admision/:patient/detalle">
         <AdmisionDetail />
-      </Route>
-      <Route exact path="/nav/admision/:patient/editar">
-        <EditPatient />
       </Route>
       <Route exact path="/nav/admision/:patient/archivos">
         <ArchivosPaciente />
@@ -319,7 +316,7 @@ const LinksHome = ({redirectTo}) => (
     </div>
     <div className="card-body">
       <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-        <Icon type="new-patient" onClick={() => redirectTo("/nav/admision/nuevo")} />
+        <Icon type="new-patient" onClick={() => redirectTo("/nav/admision/editar/0")} />
         <span style={{fontSize: "0.9rem"}}>Nuevo</span>
       </div>
       <div className="col-4" style={{display: "inline-block", textAlign: "center"}}>
@@ -450,7 +447,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         {/* editar */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
           <Icon type="edit-patient"
-            onClick={() => redirectTo(`/nav/admision/${patient.pk}/editar`)} />
+            onClick={() => redirectTo(`/nav/admision/editar/${patient.pk}`)} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
         {/* cita */}
@@ -513,165 +510,88 @@ const LinksDetail = ({patient, redirectTo}) => {
   )
 }
 // Extra
-const EditPatient = () => {
-  const _params_ = useParams()
-  const [patient, updatePatientData] = useState(false)
-  const [antecedente, setAntecedente] = useState(false)
+const NewEditPatient = () => {
+  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const _params_ = useParams()  // patient_pk in url
+  const [patient, setPatient] = useState(false)
+  /* Flux
+  * New:
+    * If patient not in DB -> regular create -> redirect admision
+    * If patient in DB -> edit -> pxs -> redirect admision
+  * Edit: save changes -> pxs -> redirect admision
+  */
 
+  const getInitialData = () => {
+    if(_params_.patient == '0') return  // Nuevo
+    // Get patient by id if patient is setted in url
+    getDataByPK('atencion/paciente/admision', _params_.patient).then(setPatient)
+  }
+  const saveData = () => {
+    if(__debug__) console.log("NewEditPatient saveData");  // ';' mandatory
+
+    (patient ? saveEdit : savePatient)()
+    // Create PacienteXSucursal register
+    .then(pac_pk => createPacienteXSucursal(pac_pk))
+    .then(pxs => redirectTo(`/nav/admision/${pxs.paciente}/detalle`))
+    .then(() => handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info'))
+    .catch(res => {
+      console.log("res", res)
+      if(!res) return
+
+      res.json().then(er => {
+        console.log("er", er)
+        if(er.hasOwnProperty('dni'))
+          handleErrorResponse('custom', "Error", "El DNI ya existe", 'warning')
+        if(er.hasOwnProperty('non_field_errors'))
+          handleErrorResponse('custom', "Error", er.non_field_errors.join(", "), 'warning')
+      })
+    })
+  }
+  // New
+  const savePatient = () => {
+    let _data = validatePatientForm()
+    if(__debug__) console.log("NewEditPatient savePatient")
+    if(!_data) return Promise.reject()
+
+    return simplePostData(`atencion/paciente/`, _data)
+      .then(pac => updatePatientAntecedents(pac.pk))
+  }
+  // Edit
   const saveEdit = () => {
     let _data = validatePatientForm()
-    console.log("_data", _data)
-    if(!_data) return
+    if(__debug__) console.log("NewEditPatient saveEdit")
+    if(!_data) return Promise.reject()
 
-    simplePostData(`atencion/paciente/${patient.pk}/`, _data, "PUT")
-    .then(
-      response_obj => {
-        updatePatientData(response_obj)
-        saveEditAntecedents()
-        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info')
-      },
-      error => console.log("WRONG!", error)
-    )
+    return simplePostData(`atencion/paciente/${patient.pk}/`, _data, "PUT")
+      .then(pac => updatePatientAntecedents(pac.pk))
   }
-  const createPatientAntecedents = _patient_pk => {
-    if(__debug__) console.log("createPatientAntecedents")
-    // Antecedent doesn't exist
-    simplePostData(`atencion/paciente/antecedentes/`, {paciente: _patient_pk})
-    .then(
-      res => {
-        if(__debug__) console.log("createPatientAntecedents res")
-        setAntecedente(res)
-      }
-    )
-  }
-  const saveEditAntecedents = () => {
+  // Extra
+  const updatePatientAntecedents = pac_pk => {
+    // By default Patient's antecedent is created, so we only need to update not create
     let _data = validatePatientAntecedentsForm()
-    _data.paciente = patient.pk
     if(!_data) return
-
-    simplePostData(`atencion/paciente/antecedentes/${antecedente.pk}/`, _data, "PUT")
-    .then(
-      response_obj => {
-        setAntecedente(response_obj)
-        handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info')
-      },
-      error => console.log("WRONG!", error)
-    )
-  }
-  const getBack = () => {
-    window.history.back()
-  }
-
-  useEffect(() => {
-    // Get patient by id
-    getDataByPK('atencion/paciente', _params_.patient)
-    .then(
-      res => {
-        if(!res) getBack()
-        updatePatientData(res)
-      }
-    )
-  }, [])
-  useEffect(() => {
-    if(!patient) return
-
-    // Get patients antecedent
-    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${_params_.patient}"}`)
-    .then(
-      res => {
-        // Antecedents doesn't exist
-        if(res.hasOwnProperty("length") && res.length == 0) createPatientAntecedents(patient.pk)
-        else setAntecedente(res[0])  // Antecedent exist
-      }
-    )
-  }, [patient])
-
-  return !patient
-    ? "loading"
-    : (
-      <div>
-        <PatientForm patient={patient} />
-        <PatientAntecedentsForm antecedente={antecedente} />
-
-        {/* Form buttons */}
-        <div className="form-group d-flex">
-          <button className="btn btn-primary" onClick={saveEdit}>
-            Guardar
-          </button>
-
-          <button className="btn btn-light ml-auto" onClick={getBack}>
-            Regresar
-          </button>
-        </div>
-      </div>
-    )
-}
-const RegisterPatient = () => {
-  const {current_sucursal, redirectTo} = useContext(NavigationContext)
-  let [patient_pk, setPatientPK] = useState(-1)
-  if(!current_sucursal) console.error("FATAL ERROR, current_sucursal PROPERTY NOT SPECIFIED")
-
-  const savePatient = () => {
-    if(patient_pk!=-1){
-      // Create PacienteXSucursal register
-      createPacienteXSucursal(patient_pk)
-      return
-    }
-    let _data = validatePatientForm()
-    if(__debug__) console.log("savePatient _data", _data)
-    if(!_data) return
-
-    simplePostData(`atencion/paciente/`, _data)
-    .then(
-      paciente => {
-        if(__debug__) console.log("RegisterPatient savePatient", paciente)
-        Promise.resolve()
-        // Save patient's antecedents
-        .then( () => savePatientAntecedents(paciente.pk) )
-        // Create PacienteXSucursal register
-        .then( () => createPacienteXSucursal(paciente.pk) )
-      },
-      error => {
-        console.log("WRONG!", error)
-      }
-    )
-  }
-  const createPacienteXSucursal = pac_pk => {
-    simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: current_sucursal})
-    .then(r => redirectTo(`/nav/admision/${pac_pk}/detalle`))
-  }
-  const savePatientAntecedents = pac_pk => {
-    let _data = validatePatientAntecedentsForm()
     _data.paciente = pac_pk
-    if(__debug__) console.log("savePatientAntecedents _data", _data)
-    if(!_data) return
 
-    simplePostData(`atencion/paciente/antecedentes/`, _data)
-    .then(
-      response_obj => {
-        if(__debug__) console.log("RegisterPatient savePatientAntecedents", response_obj)
-        // Redirect to AdmisionDetail
-        redirectTo(`/nav/admision/${pac_pk}/detalle`)
-      },
-      error => {
-        console.log("WRONG!", error)
-      }
-    )
+    return simplePostData(`atencion/paciente/${pac_pk}/antecedentes/`, _data, 'PUT')
+      .then(pa => pa.paciente)
   }
-  const getBack = () => {
-    window.history.back()
-  }
+  const getBack = () => window.history.back()
+  const createPacienteXSucursal = pac_pk => simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: current_sucursal})
+
+  useEffect(() => {
+    getInitialData()
+  }, [])
 
   return (
     <div>
-      <PatientForm setpatientpk={setPatientPK} />
-      <PatientAntecedentsForm />
+      <PatientForm patient={patient} setPatient={setPatient} />
+      <PatientAntecedentsForm antecedente={patient&&patient.antecedentes} />
 
       <div style={{paddingTop: "25px"}}></div>  {/* Separador */}
 
       {/* Form buttons */}
       <div className="form-group d-flex">
-        <button className="btn btn-primary" onClick={savePatient}>
+        <button className="btn btn-primary" onClick={saveData}>
           Guardar
         </button>
 
@@ -682,8 +602,9 @@ const RegisterPatient = () => {
     </div>
   )
 }
-const PatientForm = ({patient, setpatientpk=(()=>{})}) => {
-  const [dni_otro, setOtroDNI] = useState(patient&&!patient.dni)
+const PatientForm = ({patient, setPatient=(()=>{})}) => {
+  const [dni_otro, setOtroDNI] = useState(false)
+  // dni_otro indicates if tipo_documento equals '1'(dni) to make easier validations and re-renders
 
   const formatInputDate = date => {
     /* This only works with specific formats
@@ -692,18 +613,31 @@ const PatientForm = ({patient, setpatientpk=(()=>{})}) => {
     */
     return date.split("/").reverse().join("-")
   }
-  const _getPatiente = dni => {
-    if(!patient && !dni_otro) getPatiente(dni, setpatientpk)
+  const _getPatiente = el => {
+    let dni = el.value
+    if(!Number(dni)){
+      // Prevent characters other than numbers
+      el.value = dni.substr(0, dni.length-1)
+      return
+    }
+
+    // Ask reniec's api for patient data only if tipo_documento is '1' (dni)
+    if(!dni_otro) getPatiente(dni, setPatient)
   }
   const otroDNI = ev => {
-    setOtroDNI(ev.target.checked)
+    setOtroDNI(ev.target.value != "1")
 
-    if(!patient){
-      // Reset paciente data
-      if(ev.target.checked) getPatiente("", setpatientpk)
-      window.document.getElementById('dni').value = ""
+    if(patient){
+      // If patient is setted
+      if(ev.target.value == patient.tipo_documento){
+        // If tipo_documento is same as patient's
+        // Fill data from patient
+        window.document.getElementById('dni').value = patient.tipo_documento != "1" ? patient.dni_otro : patient.dni
+      }else window.document.getElementById('dni').value = ""
     }else{
-      window.document.getElementById('dni').value = ev.target.checked ? patient.dni_otro : patient.dni
+      // New paciente
+      // Reset values
+      if(ev.target.value == '1') getPatiente("")
     }
   }
 
@@ -726,72 +660,80 @@ const PatientForm = ({patient, setpatientpk=(()=>{})}) => {
       document.body.appendChild(select2_script)
     }
   }, [])
+  useEffect(() => {
+    if(!patient) return
+
+    // Update values
+    setOtroDNI(patient.tipo_documento != '1')
+    window.document.getElementById('dni').value = patient.dni || patient.dni_otro || ""
+    window.document.getElementById('dni_tipo').value = patient.tipo_documento
+    window.document.getElementById('name-pric').value = patient.nombre_principal
+    window.document.getElementById('name-sec').value = patient.nombre_secundario
+    window.document.getElementById('ape-p').value = patient.ape_paterno
+    window.document.getElementById('ape-m').value = patient.ape_materno
+    window.document.getElementById('born-date').value = patient.fecha_nacimiento && formatInputDate(patient.fecha_nacimiento) || ""
+    window.document.getElementById('sexo').value = patient.sexo || "1"
+    window.document.getElementById('phone').value = patient.celular
+    window.document.getElementById('permiso_sms').checked = patient.permiso_sms
+    window.document.getElementById('address').value = patient.direccion
+  }, [patient])
 
   return (
     <div className="form-group col-md-12">  {/* Form */}
-      <div className="row">
-        <div className="form-group col">
-          <label className="form-label" htmlFor="dni">{dni_otro?"Codigo":"DNI"}: </label>
-          <input type="text" id="dni" className="form-control"
-          defaultValue={patient && (patient.dni || patient.dni_otro) || ""}
-          maxLength={dni_otro?"30":"8"} dni_otro={Number(dni_otro)}
-          onChange={e => _getPatiente(e.target.value)} />
-        </div>
-        <div className="col-3 form-group" style={{display: dni_otro?"block":"none"}}>
-          <label className="form-label" htmlFor="dni_tipo">Tipo: </label>
-          <select id="dni_tipo" className="custom-select form-control" defaultValue={patient&&patient.tipo_documento}>
-            <option value="2">CARNET DE EXTRANJERIA</option>
-            <option value="3">PASAPORTE</option>
-            <option value="0">OTROS</option>
-          </select>
-        </div>
-        <div className="col-1 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
-          <input type="checkbox" className="custom-control-input" id="dni_otro"
-          defaultChecked={dni_otro} onChange={otroDNI} />
-          <label className="custom-control-label" htmlFor="dni_otro">Otro documento</label>
-        </div>
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="dni">Número de documento: </label>
+        <input type="text" id="dni" className="form-control" maxLength={dni_otro?"30":"8"}
+        onChange={e => _getPatiente(e.target)} />
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="dni_tipo">Tipo documento: </label>
+        <select id="dni_tipo" className="custom-select form-control" onChange={otroDNI}>
+          <option value="1">DNI</option>
+          <option value="2">CARNET DE EXTRANJERIA</option>
+          <option value="3">PASAPORTE</option>
+          <option value="0">OTRO</option>
+        </select>
+      </div>
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="name-pric">Nombre principal: </label>
-        <input type="text" id="name-pric" className="form-control" defaultValue={patient&&patient.nombre_principal||""} />
+        <input type="text" id="name-pric" className="form-control" />
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="name-sec">Nombre secundario: </label>
-        <input type="text" id="name-sec" className="form-control" defaultValue={patient&&patient.nombre_secundario||""} />
+        <input type="text" id="name-sec" className="form-control" />
       </div>
-      <div className="form-group">
-        <label className="form-label" htmlFor="ape-p">Apellido parterno: </label>
-        <input type="text" id="ape-p" className="form-control" defaultValue={patient&&patient.ape_paterno||""} />
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="ape-p">Apellido paterno: </label>
+        <input type="text" id="ape-p" className="form-control" />
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="ape-m">Apellido materno: </label>
-        <input type="text" id="ape-m" className="form-control" defaultValue={patient&&patient.ape_materno||""} />
+        <input type="text" id="ape-m" className="form-control" />
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
+        <input type="date" id="born-date" className="form-control" />
+      </div>
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="sexo">Sexo: </label>
-        <select id="sexo" className="custom-select form-control" defaultValue={patient&&patient.sexo||"1"}>
+        <select id="sexo" className="custom-select form-control">
           <option value="1">Masculino</option>
           <option value="2">Femenino</option>
         </select>
       </div>
-      <div className="row">
-        <div className="col form-group">
-          <label className="form-label" htmlFor="born-date">Fecha de nacimiento: </label>
-          <input type="date" id="born-date" className="form-control"
-          defaultValue={""||( patient&&patient.fecha_nacimiento&&formatInputDate(patient.fecha_nacimiento) )} />
-        </div>
-        <div className="col-3 custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
-          <input type="checkbox" className="custom-control-input" id="permiso_sms" defaultChecked={patient&&patient.permiso_sms} />
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="phone">Celular: </label>
+        <input type="text" id="phone" className="form-control" maxLength="9" />
+      </div>
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <div className="custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
+          <input type="checkbox" className="custom-control-input" id="permiso_sms" />
           <label className="custom-control-label" htmlFor="permiso_sms">Permitir envio de mensajes</label>
         </div>
       </div>
-      <div className="form-group">
-        <label className="form-label" htmlFor="phone">Celular: </label>
-        <input type="text" id="phone" className="form-control" maxLength="9" defaultValue={patient&&patient.celular||""} />
-      </div>
-      <div className="form-group">
+      <div className="form-group col-12">
         <label className="form-label" htmlFor="address">Dirección: </label>
-        <input type="text" id="address" className="form-control" defaultValue={patient&&patient.direccion||""} />
+        <input type="text" id="address" className="form-control" />
       </div>
     </div>
   )
@@ -830,28 +772,28 @@ const PatientAntecedentsForm = ({antecedente}) => {
   return (
     <div className="form-group col-md-12">  {/* Form */}
       <h3>Antecedentes</h3>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="diabetes">Diabetes? </label>
         <select id="diabetes" className="custom-select form-control">
           <option value="0">No</option>
           <option value="1">Si</option>
         </select>
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="hepatitis">Hepatitis? </label>
         <select id="hepatitis" className="custom-select form-control">
           <option value="0">No</option>
           <option value="1">Si</option>
         </select>
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="hemorragia">Hemorragia? </label>
         <select id="hemorragia" className="custom-select form-control">
           <option value="0">No</option>
           <option value="1">Si</option>
         </select>
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="enf_cardiovascular">Enfermedad cardiovascular? </label>
         <select id="enf_cardiovascular" className="custom-select form-control">
           <option value="0">No</option>
@@ -859,15 +801,15 @@ const PatientAntecedentsForm = ({antecedente}) => {
         </select>
       </div>
 
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="alergias">Alergias</label>
         <textarea className="form-control" id="alergias" rows="2" defaultValue={antecedente?antecedente.alergias:""} ></textarea>
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="operaciones">Operaciones</label>
         <textarea className="form-control" id="operaciones" rows="2" defaultValue={antecedente?antecedente.operaciones:""} ></textarea>
       </div>
-      <div className="form-group">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="medicamentos">Medicamentos</label>
         <textarea className="form-control" id="medicamentos" rows="2" defaultValue={antecedente?antecedente.medicamentos:""} ></textarea>
       </div>
@@ -926,8 +868,9 @@ function validatePatientForm(){
     return false
   }
 
+  // Validate dni considering dni_tipo
   let el_dni = document.getElementById('dni')
-  if(!Number(el_dni.getAttribute("dni_otro"))){
+  if(window.document.getElementById("dni_tipo").value == '1'){
     // DNI
     if(el_dni.value.trim().length!=8){
       handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
@@ -978,10 +921,10 @@ function validatePatientForm(){
     permiso_sms: document.getElementById('permiso_sms').checked,
   }
   // DNI or DNI_OTRO
-  let b_dni_otro = Number(el_dni.getAttribute("dni_otro"))  // Indicador
+  let b_dni_otro = window.document.getElementById("dni_tipo").value != '1'  // Indicador
   _tmp.dni = b_dni_otro ? null : el_dni.value
   _tmp.dni_otro = b_dni_otro ? el_dni.value : null
-  _tmp.tipo_documento = b_dni_otro ? window.document.getElementById("dni_tipo").value : "1"  // "1" DNI por defecto
+  _tmp.tipo_documento = window.document.getElementById("dni_tipo").value
 
   // Add non-required fields
   if(document.getElementById('born-date').value)
@@ -1332,7 +1275,7 @@ const InstantNotification = ({patient_pk, current_sucursal}) => {
       } />
   )
 }
-const getPatiente = (dni, setpatientpk) => {
+const getPatiente = (dni, setPatient) => {
   if(dni.length!=8){
     // Eliminar datos
     document.getElementById("name-pric").value = "";
@@ -1357,67 +1300,40 @@ const getPatiente = (dni, setpatientpk) => {
     document.getElementById("name-sec").disabled = false
     document.getElementById("ape-p").disabled = false
     document.getElementById("ape-m").disabled = false
-    // Reset patient pk
-    setpatientpk(-1)
     return
   }
 
-  // Generate promise
-  simpleGet(`atencion/paciente/?filtro={"dni":"${dni}"}`)
-  .then(_res => {
-    if(!(_res && _res.length > 0)) return
-    let res = _res[0]
-    if(__debug__) console.log("res", res);
-    // Get formated born_date
-    let _fecha_nacimiento = res.fecha_nacimiento.split("/").reverse().join("-")
-
-    // Set paciente data
-    document.getElementById("name-pric").value = res.nombre_principal
-    document.getElementById("name-sec").value = res.nombre_secundario
-    document.getElementById("ape-p").value = res.ape_paterno
-    document.getElementById("ape-m").value = res.ape_materno
-    document.getElementById("phone").value = res.celular
-    document.getElementById("sexo").value = res.sexo
-    document.getElementById("born-date").value = _fecha_nacimiento
-    document.getElementById("permiso_sms").checked = res.permiso_sms
-    document.getElementById("address").value = res.direccion
-    // Set patient pk
-    setpatientpk(res.pk)
-
-    // Get patients antecedent
-    simpleGet(`atencion/paciente/antecedentes/?filtro={"paciente":"${res.pk}"}`)
-    .then(_res => {
-      console.log("_res", _res);
-      // Antecedents doesn't exist
-      if(_res.hasOwnProperty("length") && _res.length == 0) return
-      let res = _res[0]
-      // Set antecedents values
-      document.getElementById("diabetes").value = Number(res.diabetes)
-      document.getElementById("hepatitis").value = Number(res.hepatitis)
-      document.getElementById("hemorragia").value = Number(res.hemorragia)
-      document.getElementById("enf_cardiovascular").value = Number(res.enf_cardiovascular)
-      document.getElementById("alergias").value = res.alergias
-      document.getElementById("operaciones").value = res.operaciones
-      document.getElementById("medicamentos").value = res.medicamentos
+  // Get patient by id
+  getDataByPK('atencion/paciente/admision/dni', dni)
+  .then(setPatient)
+  .catch(res => {
+    console.log("catch res", res)
+    // Si no se encontro al paciente en Muelitas
+    if(res.status == 404){
+      // Consultar reniec
+      // return personaFromReniec(dni)
+    }
+  })
+  .then(i => console.log("bypass getPatiente i:", i) && false || i)
+}
+export const personaFromReniec = _dni => {
+  return simpleGet(`atencion/reniec/${_dni}/`)
+    .then(res => {
+      if(__debug__) console.log("personaFromReniec res", res);
+      // Handle errors
+      if(res.hasOwnProperty('error')) return
+      else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
+      // Fill data from reniec
+      let primer_nombre = res.nombres.split(" ")[0]
+      document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
+      document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre+" ", "") )
+      document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
+      document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
+      document.getElementById("name-pric").disabled = true
+      document.getElementById("name-sec").disabled = true
+      document.getElementById("ape-p").disabled = true
+      document.getElementById("ape-m").disabled = true
     })
-  })
-  .then(() => simpleGet(`atencion/reniec/${dni}/`))
-  .then(res => {
-    if(__debug__) console.log("res", res);
-    // Handle errors
-    if(res.hasOwnProperty('error')) return
-    else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
-    // Set paciente data
-    let primer_nombre = res.nombres.split(" ")[0]
-    document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
-    document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre+" ", "") )
-    document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
-    document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
-    document.getElementById("name-pric").disabled = true
-    document.getElementById("name-sec").disabled = true
-    document.getElementById("ape-p").disabled = true
-    document.getElementById("ape-m").disabled = true
-  })
 }
 export const xhtmlDecode = _text => {
   let xhtml_codes = [

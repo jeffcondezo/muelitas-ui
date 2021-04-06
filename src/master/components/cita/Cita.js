@@ -613,7 +613,8 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
             className="form-control form-control-lg" onChange={e => fillPatienteByDNI(e.target.value)} />
           </div>
           <div className="form-group col-12" style={{display:'inline-block'}}>
-            <span id="pac_fullname" className="form-control form-control-lg">
+            <span id="pac_fullname" className="form-control form-control-lg"
+            style={{backgroundColor: "lightgray"}}>
             </span>
           </div>
           {/* Fin Paciente */}
@@ -679,7 +680,7 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
   </div>
 )
 const InfoCita = ({id, cita, confirmAnnul, openReprogramarCitaModal, redirectTo}) => {
-  if(!cita) return "no data"
+  if(!cita) return ""
 
   const addAttention = () => redirectTo(`/nav/atencion/${cita.pk}/detalle`)
   const addOdontograma = () => redirectTo(`/nav/odontograma/${cita.pk}`)

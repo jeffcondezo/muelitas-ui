@@ -184,7 +184,7 @@ const CobranzaDetail = () => {
   const [patient, setPatient] = useState(false)
   // update_dcclist will re-execute this component so dcc_list is recalculated with its new .monto value
   const [update_dcclist, updateDCCList] = useState(false)
-  let dcc_list = selected_attention_detail.map(i => {return {dcc: (i.pk||null), monto: i.monto}})
+  let dcc_list = selected_attention_detail.map(i => ({dcc: (i.pk||null), monto: i.monto}))
 
   const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
   const updatedcclist = () => updateDCCList(!update_dcclist)

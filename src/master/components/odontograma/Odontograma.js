@@ -2662,15 +2662,7 @@ function Odontograma({role, redirectTo}){
         </div>
       </div>
       {/* Paciente */}
-      <div>
-        <h5>Paciente: <i>{
-          cita
-          ? cFL(cita.paciente_data.nombre_principal)+" "+
-            cita.paciente_data.ape_paterno.toUpperCase()+" "+
-            cita.paciente_data.ape_materno.toUpperCase()
-          : ""
-        }</i></h5>
-      </div>
+      {cita && (<div><h5>Paciente: <i>{cita.paciente_data.fullname}</i></h5></div>)}
 
       <div style={{whiteSpace: "nowrap"}}>
         <canvas id="odontogram" width="750" height="530" style={{background:"white", verticalAlign:"top"}}></canvas>

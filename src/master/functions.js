@@ -59,6 +59,7 @@ export function handleErrorResponse(type, ...data){
 
   document.getElementById(_id).style.display = "block"
   document.getElementById(_id).classList.remove("fade")
+  document.getElementById(_id).scrollIntoView()
   setTimeout(function(id){
     if(document.getElementById(id))
       document.getElementById(id).classList.add("fade")
