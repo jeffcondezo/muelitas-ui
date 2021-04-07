@@ -615,7 +615,7 @@ const PatientForm = ({patient, setPatient=(()=>{})}) => {
   }
   const _getPatiente = el => {
     let dni = el.value
-    if(!Number(dni)){
+    if(Number(dni) == false){
       // Prevent characters other than numbers
       el.value = dni.substr(0, dni.length-1)
       return

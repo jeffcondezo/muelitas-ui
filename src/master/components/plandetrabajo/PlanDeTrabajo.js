@@ -528,7 +528,7 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
       dcc_list: dcc_list,
     })
     // Call EP to show comprobante in screen
-    .then(res => res && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
+    .then(res => res.comprobante && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
     .then(() => handleErrorResponse('custom', "Exito", "Pago realizado correctamente", 'info'))
     .then(() => refreshPDT(true))
     .finally(() => window.$("#pdtpay_modal").modal('hide'))
