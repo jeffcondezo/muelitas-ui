@@ -539,11 +539,17 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
     sendData(_client, tipo_pago)
   }
   const footer_fn = (getFormClient, tipo_pago) => {
+    const checkPayMontoValue = ev => {
+      let _monto = Number(ev.target.value)
+      if(_monto < 0) ev.target.value = 0
+      if(_monto > deuda) ev.target.value = deuda
+    }
+
     return (
       <div>
         <div className="col-sm" style={{marginBottom: "10px"}}>
           <label className="form-label col-sm" htmlFor="precio">Monto a pagar</label>
-          <input type="number" className="form-control" id="pdtpay-monto" min="0" max={deuda}/>
+          <input type="number" className="form-control" id="pdtpay-monto" min="0" max={deuda} onChange={checkPayMontoValue}/>
         </div>
 
         <button className="btn btn-primary" onClick={() => handleSubmit(getFormClient, tipo_pago)}>

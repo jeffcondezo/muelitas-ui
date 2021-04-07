@@ -92,6 +92,7 @@ const HistorialPagos = () => {
       }, {
         // Origen del pago
         targets: 2,
+        orderable: false,
         createdCell: (cell, data, _) => {
           ReactDOM.render(
             <span className={`badge badge-${data?"info":"success"} badge-pill`} style={{cursor: "pointer"}}>
@@ -103,6 +104,7 @@ const HistorialPagos = () => {
       }, {
         // Detalle
         targets: 3,
+        orderable: false,
         createdCell: (cell, _, row) => {
           ReactDOM.render(
             <button className="btn-primary btn-pills waves-effect"
@@ -114,6 +116,7 @@ const HistorialPagos = () => {
       }, {
         // Comprobante
         targets: -1,
+        orderable: false,
         createdCell: (cell, data, _) => {
           if(!data) return
           ReactDOM.render(
