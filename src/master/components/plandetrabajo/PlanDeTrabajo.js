@@ -517,6 +517,13 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
       dcc_list.push({dcc: i.dcc?.pk, dpdt: i.pk, monto: monto})
       return true
     })
+    // Validations
+    if(dcc_list.length == 0){
+      // Validate dcc_list is not empty
+      handleErrorResponse("paymentform", "Error", "No se puede pagar 0 soles", "warning")
+      return
+    }
+
 
     simplePostData(`finanzas/pago/create/`, {
       paciente: pdt.paciente,

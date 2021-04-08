@@ -595,15 +595,12 @@ const PatientDebtsTable = ({patient, selected, select, updateDCCList}) => {
     // Pay amount out of range
     if(input_el.value == ""){
       input_el.value = input_el.min
-      return
     }
     if(Number(input_el.value) < Number(input_el.min)){
       input_el.value = input_el.min
-      return
     }
     if(Number(input_el.value) > Number(input_el.max)){
       input_el.value = input_el.max
-      return
     }
     // Set pay amount in dcc object
     dcc.monto = Number(input_el.value)
