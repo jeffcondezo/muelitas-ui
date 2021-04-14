@@ -80,35 +80,27 @@ function Login({logIn}){
                 <div className="flex-1">
                     <div className="container py-4 py-lg-5 my-lg-5 px-4 px-sm-0">
                         <div className="row">
-                            <div className="col col-md-6 col-lg-7 hidden-sm-down">
-                                <h2 className="fs-xxl fw-500 mt-4 text-white">
-                                    Muelitas, la herramienta Online para tu consultorio odontológico.
-                                    <small className="h3 fw-300 mt-3 mb-5 text-white opacity-60">
-                                        Te presentamos la solución que va a darle un nuevo de nivel de calidad a tu empresa.
-                                    </small>
-                                </h2>
-                                {/*
-                                <a href="#" className="fs-lg fw-500 text-white opacity-70">Ver más &gt;&gt;</a>
-                                <div className="d-sm-flex flex-column align-items-center justify-content-center d-md-block">
-                                    <div className="px-0 py-1 mt-5 text-white fs-nano opacity-50">
-                                        Redes Sociales
-                                    </div>
-                                    <div className="d-flex flex-row opacity-70">
-                                        <a href="#" className="mr-2 fs-xxl text-white">
-                                            <i className="fab fa-facebook-square"></i>
-                                        </a>
-                                        <a href="#" className="mr-2 fs-xxl text-white">
-                                            <i className="fab fa-twitter-square"></i>
-                                        </a>
-                                        <a href="#" className="mr-2 fs-xxl text-white">
-                                            <i className="fab fa-google-plus-square"></i>
-                                        </a>
-                                        <a href="#" className="mr-2 fs-xxl text-white">
-                                            <i className="fab fa-linkedin"></i>
-                                        </a>
-                                    </div>
+                          <div className="col col-md-6 col-lg-7 hidden-sm-down">
+                              <h2 className="fs-xxl fw-500 mt-4 text-white">
+                                Muelitas, la herramienta Online para tu consultorio odontológico.
+                                <small className="h3 fw-300 mt-3 mb-5 text-white opacity-60">
+                                  Te presentamos la solución que va a darle un nuevo de nivel de calidad a tu empresa.
+                                </small>
+                              </h2>
+                              <a href={process.env.REACT_APP_PROJECT_API+'maestro/viewdoc/presentacion/'} className="fs-lg fw-500 text-white opacity-70">Conoce más de Muelitas aquí &gt;&gt;</a>
+                              <div className="d-sm-flex flex-column align-items-center justify-content-center d-md-block">
+                                <div className="px-0 py-1 mt-5 text-white fs-nano opacity-50">
+                                  Redes Sociales
                                 </div>
-                                */}
+                                <div className="d-flex flex-row opacity-70">
+                                  <a href="https://www.facebook.com/DatakraftHco" className="mr-2 fs-xxl text-white">
+                                    <i className="fab fa-facebook-square"></i>
+                                  </a>
+                                  <a href="https://www.instagram.com/datakrafthco/" className="mr-2 fs-xxl text-white">
+                                    <i className="fab fa-instagram"></i>
+                                  </a>
+                                </div>
+                              </div>
                             </div>
                             <div className="col-sm-12 col-md-6 col-lg-5 col-xl-4 ml-auto">
                                 <h1 className="text-white fw-300 mb-3 d-sm-block d-md-none">
@@ -158,7 +150,7 @@ function Login({logIn}){
             </div>
         </div>
     </div>
-  );
+  )
 }
 
 export default Login;
