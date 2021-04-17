@@ -90,6 +90,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
   const [patients, setPatients] = useState([])
   const [datatable, setDatatable] = useState(false)
 
+  // const getAllPatients = _sucursal_pk => simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/`).then(pxs => setPatients(pxs.map(i => i.paciente)))
   const getAllPatients = _sucursal_pk => {
     // Function to build lot filter
     let filtro_batch = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
@@ -154,7 +155,18 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     if(!patients || patients.length == 0) return  // Abort if it's false
 
     // Destroy previous DT if exists
-    if(datatable) window.$('#search-patient').DataTable().clear().destroy()
+    let search_input_val = ""
+    /* search_input_val
+    * Store user's search value
+    * in low conection or delayed requests enviroments,
+    * user may start writing a search input before data have been fully loaded
+    * new data lot being added to current DT's data will cause search input to stop working
+    * so, we will be storing previous search input value, setting it into the new DT instance and focus search input
+    */
+    if(datatable){
+      search_input_val = window.$('.dataTables_filter input').val()
+      window.$('#search-patient').DataTable().clear().destroy()
+    }
     // Gen Datatable
     let _tmp = window.$('#search-patient').DataTable({
       data: patients,
@@ -200,6 +212,9 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
         }
       }],
       pageLength: 8,
+      search: {
+        search: search_input_val
+      },
       lengthMenu: [[8, 15, 25], [8, 15, 25]],
       language: {
         // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
@@ -230,6 +245,8 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
         }
       },
     })
+    // Focus input to allow user continuous writing
+    window.$('.dataTables_filter input').focus()
 
     setDatatable(_tmp)  // Save DT in state
   }, [patients])

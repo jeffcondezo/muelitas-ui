@@ -27,6 +27,7 @@ import HistoriaClinica from './historia/Historia'
 import Cobranza from './finanzas/Cobranza'
 import PlanDeTrabajo from './plandetrabajo/PlanDeTrabajo'
 import Admin from './admin/Admin'
+import Reportes from './reportes/Reportes'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -150,6 +151,9 @@ const SelectComponent = () => (
       </Route>
       <Route path="/nav/admin">
         <Admin />
+      </Route>
+      <Route path="/nav/reporte">
+        <Reportes />
       </Route>
 
       {/* Components accessed only by redirect */}
@@ -316,6 +320,17 @@ const ActionSettings = () => {
                 </span>
                 <span className="app-list-name">
                   Admin
+                </span>
+              </a>
+            </li>
+            <li>
+              <a className="app-list-item hover-white" onClick={() => redirectTo("/nav/reporte/")}>
+                <span className="icon-stack">
+                  <i className="base-5 icon-stack-3x color-primary-500"></i>
+                  <i className="fal fa-chart-bar icon-stack-1x text-white"></i>
+                </span>
+                <span className="app-list-name">
+                  Reportes
                 </span>
               </a>
             </li>
