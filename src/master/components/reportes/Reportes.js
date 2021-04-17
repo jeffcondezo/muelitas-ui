@@ -6,6 +6,7 @@ import {
   PageTitle,
 } from '../bits'
 import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 import c3 from 'c3'
 import 'c3/c3.css'
 
@@ -49,6 +50,7 @@ const Reportes = () => {
   return (
     <div>
       <PageTitle title={"Reportes"} />
+
       <div className="row">
         <div className="col-6">
           <div className="row">
@@ -108,8 +110,10 @@ const Report1 = ({data}) => {
             Atenciones realizadas por mes
           </div>
         </div>
-        <div className="card-body">
-          <div id="report1"></div>
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
+          <div id="report1">
+          </div>
         </div>
       </div>
     </div>
@@ -146,7 +150,8 @@ const Report2 = ({data}) => {
             Atenciones realizadas por procedimiento
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <div id="report2"></div>
         </div>
       </div>
@@ -177,7 +182,8 @@ const Report3 = ({data}) => {
             Atenciones realizadas por odontologo
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <div id="report3"></div>
         </div>
       </div>
@@ -222,7 +228,8 @@ const Report4 = ({data}) => {
             Ingresos generados por mes
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <div id="report4"></div>
         </div>
       </div>
@@ -262,7 +269,8 @@ const Report5 = ({data}) => {
             Top 20 mayores ingresos generados por procedimiento
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <div id="report5"></div>
         </div>
       </div>
@@ -294,7 +302,8 @@ const Report6 = ({data}) => {
             Ingresos generados por odontologo
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <div id="report6"></div>
         </div>
       </div>
@@ -352,7 +361,8 @@ const Report7 = ({data}) => {
             Tabular de cuentas por cobrar
           </div>
         </div>
-        <div className="card-body">
+        <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
+          {!data && <Loader scale={2} />}
           <table id="report7"></table>
         </div>
       </div>

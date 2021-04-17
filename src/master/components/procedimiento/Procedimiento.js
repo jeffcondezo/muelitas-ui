@@ -8,6 +8,7 @@ import {
 } from '../../functions'
 import { PageTitle } from '../bits'
 import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -61,7 +62,7 @@ const Procedimiento = () => {
   }, [])
 
   return !da && !cita
-  ? "loading"
+  ? <Loader scale={2} />
   : (
   <>
     <PageTitle title={"Procedimiento"} />
@@ -152,7 +153,7 @@ const ProcedimientoForm = ({procedure, current_sucursal}) => {
   }, [pxss])
 
   return !pxss
-    ? "loading"
+    ? <Loader scale={2} />
     : pxss.length==0
     ? "No hay procedimientos encontrados"
     : (

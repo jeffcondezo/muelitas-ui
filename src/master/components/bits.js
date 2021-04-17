@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 
 // Here there will be placed small components to be reused all over navigation

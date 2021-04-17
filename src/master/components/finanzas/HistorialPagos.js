@@ -6,6 +6,7 @@ import {
 } from '../../functions'
 import { PageTitle, RegularModalCentered } from '../bits'
 import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -168,7 +169,7 @@ const HistorialPagos = () => {
     <>
     <PageTitle title={"Historial de pagos del paciente"} />
     {!patientxpagos
-      ? "loading"
+      ? <Loader scale={2} />
       : (
         <div className="datatable-container col-12">
           <table id={datatable_id} style={{width: "100%"}}></table>

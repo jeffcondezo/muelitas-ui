@@ -23,6 +23,8 @@ import {
 } from '../bits'
 import { NavigationContext } from '../Navigation'
 import { PaymentForm } from '../finanzas/Cobranza'
+import Loader from '../loader/Loader'
+
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -360,7 +362,7 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
   }, [pdtDeleted])
 
   return !pdts
-    ? "loading"
+    ? <Loader scale={2} />
     : (
       <div className="datatable-container col-12">
         <h3>
@@ -725,7 +727,7 @@ const CreatePDTForm = ({current_sucursal, refreshProcList}) => {
   }, [pxss])
 
   return !pxss
-    ? "loading"
+    ? <Loader scale={2} />
     : (
       <div>
         <div style={{marginBottom: "10px"}}>

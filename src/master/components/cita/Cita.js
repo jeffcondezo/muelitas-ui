@@ -28,6 +28,7 @@ import {
 } from '../../functions'
 import { NavigationContext } from '../Navigation';
 import { tipo_documento } from '../admision/Admision'
+import Loader from '../loader/Loader'
 
 // Static
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -40,6 +41,7 @@ const Cita = () => {
   const [pxss, setPXS] = useState(false)  // Sucursal's procedures
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
   const [show_past_citas, setShowPastCitas] = useState(false)  // Show past citas
+  const [loading, setLoader] = useState(true)
   /* fake_redirect_data: Workaround to fake redirect_data empty
   * when it has already been fully used to create a Cita
   * and therefore it is not longer needed
@@ -63,6 +65,7 @@ const Cita = () => {
   const getPXS = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setPXS)
   const getCitas = () => {
     if(__debug__) console.log("Cita getCitas", show_past_citas)
+    setLoader(true)
 
     let dt = new Date()
     dt.setTime(dt.getTime() - (14*24*60*60*1000))  // get back time to 2 weeks ago
@@ -71,6 +74,7 @@ const Cita = () => {
       : `"estado":"1"`
     simpleGet(`atencion/cita/?filtro={"sucursal":"${current_sucursal}","programado":"1",${filter}}`)
     .then(handleCitaResponse)
+    .finally(() => setLoader(false))
   }
   const handleCitaResponse = _citas => {
     if(__debug__) console.log("Cita handleCitaResponse")
@@ -463,6 +467,7 @@ const Cita = () => {
     if(!events || events.length==0) return
 
     fixFCStyles()
+    setLoader(false)
   }, [events])
   useEffect(() => {
     if(!cita_selected) return
@@ -532,6 +537,7 @@ const Cita = () => {
         events={events}
         eventColor='gray'
         />
+      {loading && <Loader scale={2} />}
 
       {/* MODAL CITA FORM */}
       <ModalCitaForm

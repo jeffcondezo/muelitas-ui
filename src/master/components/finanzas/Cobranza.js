@@ -20,6 +20,7 @@ import { PageTitle } from '../bits'
 import HistorialPagos from './HistorialPagos'
 import { NavigationContext } from '../Navigation'
 import { xhtmlDecode } from '../admision/Admision'
+import Loader from '../loader/Loader'
 
 
 // Constant
@@ -166,7 +167,7 @@ const DebtXPatientTable = () => {
     <>
     <PageTitle title={"Lista de deudas"} />
     {!patientxdebt
-    ? "loading"
+    ? <Loader scale={2} />
     : (
       <div className="datatable-container col-12">
         <table id="patientxdebt-table" style={{width: "100%"}}></table>
@@ -195,7 +196,7 @@ const CobranzaDetail = () => {
   }, [])
 
   return !patient
-    ? "loading"
+    ? <Loader scale={2} />
     : (
     <>
       <PageTitle title={"Cobrar"} />
@@ -227,6 +228,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // BOLETA || FACTURA || SIN CLIENTE
   const [ubigeos, setUbigeos] = useState(false)
   const [client, setClient] = useState(false)
+  const [loading, setLoader] = useState(true)
   let html_btn_group_toggle_class = "btn btn-outline-info waves-effect waves-themed"
 
   // Initial
@@ -437,11 +439,13 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
     if(ubigeos && clienttype==1){
       if(client) fillFromClient()
       else fillFromPatient()
+      setLoader(false)
     }
   }, [client, ubigeos, clienttype])
 
   return (
     <div>
+      {loading && <Loader scale={2} />}
       <div id="alert-paymentform" className="alert bg-warning-700 fade" role="alert" style={{display: "none"}}>
         <strong id="alert-paymentform-headline">Error!</strong> <span id="alert-paymentform-text">Algo salió mal</span>.
       </div>
@@ -638,7 +642,7 @@ const PatientDebtsTable = ({patient, selected, select, updateDCCList}) => {
   }, [selected])
 
   return !dccs
-    ? "loading"
+    ? <Loader scale={2} />
     : (
       <table style={{fontSize: "1.2em"}}>
         <thead>

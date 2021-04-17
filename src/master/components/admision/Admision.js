@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import {
   Switch,
   Route,
   Redirect,
   useParams,
-} from "react-router-dom";
+} from "react-router-dom"
 import {
   simpleGet,
   simplePostData,
@@ -12,17 +12,18 @@ import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   getDataByPK,
-} from '../../functions';
-import { ListSavedMedicine } from '../prescripcion/Prescripcion';
+} from '../../functions'
+import { ListSavedMedicine } from '../prescripcion/Prescripcion'
 import {
   Icon,
   PageTitle,
   ModalLoading,
   RegularModalCentered
-} from '../bits';
+} from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
-import MassiveNotification from './MassiveNotification';
-import { NavigationContext } from '../Navigation';
+import MassiveNotification from './MassiveNotification'
+import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -89,6 +90,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
   const patients_ref = useRef([])
   const [patients, setPatients] = useState([])
   const [datatable, setDatatable] = useState(false)
+  const [loading, setLoader] = useState(true)
 
   // const getAllPatients = _sucursal_pk => simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/`).then(pxs => setPatients(pxs.map(i => i.paciente)))
   const getAllPatients = _sucursal_pk => {
@@ -99,6 +101,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     // Init lot request
     batchRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_batch, lot_length, 1, patients)
     .catch(() => console.log("data batch loaded"))
+    .finally(() => setLoader(false))
   }
   const batchRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
     // Max number of requests
@@ -255,6 +258,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     ? "loading"
     : (
       <div className="datatable-container col-12">
+        {loading && <Loader scale={2} />}
         <table id="search-patient" style={{width: "100%"}}></table>
       </div>
     )
@@ -1298,7 +1302,7 @@ const InstantNotification = ({patient_pk, current_sucursal}) => {
 const getPatiente = (dni, setPatient) => {
   if(dni.length!=8){
     // Eliminar datos
-    document.getElementById("name-pric").value = "";
+    document.getElementById("name-pric").value = ""
     document.getElementById("name-sec").value = "";
     document.getElementById("ape-p").value = "";
     document.getElementById("ape-m").value = "";
