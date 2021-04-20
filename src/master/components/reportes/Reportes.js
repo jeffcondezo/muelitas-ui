@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
 import {
-  simpleGet,
+  simplePostData,
 } from '../../functions'
 import {
   PageTitle,
@@ -18,11 +18,54 @@ const Reportes = () => {
   const {current_sucursal} = useContext(NavigationContext)
 
   const [script_dt, setScriptDT] = useState(false)
-  const [reportes, setReportes] = useState(false)
+  const [reportes_general, setReportesGeneral] = useState(false)
+  const [reportes_bi, setReportesBi] = useState(false)
+  const report_month_range = 12  // {6, 12, 18}
 
   const getReportes = () => {
-    simpleGet(`maestro/sucursal/${current_sucursal}/reporte/1/`)
-    .then(setReportes)
+    let dt_from = window.document.getElementById("dt-from").value
+    let dt_to = window.document.getElementById("dt-to").value
+
+    let req_body = reportes_general ? {dt_from: dt_from, dt_to: dt_to} : {}
+    let req_url = reportes_general ? 0 : report_month_range/6
+    // Set loader when range-date changes
+    if(req_url == 0) setReportesBi(false)
+    // Make request
+    simplePostData(`maestro/sucursal/${current_sucursal}/reporte/${req_url}/`, req_body)
+    .then(data => {
+      if(data.general) setReportesGeneral(data.general)
+      setReportesBi(data.bi)
+    })
+  }
+  const dateRangeChange = ev => {
+    // Validate date
+    if( ev.target.valueAsDate > new Date() ){
+      ev.target.value = new Date().toDateInputValue()
+    }
+    // Prevent dt-from to be newer than dt-to
+    if( window.document.getElementById('dt-from').valueAsDate > window.document.getElementById('dt-to').valueAsDate ){
+      window.document.getElementById('dt-from').value = window.document.getElementById('dt-to').valueAsDate
+    }
+
+    getReportes()
+  }
+  const getPastMonthDate = months => {
+    if(months < 0) return false
+
+    let _month = months%12
+    let _year = Math.floor(months/12)
+    let _date = new Date()
+
+    // Set month
+    // Date.Month starts from 0
+    if(_month > _date.getMonth()+1){
+      _year += 1
+      _month = 12 - (_month - (_date.getMonth()+1))
+      _date.setMonth(_month)
+    }else _date.setMonth(_date.getMonth() - _month)
+
+    _date.setFullYear(_date.getFullYear() - _year)
+    return _date
   }
 
   useEffect(() => {
@@ -51,22 +94,46 @@ const Reportes = () => {
     <div>
       <PageTitle title={"Reportes"} />
 
+      {/* General reports */}
       <div className="row">
-        <div className="col-6">
+        <div className="col-12 col-md-8">
           <div className="row">
-            <Report1 data={reportes[1]} />
-            <Report2 data={reportes[2]} />
-            <Report3 data={reportes[3]} />
+            <Report1 data={reportes_general.at_dt} />
+            <Report4 data={reportes_general.inc_dt} />
           </div>
         </div>
-        <div className="col-6">
-          <div className="row">
-            <Report4 data={reportes[4]} />
-            <Report5 data={reportes[5]} />
-            <Report6 data={reportes[6]} />
+        <div className="col-12 col-md-4">
+          <div className="row" style={{height: "100%"}}>
+            {script_dt && <Report7 data={reportes_general.debt_pac} />}
           </div>
         </div>
-        {script_dt && <Report7 data={reportes[7]} />}
+      </div>
+
+      <hr style={{borderBottom: "1px solid darkgray"}}/>
+      {/* Specific reports */}
+      <div className="row">
+        <div className="col-12 form-group">
+          <label className="form-label" htmlFor="dt-from" style={{marginRight: "20px"}}>Rango de fechas: </label>
+          <input type="date" id="dt-from" className="form-control col-2"
+          style={{display: "inline"}} onChange={dateRangeChange}
+          defaultValue={getPastMonthDate(6).toDateInputValue()} />
+          <input type="date" id="dt-to" className="form-control col-2"
+          style={{display: "inline"}} onChange={dateRangeChange}
+          defaultValue={getPastMonthDate(0).toDateInputValue()} />
+        </div>
+
+        <div className="col-12 col-md-6">
+          <div className="row">
+            <Report2 data={reportes_bi.at_pxs} />
+            <Report3 data={reportes_bi.at_per} />
+          </div>
+        </div>
+        <div className="col-12 col-md-6">
+          <div className="row">
+            <Report5 data={reportes_bi.inc_pxs} />
+            <Report6 data={reportes_bi.inc_per} />
+          </div>
+        </div>
       </div>
 
     </div>
@@ -131,7 +198,7 @@ const Report2 = ({data}) => {
       },
       bar: {
         width: {
-          ratio: .8
+          ratio: 1
         }
       },
       tooltip: {
@@ -147,7 +214,7 @@ const Report2 = ({data}) => {
       <div className="panel">
         <div className="card-header">
           <div className="card-title">
-            Atenciones realizadas por procedimiento
+            Atenciones realizadas por procedimiento (15 principales)
           </div>
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
@@ -249,7 +316,7 @@ const Report5 = ({data}) => {
       },
       bar: {
         width: {
-          ratio: .8
+          ratio: 1
         }
       },
       tooltip: {
@@ -266,7 +333,7 @@ const Report5 = ({data}) => {
       <div className="panel">
         <div className="card-header">
           <div className="card-title">
-            Top 20 mayores ingresos generados por procedimiento
+            Mayores ingresos generados por procedimiento (15 más altos)
           </div>
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
@@ -311,16 +378,20 @@ const Report6 = ({data}) => {
   )
 }
 const Report7 = ({data}) => {
+  const [datatable, setDataTable] = useState(false)
+
   useEffect(() => {
     if(!data) return
 
-    console.log("data", data)
-    window.$('#report7').DataTable({
+    if(datatable) window.$('#report7').DataTable().clear().destroy()
+    let tmp = window.$('#report7').DataTable({
       data: data.pacientes,
       columns: [
         {title: "Paciente", data: 'fullname'},
         {title: "Deuda", data: 'deuda'},
       ],
+      pageLength: 26,
+      order: [[1, 'desc']],
       searching: false,
       bLengthChange: false,
       language: {
@@ -328,7 +399,7 @@ const Report7 = ({data}) => {
         sLengthMenu:     "Mostrar _MENU_ registros",
         sZeroRecords:    "No se encontraron resultados",
         sEmptyTable:     "No hay pacientes registrados",
-        sInfo:           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+        sInfo:           "",
         sInfoEmpty:      "Mostrando registros del 0 al 0 de un total de 0 registros",
         sInfoFiltered:   "(filtrado de un total de _MAX_ registros)",
         sInfoPostFix:    "",
@@ -351,10 +422,12 @@ const Report7 = ({data}) => {
         }
       },
     })
+
+    setDataTable(tmp)
   }, [data])
 
   return (
-    <div className="col-12">
+    <div className="col-12" style={{display: "flex", alignItems: "stretch"}}>
       <div className="panel">
         <div className="card-header">
           <div className="card-title">
@@ -363,7 +436,14 @@ const Report7 = ({data}) => {
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
+          {data && <h4>Deuda total: {parseToSoles(data.total)}</h4>}
           <table id="report7"></table>
+          {data && (
+            <div>
+              <hr style={{borderBottom: "1px solid #BBB"}}/>
+              <p>La deuda se calcula a partir de los procedimientos que se realizaron en una atención o los programados en una plan de trabajo que está parcialmente pagado</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

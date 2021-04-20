@@ -74,7 +74,6 @@ const Cita = () => {
       : `"estado":"1"`
     simpleGet(`atencion/cita/?filtro={"sucursal":"${current_sucursal}","programado":"1",${filter}}`)
     .then(handleCitaResponse)
-    .finally(() => setLoader(false))
   }
   const handleCitaResponse = _citas => {
     if(__debug__) console.log("Cita handleCitaResponse")
@@ -464,10 +463,10 @@ const Cita = () => {
     getCitas()
   }, [personal])
   useEffect(() => {
+    setLoader(false)
     if(!events || events.length==0) return
 
     fixFCStyles()
-    setLoader(false)
   }, [events])
   useEffect(() => {
     if(!cita_selected) return

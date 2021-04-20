@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   simpleGet,
+  getDataByPK,
   capitalizeFirstLetter as cFL
 } from '../../functions';
 import { Icon, PageTitle } from '../bits';
@@ -10,7 +11,7 @@ import { NavigationContext } from '../Navigation'
 
 
 const HistoriaClinica = () => {
-  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const {redirectTo} = useContext(NavigationContext)
   const {patient_pk} = useParams()
   return (
     <>
@@ -27,10 +28,10 @@ const HistoriaClinica = () => {
 const HistoriaPatientData = ({patient_pk}) => {
   const [patient, setPatient] = useState(false);
 
-  const getPatient = pac_pk => simpleGet(`atencion/paciente/${pac_pk}/`).then(setPatient)
+  const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
 
   useEffect(() => {
-    getPatient(patient_pk);
+    getPatientByID(patient_pk);
   }, []);
 
   return (
@@ -45,9 +46,10 @@ const HistoriaPatientData = ({patient_pk}) => {
 }
 const HistoriaCitaList = ({patient_pk, redirectTo}) => {
   const [citaList, setCitaList] = useState(false);
+  const {current_sucursal} = useContext(NavigationContext)
 
   const getCitas = pac_pk => {
-    simpleGet(`atencion/cita/?filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true"}`)
+    simpleGet(`atencion/cita/?filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true", "sucursal":"${current_sucursal}"}`)
     .then(res => {
       // Remove duplicated attention
       let _tmp = res;

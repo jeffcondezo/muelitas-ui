@@ -1629,6 +1629,7 @@ let pvw_ctx;
 // Main component
 function Odontograma({role, redirectTo}){
   let __params__ = useParams()
+  const {current_sucursal} = useContext(NavigationContext)
 
   let [cita, setCita] = useState(false)
   /* We want to keep these values even when any state change, so we declare 'em as Ref
@@ -2182,7 +2183,7 @@ function Odontograma({role, redirectTo}){
   }, [__params__, genTeeth])
   // Cita
   useEffect(() => {
-    if(__debug__) console.log("useEffect cita");
+    if(__debug__) console.log("useEffect cita")
     if(!cita) return
 
     if(role=="regular"){
@@ -2255,7 +2256,7 @@ function Odontograma({role, redirectTo}){
   function getOdontogram(){
     if(__debug__) console.log("getOdontogram");
     // Get odontograma
-    simpleGet(`atencion/${cita.atencion}/odontograma/`)
+    simpleGet(`atencion/${cita.atencion}/sucursal/${current_sucursal}/odontograma/`)
     .then(setOdontogram,  // Save odontogram
       error_response => {
         console.log("error_response", error_response)
@@ -2560,7 +2561,7 @@ function Odontograma({role, redirectTo}){
 
   // Initial odontogram
   const getInitialOdontogram = _pac_pk => {
-    simpleGet(`atencion/paciente/${_pac_pk}/odontograma/inicial/`)
+    simpleGet(`atencion/paciente/${_pac_pk}/sucursal/${current_sucursal}/odontograma/inicial/`)
     .then(response => {
       if(__debug__) console.log("getInitialOdontogram: response", response);
       // If response is false then there is no initial odontogram
@@ -2578,12 +2579,12 @@ function Odontograma({role, redirectTo}){
     })
   }
   const getEvolutionOdontogram = _pac_pk => {
-    return simpleGet(`atencion/paciente/${_pac_pk}/odontograma/evolucion/`)
+    return simpleGet(`atencion/paciente/${_pac_pk}/sucursal/${current_sucursal}/odontograma/evolucion/`)
   }
   // Evolution odontogram
   const getEvolutionLog = _pac_pk => {
     /* refer: codeStructure.js: simpleFetch functions: debug log structure */
-    simpleGet(`atencion/paciente/${_pac_pk}/odontograma/evolucion/log/`)
+    simpleGet(`atencion/paciente/${_pac_pk}/sucursal/${current_sucursal}/odontograma/evolucion/log/`)
     .then(res => (__debug__ && console.log("getEvolutionLog: response", res)) || res)
     // If response is an empty array then there is no evolution log
     .then(res => (__debug__ && res.length == 0 && console.log("getEvolutionLog: no evolution log") || res))
