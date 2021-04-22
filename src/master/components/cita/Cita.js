@@ -116,7 +116,6 @@ const Cita = () => {
     // Generate promise
     simpleGet(`atencion/paciente/?filtro={"dni":"${_dni}","dni_otro":"true"}`)
     .then(res => {
-      // If patient was not found, enable inputs
       if(res.length<1) return
 
       // Set paciente data

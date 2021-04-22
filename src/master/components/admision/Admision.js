@@ -97,7 +97,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     // Function to build lot filter
     let filtro_batch = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
     // Lot params
-    let lot_length = 50
+    let lot_length = 75
     // Init lot request
     batchRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_batch, lot_length, 1, patients)
     .catch(() => console.log("data batch loaded"))
@@ -105,7 +105,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
   }
   const batchRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
     // Max number of requests
-    if(_next_lot_number==10) return Promise.reject(null)
+    if(_next_lot_number==20) return Promise.reject(null)
     return Promise.resolve(
       // Request next lot of queries
       simpleGet(_ep+_filtro_fn(_lot_length, _next_lot_number))
@@ -636,7 +636,7 @@ const PatientForm = ({patient, setPatient=(()=>{})}) => {
   }
   const _getPatiente = el => {
     let dni = el.value
-    if(Number(dni) == false){
+    if(Number(dni) === NaN){
       // Prevent characters other than numbers
       el.value = dni.substr(0, dni.length-1)
       return
