@@ -117,9 +117,6 @@ function Navigation({user, history}){
       <div>
         <div className="page-wrapper">
           <div className="page-inner">
-            {/*
-              <Aside />
-              */}
             <div className="page-content-overlay" data-action="toggle" data-class="mobile-nav-on"></div>
 
             <PageContent />
