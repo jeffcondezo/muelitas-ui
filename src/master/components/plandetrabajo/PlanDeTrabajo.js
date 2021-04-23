@@ -162,6 +162,10 @@ const PlanDeTrabajoHome = () => {
         pdt={pdt}
         selected={ar_proc_selected}
         refreshPDT={() => setPDTDeleted(true)} />
+      <ModalCitaRelacion
+        pdt={pdt}
+        selected={ar_proc_selected}
+        refreshPDT={() => setPDTDeleted(true)} />
     </div>
   )
 }
@@ -290,8 +294,8 @@ const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, s
         }
       ],
       order: [[2, 'asc']],  // Default sort by 'orden' field
-      pageLength: 8,
-      lengthMenu: [[8, 15, 25], [8, 15, 25]],
+      pageLength: 15,
+      lengthMenu: [[15, 25, 35], [15, 25, 35]],
       language: {
         // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
         sProcessing:     "Procesando...",
@@ -407,6 +411,21 @@ const PDTActions = ({redirectTo, selected, patient, pdt}) => {
 
     window.$("#pdtpay_modal").modal('show')
   }
+  const openCitaRelModal = () => {
+    // Verify selected not empty
+    if(selected.length == 0){
+      handleErrorResponse('custom', "", "Debe seleccionar al menos un procedimiento", 'warning')
+      return
+    }
+    // If any selected dpdt have been fully paid already
+    let dpdt_er = selected.find(i => i.cita_relacionada)
+    if(dpdt_er){
+      alertInputRedSpark(dpdt_er)
+      return
+    }
+
+    window.$("#citarel_modal").modal('show')
+  }
 
   return (
     <div className="card col-12" style={{
@@ -421,26 +440,33 @@ const PDTActions = ({redirectTo, selected, patient, pdt}) => {
         display: "flex",
         alignItems: "center",
       }}>
-        <div className="col-4" style={{
+        <div className="col-3" style={{
           display: "inline-block",
           textAlign: "center"
         }}>
           <Icon type="edit" onClick={() => redirectTo(`/nav/plandetrabajo/${patient.pk}/editar/${pdt.pk}/`)} />
           <span style={{fontSize: "0.9rem"}}>Editar</span>
         </div>
-        <div className="col-4" style={{
+        <div className="col-3" style={{
           display: "inline-block",
           textAlign: "center"
         }}>
           <Icon type="finance" onClick={openPagosModal} />
           <span style={{fontSize: "0.9rem"}}>Pagos</span>
         </div>
-        <div className="col-4" style={{
+        <div className="col-3" style={{
           display: "inline-block",
           textAlign: "center"
         }}>
           <Icon type="add" onClick={redirectToCita} />
           <span style={{fontSize: "0.9rem"}}>Crear Cita</span>
+        </div>
+        <div className="col-3" style={{
+          display: "inline-block",
+          textAlign: "center"
+        }}>
+          <Icon type="list" onClick={openCitaRelModal} />
+          <span style={{fontSize: "0.9rem"}}>Enlazar Cita</span>
         </div>
       </div>
     </div>
@@ -491,6 +517,16 @@ const ModalPagos = ({pdt, selected, refreshPDT}) => {
       _id={"pdtpay_modal"}
       _body={
         <PagoPDT pdt={pdt} selected={selected} refreshPDT={refreshPDT} />
+      }
+      _min_width={"600"} />
+  ) : ""
+}
+const ModalCitaRelacion = ({pdt, selected, refreshPDT}) => {
+  return pdt ? (
+    <RegularModalCentered _title={"Enlazar procedimiento a Cita"}
+      _id={"citarel_modal"}
+      _body={
+        <CitaRel pdt={pdt} selected={selected} refreshPDT={refreshPDT} />
       }
       _min_width={"600"} />
   ) : ""
@@ -578,6 +614,54 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
       current_sucursal={current_sucursal}
       patient={pdt.paciente_data}
       footer_fn={footer_fn} />
+  )
+}
+const CitaRel = ({pdt, selected, refreshPDT}) => {
+  const {current_sucursal} = useContext(NavigationContext)
+  const [latest_citas, setLatestPacAte] = useState(false)
+
+  const getLastAttendedPatients = (_sucursal_pk, _pac_pk) => {
+    simpleGet(`atencion/cita/?filtro={"sucursal":"${_sucursal_pk}", "estado":"-1", "sort":"true", "last": "10", "paciente": "${_pac_pk}"}`)
+    .then(setLatestPacAte)
+  }
+  const enlazarCita = () => {
+    let related_cita = window.document.getElementById('cita-to-relate').value
+    if(!related_cita) return
+
+    simplePostData('atencion/plantrabajo/cita/relacion/', {
+      cita: related_cita,
+      dpdt_pks: selected.map(i => i.pk)
+    })
+    .then(refreshPDT)
+    .finally(() => window.$("#citarel_modal").modal('hide'))
+  }
+
+  useEffect(() => {
+    getLastAttendedPatients(current_sucursal, pdt.paciente)
+  }, [])
+
+  return !latest_citas
+    ? <Loader scale={2} />
+    : (
+    <div>
+      <p>Enlazar los procedimientos seleccionados ({selected.length}) a la Cita seleccionada</p>
+      <select className="custom-select form-control" id="cita-to-relate">
+        {latest_citas.length == 0 && (
+          <p>El paciente no tiene atenciones a las cuales relacionar</p>
+        )}
+        {latest_citas.map(c => (
+          <option key={"latest_citas_"+c.pk} value={c.pk}>
+            {`${c.paciente_data.fullname.toUpperCase()} | ${c.hora} - ${c.hora_fin}
+            ${c.fecha.split("-").reverse().join('/')} | ${c.programado.length<25?c.programado:c.programado.slice(0, 25)+".."}`}
+          </option>
+        ))}
+      </select>
+      <br/><br/>
+      <button className="btn btn-primary" onClick={enlazarCita}>Enlazar</button>
+      <br/>
+      <br/>
+      <p style={{color: "orange"}}>* Para desvincular el procedimiento entre a la atención y elimine los procedimientos manualmente</p>
+    </div>
   )
 }
 

@@ -38,6 +38,8 @@ const Reportes = () => {
     })
   }
   const dateRangeChange = ev => {
+    // Validate new date is a valid date
+    if( !window.document.getElementById('dt-from').valueAsDate || !window.document.getElementById('dt-to').valueAsDate ) return
     // Validate date
     if( ev.target.valueAsDate > new Date() ){
       ev.target.value = new Date().toDateInputValue()

@@ -200,6 +200,14 @@ export const Icon = ({type, onClick, data_dismiss}) => {
           <i className="fal fa-user"></i>
       </a>
     ); break;
+    case "list": el.push(  // List
+      <a key={type+"icon"} onClick={onClick}
+        data-dismiss={data_dismiss}
+        className="btn btn-icon waves-effect waves-themed"
+        style={{margin: "0 4px", fontSize: "2.5em"}}>
+          <i className="fal fa-list"></i>
+      </a>
+    ); break;
     default: break;
   }
 

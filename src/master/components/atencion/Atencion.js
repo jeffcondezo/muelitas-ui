@@ -265,7 +265,7 @@ const CitaData = ({cita}) => {
         </h6>
         <h6>
           <b>Fecha y hora: </b>
-          {cita.fecha} <code>{cita.hora.slice(0, 5)} - {cita.hora_fin.slice(0, 5)}</code>
+          {cita.fecha.split('-').reverse().join('/')} <code>{cita.hora.slice(0, 5)} - {cita.hora_fin.slice(0, 5)}</code>
         </h6>
         {cita.personal
           ? (
@@ -465,15 +465,15 @@ const AttentionProcedures = ({cita}) => {
                     <span style={{fontSize: "1.2em"}}>
                         {cFL(da.pxs_data.nombre)}
                     </span>
-                    {!da.pagado && (
+                    {(!da.dpdt && !da.pago_iniciado) && (
                       <button className="btn ml-auto"
                         style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
                         onClick={()=>editProcedure(da.pk)}>
                           <i className="fal fa-edit"></i>
                       </button>
                     )}
-                    {!da.pagado && (
-                      <button className="btn"
+                    {(!da.pago_iniciado || da.dpdt) && (
+                      <button className={"btn"+(da.dpdt?" ml-auto":"")}
                         style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
                         onClick={()=>modalConfirmDelete(da.pk)}>
                           <i className="fal fa-trash-alt"></i>

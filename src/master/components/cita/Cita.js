@@ -165,22 +165,13 @@ const Cita = () => {
   }
   const redirectDataFinal = cita => {
     // Compare procs sended and procs received
-    let sended_ar = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
-    // BUG: Execute it all in promise to avoid multiple instant execution (duplicity in DB objects)
     // _redirect_data.selected = [{pxs_pk, dpdt}]
-    _redirect_data.selected.reduce(
-      (promise_chain, obj) => {
-        return sended_ar.indexOf(obj.pxs_pk) == -1
-          ? promise_chain
-          : promise_chain.then(
-            // If proc was sended, add cita as dpdt's reference
-            () => simplePostData(`atencion/plantrabajo/detalle/${obj.dpdt}/cita/${cita.pk}/`)
-          ).then(
-            // Create DA from DPDT data
-            () => simplePostData(`atencion/${cita.atencion}/detalle/dpdt/${obj.dpdt}/`)
-          )
-      }, Promise.resolve()
-    ).then(() => setFakeRedirectData(true))
+    let sended_ar = window.$("#select-procedimiento_programado").select2('data').map(i => Number(i.id))
+    simplePostData('atencion/plantrabajo/cita/relacion/', {
+      cita: cita.pk,
+      dpdt_pks: _redirect_data.selected.filter(i => sended_ar.indexOf(i.pxs_pk)!=-1 ).map(i => i.dpdt)
+    })
+    .finally(() => setFakeRedirectData(true))
   }
   const createDACita = cita => {
     // Create DA for every programado
