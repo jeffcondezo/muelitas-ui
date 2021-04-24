@@ -15,7 +15,6 @@ const __debug__ = process.env.REACT_APP_DEBUG
 
 
 const Prescripcion = () => {
-  const {redirectTo} = useContext(NavigationContext)
   let __params__ = useParams()
 
   const [cita, setCita] = useState(false)
@@ -40,9 +39,6 @@ const Prescripcion = () => {
     setMedicineList(_tmp)
   }
   const getPrescriptionMedicine = (_attention_pk) => simpleGet(`atencion/prescripcion/?filtro={"atencion":"${_attention_pk}"}`).then(setMedicineList)
-  const getBack = () => {
-    redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})
-  }
 
   useEffect(() => {
     // Si props no recibe cita
@@ -75,12 +71,6 @@ const Prescripcion = () => {
           <ListSavedMedicine
             medicine_list={medicine_list}
             removeMedicineFromList={removeMedicineFromList} />
-
-        </div>
-        <div className="position-absolute pos-bottom">
-          <button className="btn btn-primary" onClick={() => getBack()}>
-            Regresar
-          </button>
         </div>
       </div>
     </div>
@@ -89,6 +79,7 @@ const Prescripcion = () => {
 }
 
 const AddMedicine = ({cita, addMedicineToList}) => {
+  const {redirectTo, current_sucursal} = useContext(NavigationContext)
   const [medicine, setMedicine] = useState(false)
 
   const getMedicines = () => simpleGet(`atencion/medicamento/`).then(setMedicine)
@@ -171,6 +162,7 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     }
     // Set value
     document.getElementById('start-time').value = String(suggested_hour).padStart(2, 0)+":00"
+    updateIndications()
   }
   const clearForm = () => {
     document.getElementById('amount').value = ""
@@ -178,6 +170,16 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     document.getElementById('contraindications').value = ""
     document.getElementById('period').value = "4"
     handlePeriodChange()
+  }
+  const updateIndications = () => {
+    // Update Indicaciones
+    let hora_inicio = document.getElementById('start-time').value
+    let amount = document.getElementById('amount').value
+    let period_text = document.getElementById('period').selectedOptions[0].text
+    document.getElementById('indications').value = `Tomar ${amount} ${period_text}, iniciar a las ${hora_inicio} horas.`
+  }
+  const getBack = () => {
+    redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})
   }
 
   // Run at first execution
@@ -233,7 +235,7 @@ const AddMedicine = ({cita, addMedicineToList}) => {
       {/* Cantidad */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
         <label className="form-label" htmlFor="amount">Total a comprar</label>
-        <input type="text" className="form-control" id="amount"></input>
+        <input type="text" className="form-control" id="amount" onChange={updateIndications} defaultValue="1"></input>
       </div>
       {/* Periodo */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
@@ -243,6 +245,11 @@ const AddMedicine = ({cita, addMedicineToList}) => {
           <option value="8">cada 8 horas</option>
           <option value="12">cada 12 horas</option>
         </select>
+      </div>
+      {/* Hora sugerida de inicio */}
+      <div className="col-sm" style={{paddingBottom: "5px"}}>
+        <label className="form-label" htmlFor="start-time">Hora sugerida de inicio</label>
+        <input className="form-control" id="start-time" type="time" onChange={updateIndications}></input>
       </div>
       {/* Indicaciones */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
@@ -254,17 +261,19 @@ const AddMedicine = ({cita, addMedicineToList}) => {
         <label className="form-label" htmlFor="contraindications">Contraindicaciones</label>
         <textarea className="form-control" id="contraindications" rows="2"></textarea>
       </div>
-      {/* Fecha Fin */}
-      <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="start-time">Hora sugerida de inicio</label>
-        <input className="form-control" id="start-time" type="time"></input>
-      </div>
 
       <br/>
       {/* Agregar button */}
-      <div className="col-sm d-flex">
-        <button className="btn btn-dark" onClick={() => handleSubmit()}>
+      <div className="modal-footer" style={{justifyContent: "end"}}>
+        <button className="btn btn-info" onClick={() => handleSubmit()}>
           Agregar
+        </button>
+        <button className="btn btn-primary" onClick={() => getBack()}>
+          Regresar
+        </button>
+        <button className="btn btn-dark"
+        onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/receta/${current_sucursal}/${cita.paciente}/${cita.atencion}/`, '_blank')}>
+          Imprimir
         </button>
       </div>
     </div>

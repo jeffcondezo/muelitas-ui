@@ -169,13 +169,13 @@ const PlanDeTrabajoHome = () => {
     </div>
   )
 }
-const PlanDeTrabajoList = ({redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT, pdt, setPDT}) => {
+const PlanDeTrabajoList = ({current_sucursal, redirectTo, patient_pk, pdtDeleted, setPDTDeleted, selectProc, thereIsPDT, setThereIsPDT, pdt, setPDT}) => {
   const [pdts, setPdts] = useState(false)  // Planes de trabajo
   const [dpdts, setDpdts] = useState(false)  // Detalles de Plan de trabajo
   const [datatable, setDatatable] = useState(false)
 
   const getPdts = () => {
-    simpleGet(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}"}`)
+    simpleGet(`atencion/plantrabajo/?filtro={"paciente":"${patient_pk}", "sucursal":"${current_sucursal}"}`)
     .then(setPdts)
   }
   const getDptByPdt = pdt_pk => {
