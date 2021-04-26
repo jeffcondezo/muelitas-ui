@@ -26,10 +26,6 @@ const Atencion = () => (
     <Route exact path="/nav/atencion/:cita_pk/detalle">
       <AttentionDetail />
     </Route>
-    <Route exact path="/nav/atencion/:pac_pk/atender">
-      <AtenderPaciente />
-    </Route>
-
     <Route>
       <Redirect to="/nav/atencion" />
     </Route>
@@ -616,46 +612,6 @@ export const GDriveFile = ({file, deleteFile}) => {
   )
 }
 
-const AtenderPaciente = () => {
-  const {current_sucursal} = useContext(NavigationContext)
-  let __params__ = useParams()
-  let [cita, setCita] = useState(false)
-
-  const getUnfinishedANP = (pac_pk, _sucursal_pk) => {
-    if(__debug__) console.log("AtenderPaciente getUnfinishedANP")
-    simplePostData(`atencion/noprogramado/unfinished/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
-    .then(
-      res => {
-        if(__debug__) console.log("AtenderPaciente getUnfinishedANP res:", res)
-        if(!res){
-          if(__debug__) console.log("AtenderPaciente: no hay una ANP sin finalizar")
-          if(__debug__) console.log("AtenderPaciente: crear una ANP")
-          createANP(pac_pk, _sucursal_pk)
-        }else setCita(res)
-      }
-    )
-  }
-  const createANP = (pac_pk, _sucursal_pk) => {
-    if(__debug__) console.log("AtenderPaciente createANP")
-    simplePostData(`atencion/noprogramado/create/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
-    .then(
-      res => {
-        if(__debug__) console.log("AtenderPaciente createANP res:", res)
-        setCita(res)
-      }
-    )
-  }
-
-  useEffect(() => {
-    if(__debug__) console.log("AtenderPaciente useEffect")
-
-    getUnfinishedANP(__params__.pac_pk, current_sucursal)
-  }, [])
-
-  return !cita
-    ? "loading"
-    : <Redirect to={`/nav/atencion/${cita.pk}/detalle`} />
-}
 
 export default Atencion
 

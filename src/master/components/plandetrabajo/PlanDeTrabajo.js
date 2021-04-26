@@ -533,9 +533,15 @@ const ModalCitaRelacion = ({pdt, selected, refreshPDT}) => {
 }
 const PagoPDT = ({pdt, selected, refreshPDT}) => {
   const {current_sucursal} = useContext(NavigationContext)
+  let clicked = false
   let deuda = selected.reduce((sum, i) => sum+(i.dcc?i.dcc.deuda:i.precio), 0)
 
   const sendData = (_client, _tipo_pago) => {
+    console.log("clicked", clicked)
+    if(clicked) return
+    else clicked = true
+    console.log("proceed")
+
     let monto_pagado = window.document.getElementById('pdtpay-monto').value
     let dcc_list = []
     let monto_remain = Number(monto_pagado)
@@ -562,7 +568,6 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
       return
     }
 
-
     simplePostData(`finanzas/pago/create/`, {
       paciente: pdt.paciente,
       cliente: _client,
@@ -576,7 +581,10 @@ const PagoPDT = ({pdt, selected, refreshPDT}) => {
     .then(res => res.comprobante && window.open(process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${res.comprobante}/`, "_blank"))
     .then(() => handleErrorResponse('custom', "Exito", "Pago realizado correctamente", 'info'))
     .then(() => refreshPDT(true))
-    .finally(() => window.$("#pdtpay_modal").modal('hide'))
+    .finally(() => {
+      window.$("#pdtpay_modal").modal('hide')
+      clicked = false
+    })
   }
   const handleSubmit = (getFormClient, tipo_pago) => {
     let _client  = getFormClient()
@@ -651,7 +659,7 @@ const CitaRel = ({pdt, selected, refreshPDT}) => {
         )}
         {latest_citas.map(c => (
           <option key={"latest_citas_"+c.pk} value={c.pk}>
-            {`${c.paciente_data.fullname.toUpperCase()} | ${c.hora} - ${c.hora_fin}
+            {`${c.personal.fullname.toUpperCase()} | ${c.hora} - ${c.hora_fin}
             ${c.fecha.split("-").reverse().join('/')} | ${c.programado.length<25?c.programado:c.programado.slice(0, 25)+".."}`}
           </option>
         ))}

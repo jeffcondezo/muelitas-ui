@@ -229,6 +229,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   const [ubigeos, setUbigeos] = useState(false)
   const [client, setClient] = useState(false)
   const [loading, setLoader] = useState(true)
+  let clicked = false
   let html_btn_group_toggle_class = "btn btn-outline-info waves-effect waves-themed"
 
   // Initial
@@ -389,6 +390,11 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
     sendData(dcc_list, _client)
   }
   const sendData = (_dcc_list, _client) => {
+    console.log("clicked", clicked)
+    if(clicked) return
+    else clicked = true
+    console.log("proceed")
+
     simplePostData('finanzas/pago/create/', {
       paciente: patient.pk,
       cliente: _client,
@@ -402,6 +408,9 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
     .then(() => handleErrorResponse("paymentform", "Exito", "Se ha realizado el pago correctamente", "info"))
     .then(() => update_ctx.update(true))
     .catch(er => console.log("ERROR", er))
+    .finally( () => {
+      clicked = false
+    })
   }
 
   useEffect(() => {

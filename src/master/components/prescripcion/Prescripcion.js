@@ -9,6 +9,7 @@ import {
 } from '../../functions'
 import { PageTitle } from '../bits'
 import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
@@ -58,6 +59,7 @@ const Prescripcion = () => {
       <div className="col-lg-8">
         <AddMedicine
           cita={cita}
+          medicine_list={medicine_list}
           addMedicineToList={addMedicineToList} />
       </div>
       <div className="col-lg-4 position-relative">
@@ -78,7 +80,7 @@ const Prescripcion = () => {
   )
 }
 
-const AddMedicine = ({cita, addMedicineToList}) => {
+const AddMedicine = ({cita, medicine_list, addMedicineToList}) => {
   const {redirectTo, current_sucursal} = useContext(NavigationContext)
   const [medicine, setMedicine] = useState(false)
 
@@ -100,7 +102,6 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     return _medicine
   }
   const saveMedicineItem = _data => {
-    console.log("_data", _data)
     simplePostData(`atencion/prescripcion/`, _data)
     .then(addMedicineToList)
     .then(clearForm)
@@ -113,6 +114,10 @@ const AddMedicine = ({cita, addMedicineToList}) => {
       handleErrorResponse("custom", "Error", "Cantidad no especificada", 'warning')
       return
     }
+    if(isNaN(Number(_tmp1.value)) || Number(_tmp1.value) < 1){
+      handleErrorResponse("custom", "Error", "Cantidad debe ser un número valido", 'warning')
+      return
+    }
     _tmp1 = document.getElementById("period")
     if(!_tmp1 || _tmp1.value.trim().length==0){
       handleErrorResponse("custom", "Error", "Periodo no especificado", 'warning')
@@ -123,11 +128,11 @@ const AddMedicine = ({cita, addMedicineToList}) => {
       atencion: cita.atencion,
       paciente: cita.paciente,
       medicamento: document.getElementById('select_medicine').value,
-      medicamento_name: document.getElementById('select_medicine').selectedOptions[0].text,
       cantidad: document.getElementById('amount').value,
       periodo: document.getElementById('period').value,
       indicaciones: document.getElementById('indications').value,
-      contraindicaciones: document.getElementById('contraindications').value,
+      sugerencias: document.getElementById('sugerencias').value,
+      fecha_validez: document.getElementById('fecha_validez').value,
       hora_inicio: document.getElementById('start-time').value,
     }
 
@@ -140,7 +145,7 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     let suggested_hour = 0
 
     // Algorithm
-    if(period==12){
+    if(period==12 || period==24){
       // Breakfast & Dinner
       suggested_hour = 7  // 7AM 7PM
     }else if(period==8){
@@ -162,21 +167,33 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     }
     // Set value
     document.getElementById('start-time').value = String(suggested_hour).padStart(2, 0)+":00"
-    updateIndications()
+    updateDynamicValues()
+  }
+  const handleAmountChange = el => {
+    if( isNaN( Number(el.value) ) ) el.value = 0
+    else if( Number(el.value) < 1 ) el.value = 0
+    updateDynamicValues()
   }
   const clearForm = () => {
     document.getElementById('amount').value = ""
     document.getElementById('indications').value = ""
-    document.getElementById('contraindications').value = ""
+    document.getElementById('sugerencias').value = ""
     document.getElementById('period').value = "4"
     handlePeriodChange()
   }
-  const updateIndications = () => {
-    // Update Indicaciones
-    let hora_inicio = document.getElementById('start-time').value
+  const updateDynamicValues = () => {
+    let start_time = document.getElementById('start-time').valueAsDate
+    let html_period = document.getElementById('period')
     let amount = document.getElementById('amount').value
-    let period_text = document.getElementById('period').selectedOptions[0].text
-    document.getElementById('indications').value = `Tomar ${amount} ${period_text}, iniciar a las ${hora_inicio} horas.`
+    let init_time = new Date()
+    init_time.setHours(start_time.getHours())
+    init_time.setMinutes(start_time.getMinutes())
+
+    // Update fecha_validez
+    document.getElementById('fecha_validez').value = new Date(init_time.getTime() + 1000*60*60*html_period.value*amount).toDateInputValue()
+    // Update Indicaciones
+    document.getElementById('indications').value =
+      `Tomar 1 ${html_period.selectedOptions[0].text}, iniciar a las ${String(start_time.getUTCHours()).padStart(2, "0")}:${String(start_time.getUTCMinutes()).padStart(2, "0")} horas.`
   }
   const getBack = () => {
     redirectTo(`/nav/atencion/${cita.pk}/detalle`, {cita: cita})
@@ -216,7 +233,7 @@ const AddMedicine = ({cita, addMedicineToList}) => {
     if(!medicine) return
 
     // Set select2 for medicine
-    window.$("#select_medicine").select2({tags: true})
+    window.$("#select_medicine").select2()
   }, [medicine])
 
   return (
@@ -225,41 +242,49 @@ const AddMedicine = ({cita, addMedicineToList}) => {
       <div className="col-sm" style={{paddingBottom: "5px"}}>
         <label className="form-label" htmlFor="select_medicine">Medicamento: </label>
         {!medicine
-          ? "loading"
+          ? <Loader scale={2} />
           : (
             <select id="select_medicine" className="custom-select form-control custom-select-lg">
               {selectOptions_Medicine(medicine)}
             </select>
           )}
       </div>
-      {/* Cantidad */}
-      <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="amount">Total a comprar</label>
-        <input type="text" className="form-control" id="amount" onChange={updateIndications} defaultValue="1"></input>
-      </div>
-      {/* Periodo */}
-      <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="period">Periodo</label>
-        <select className="custom-select form-control" id="period" onChange={(e)=>handlePeriodChange(e.target.value)}>
-          <option value="4">cada 4 horas</option>
-          <option value="8">cada 8 horas</option>
-          <option value="12">cada 12 horas</option>
-        </select>
-      </div>
-      {/* Hora sugerida de inicio */}
-      <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="start-time">Hora sugerida de inicio</label>
-        <input className="form-control" id="start-time" type="time" onChange={updateIndications}></input>
+      <div style={{display: "flex"}}>
+        {/* Cantidad */}
+        <div className="col-3" style={{paddingBottom: "5px"}}>
+          <label className="form-label" htmlFor="amount">Total a comprar</label>
+          <input type="text" className="form-control" id="amount" onChange={ev => handleAmountChange(ev.target)} defaultValue="1"></input>
+        </div>
+        {/* Periodo */}
+        <div className="col-3" style={{paddingBottom: "5px"}}>
+          <label className="form-label" htmlFor="period">Periodo</label>
+          <select className="custom-select form-control" id="period" onChange={(e)=>handlePeriodChange(e.target.value)}>
+            <option value="4">cada 4 horas</option>
+            <option value="8">cada 8 horas</option>
+            <option value="12">cada 12 horas</option>
+            <option value="24">cada 24 horas</option>
+          </select>
+        </div>
+        {/* Hora sugerida de inicio */}
+        <div className="col-3" style={{paddingBottom: "5px"}}>
+          <label className="form-label" htmlFor="start-time">Hora sugerida de inicio</label>
+          <input className="form-control" id="start-time" type="time" onChange={updateDynamicValues}></input>
+        </div>
+        {/* Fecha validez */}
+        <div className="col-3" style={{paddingBottom: "5px"}}>
+          <label className="form-label" htmlFor="fecha_validez">Valido hasta</label>
+          <input className="form-control" id="fecha_validez" type="date" onChange={updateDynamicValues}></input>
+        </div>
       </div>
       {/* Indicaciones */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
         <label className="form-label" htmlFor="indications">Indicaciones</label>
         <textarea className="form-control" id="indications" rows="2"></textarea>
       </div>
-      {/* Contraindicaciones */}
+      {/* Sugerencias */}
       <div className="col-sm" style={{paddingBottom: "5px"}}>
-        <label className="form-label" htmlFor="contraindications">Contraindicaciones</label>
-        <textarea className="form-control" id="contraindications" rows="2"></textarea>
+        <label className="form-label" htmlFor="sugerencias">Sugerencias</label>
+        <textarea className="form-control" id="sugerencias" rows="2"></textarea>
       </div>
 
       <br/>
@@ -271,10 +296,12 @@ const AddMedicine = ({cita, addMedicineToList}) => {
         <button className="btn btn-primary" onClick={() => getBack()}>
           Regresar
         </button>
-        <button className="btn btn-dark"
-        onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/receta/${current_sucursal}/${cita.paciente}/${cita.atencion}/`, '_blank')}>
+        {medicine_list.length!=0 && (
+          <button className="btn btn-dark"
+          onClick={() => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/receta/${current_sucursal}/${cita.paciente}/${cita.atencion}/`, '_blank')}>
           Imprimir
-        </button>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -311,7 +338,7 @@ export const ListSavedMedicine = ({medicine_list, removeMedicineFromList}) => {
           <span>
             Cada {medc.periodo} horas <br/>
             {medc.indicaciones} <br/>
-            {medc.contraindicaciones}
+            {medc.sugerencias}
           </span>
       </div>
     </div>

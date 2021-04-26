@@ -29,6 +29,7 @@ import Loader from '../loader/Loader'
 const __debug__ = process.env.REACT_APP_DEBUG
 const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
+const html_atender_modal_id = 'html_atender_modal_id'
 export const tipo_documento = {
   1: "DNI",
   2: "CARNET DE EXTRANJERIA",
@@ -358,6 +359,11 @@ const AdmisionDetail = () => {
   useEffect(() => {
     getPatientByID(_params_.patient)
   }, [])
+  useEffect(() => () => {
+    window.$('#'+html_format_id).modal('hide')
+    window.$('#'+html_instant_notification_id).modal('hide')
+    window.$('#'+html_atender_modal_id).modal('hide')
+  }, [])
 
   return !patient
     ? "loading"
@@ -382,6 +388,7 @@ const AdmisionDetail = () => {
         </div>
         <ModalFormatos patient_pk={patient.pk} current_sucursal={current_sucursal} />
         <InstantNotification patient_pk={patient.pk} current_sucursal={current_sucursal} />
+        <AtenderPaciente patient_pk={patient.pk} current_sucursal={current_sucursal} redirectTo={redirectTo} />
       </div>
     )
 }
@@ -502,7 +509,7 @@ const LinksDetail = ({patient, redirectTo}) => {
         </div>
         {/* atender */}
         <div className="col-3" style={{display: "inline-block", textAlign: "center"}}>
-          <Icon type="add" onClick={() => redirectTo(`/nav/atencion/${patient.pk}/atender`)} />
+          <Icon type="add" onClick={() => window.$('#'+html_atender_modal_id).modal('show')} />
           <span style={{fontSize: "0.9rem"}}>Atender</span>
         </div>
         {/* archivos */}
@@ -1379,6 +1386,82 @@ export const xhtmlDecode = _text => {
   xhtml_codes.map(v => text = text.replace(v.code, v.value))
 
   return text
+}
+// Atender
+const AtenderPaciente = ({patient_pk, current_sucursal, redirectTo}) => {
+  let [latest_citas, setLatestCitaInfo] = useState(false)
+  let [personal, setPersonal] = useState(false)
+
+  const getLatestCitasInfo = (pac_pk, _sucursal_pk) => {
+    if(__debug__) console.log("AtenderPaciente getUnfinishedANP")
+    simplePostData(`atencion/noprogramado/unfinished/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
+    .then(res => setLatestCitaInfo(res.citas))
+  }
+  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
+  const submitAtender = () => {
+    let personal_pk = window.document.getElementById('last_cita_personal').value
+    simplePostData(`atencion/noprogramado/create/`, {paciente: patient_pk, sucursal: current_sucursal, personal: personal_pk})
+    .then( c => redirectTo(`/nav/atencion/${c.pk}/detalle`))
+  }
+  const goPastAttention = () => {
+    let cita_pk = window.document.getElementById('last_cita').value
+    redirectTo(`/nav/atencion/${cita_pk}/detalle`)
+  }
+
+  useEffect(() => {
+    if(__debug__) console.log("AtenderPaciente useEffect")
+
+    getLatestCitasInfo(patient_pk, current_sucursal)
+    getPersonal()
+  }, [])
+
+  return (
+    <RegularModalCentered
+      _id={html_atender_modal_id}
+      _title={"Atender Paciente"}
+      _body={
+        <div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="last_cita">Atenciones del día de hoy: </label>
+            {!latest_citas
+              ? <Loader scale={2} />
+              : latest_citas.length == 0
+                ? <h5 style={{color: "purple"}}>No se encontraron atenciones</h5>
+                : (
+                  <div className="row">
+                    <div className="col-8">
+                      <select className="custom-select form-control" id="last_cita">
+                        {latest_citas.map(c =>
+                          <option key={c.pk} value={c.pk}>{c.hora.slice(0, 5)} - {c.personal.fullname.toUpperCase()}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-2">
+                      <button className="btn btn-primary" onClick={goPastAttention}>Ir</button>
+                    </div>
+                  </div>
+                )
+            }
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="last_cita_personal">Crear atención sin cita: </label>
+            <div className="row">
+              <div className="col-8">
+                {!personal
+                  ? <Loader scale={2} />
+                  : (
+                    <select className="custom-select form-control" id="last_cita_personal">
+                      {personal.map(p => <option key={p.pk} value={p.pk}>{p.fullname.toUpperCase()}</option>)}
+                    </select>
+                  )}
+              </div>
+              <div className="col-2">
+                <button className="btn btn-primary" onClick={submitAtender}>Crear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      } />
+  )
 }
 
 
