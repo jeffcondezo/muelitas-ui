@@ -91,6 +91,11 @@ const Reportes = () => {
       document.head.appendChild(dt_style)
     }
   }, [])
+  useEffect(() => {
+    if(!reportes_general) return
+
+    getReportes()
+  }, [reportes_general])
 
   return (
     <div>
@@ -118,7 +123,7 @@ const Reportes = () => {
           <label className="form-label" htmlFor="dt-from" style={{marginRight: "20px"}}>Rango de fechas: </label>
           <input type="date" id="dt-from" className="form-control col-2"
           style={{display: "inline"}} onChange={dateRangeChange}
-          defaultValue={getPastMonthDate(6).toDateInputValue()} />
+          defaultValue={getPastMonthDate(0).toDateInputValue()} />
           <input type="date" id="dt-to" className="form-control col-2"
           style={{display: "inline"}} onChange={dateRangeChange}
           defaultValue={getPastMonthDate(0).toDateInputValue()} />
@@ -221,6 +226,7 @@ const Report2 = ({data}) => {
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
+          {data && <h4>Total: {data.reduce((v, i) => v+i.count, 0)} atenciones</h4>}
           <div id="report2"></div>
         </div>
       </div>
@@ -253,6 +259,7 @@ const Report3 = ({data}) => {
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
+          {data && <h4>Total: {data.reduce((v, i) => v+i.count, 0)} atenciones</h4>}
           <div id="report3"></div>
         </div>
       </div>
@@ -340,6 +347,7 @@ const Report5 = ({data}) => {
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
+          {data && <h4>Total: {parseToSoles(data.reduce((v, i) => v+i.total, 0))}</h4>}
           <div id="report5"></div>
         </div>
       </div>
@@ -373,6 +381,7 @@ const Report6 = ({data}) => {
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
+          {data && <h4>Total: {parseToSoles(data.reduce((v, i) => v+i.total, 0))}</h4>}
           <div id="report6"></div>
         </div>
       </div>
@@ -475,8 +484,9 @@ export default Reportes
 7. Tabular de cuentas por cobrar (DataTable)
 
 * Distribution
-1 4
+1 7
+4 7
+
 2 5
 3 6
- 7
 */

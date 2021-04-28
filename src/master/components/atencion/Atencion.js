@@ -8,14 +8,16 @@ import {
   simpleGet,
   simpleDelete,
 } from '../../functions'
-import { Icon, ModalLoading } from '../bits'
+import { Icon, ModalLoading, RegularModalCentered } from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
 import { ModalFileUpload, tipo_documento } from '../admision/Admision'
 import { NavigationContext } from '../Navigation'
+import Loader from '../loader/Loader'
 
 
 // Constant
 const __debug__ = process.env.REACT_APP_DEBUG
+const html_da_observaciones_id = 'html_da_observaciones_id'
 
 
 const Atencion = () => (
@@ -378,7 +380,7 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
 
 
   return !files
-    ? (<div className="card"><div className="card-body">loading</div></div>)
+    ? (<div className="card"><div className="card-body"><Loader scale={2} /></div></div>)
     : (
       <div className="card col-12" style={{padding: "0px"}}>
         <div className="card-header">
@@ -415,6 +417,7 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
 const AttentionProcedures = ({cita}) => {
   const {redirectTo} = useContext(NavigationContext)
   const [das, setDA] = useState(false)
+  const [selected_da, selectDa] = useState(false)
   const delete_proc_pk = useRef(-1)
 
   const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setDA)
@@ -434,61 +437,77 @@ const AttentionProcedures = ({cita}) => {
       delete_proc_pk.current = -1
     })
   }
+  const showDAObservation = _da => {
+    if(selected_da == _da) window.$('#'+html_da_observaciones_id).modal("show")
+    else selectDa(_da)
+  }
   const editProcedure = _proc_pk => redirectTo(`/nav/procedimiento/${_proc_pk}/editar/`)
 
   useEffect(() => {
     getProcedures(cita.atencion)
   }, [])
+  useEffect(() => {
+    if(!selected_da) return
 
-  return !das
-    ? (<div className="card"><div className="card-body">loading</div></div>)
-    : (
-      <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
-        <div className="card-header">
-          <div className="card-title">
-            Procedimientos realizados
-          </div>
+    window.$('#'+html_da_observaciones_id).modal("show")
+  }, [selected_da])
+
+  return (
+    <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Procedimientos realizados
         </div>
-        <div id="proc-list" className={das.length==0?"card-body":""}>
-          {das.length==0
-            ? "No se ha relizado ningún procedimiento"
-            : das.map(da => (
-              <div key={"da-"+da.pk}>
-                <li className="list-group-item d-flex" id={da.pk}
-                  data-toggle="collapse" data-target={"#da-desc-"+da.pk}
-                  aria-expanded="true" aria-controls={"da-desc-"+da.pk}
-                  style={{cursor: "pointer", borderBottom: "0"}}>
-                    <span style={{fontSize: "1.2em"}}>
-                        {cFL(da.pxs_data.nombre)}
-                    </span>
-                    {(!da.dpdt && !da.pago_iniciado) && (
-                      <button className="btn ml-auto"
-                        style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                        onClick={()=>editProcedure(da.pk)}>
-                          <i className="fal fa-edit"></i>
-                      </button>
-                    )}
-                    {(!da.pago_iniciado || da.dpdt) && (
-                      <button className={"btn"+(da.dpdt?" ml-auto":"")}
-                        style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                        onClick={()=>modalConfirmDelete(da.pk)}>
-                          <i className="fal fa-trash-alt"></i>
-                      </button>
-                    )}
-                </li>
-                <div id={"da-desc-"+da.pk} className="collapse"
-                  aria-labelledby={da.pk} data-parent="#da-list"
-                  style={{paddingLeft: "1.8rem", paddingTop: "0", paddingBottom: ".75rem"}}>
-                    <span>
-                      {da.observaciones}
-                    </span>
-                </div>
-              </div>
-            ))}
-        </div>
-        <AlertModal func={deleteProcedure} />
       </div>
-    )
+      <div id="proc-list" className={das.length==0?"card-body":""} style={{minHeight: "48px", position: "relative"}}>
+        {!das
+          ? <Loader scale={2} />
+          : das.length == 0
+          ? "No se ha relizado ningún procedimiento"
+          : das.map(da => (
+            <div key={"da-"+da.pk}>
+              <li className="list-group-item d-flex" id={"da-title-"+da.pk}
+              onClick={ (!da.observaciones || da.observaciones.length==0) ? () => showDAObservation(da) : () => {} }
+              data-toggle="collapse" data-target={"#da-desc-"+da.pk} aria-expanded="true"  // collapse behaviour
+              style={{borderBottom: "0", cursor: "pointer"}}>
+                <span style={{fontSize: "1.2em"}}>
+                  {cFL(da.pxs_data.nombre)}
+                </span>
+                {(!da.dpdt && !da.pago_iniciado) && (
+                  <button className="btn ml-auto"
+                  style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
+                  onClick={()=>editProcedure(da.pk)}>
+                    <i className="fal fa-edit"></i>
+                  </button>
+                )}
+                {(!da.pago_iniciado || da.dpdt) && (
+                  <button className={"btn"+(da.dpdt?" ml-auto":"")}
+                  style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
+                  onClick={()=>modalConfirmDelete(da.pk)}>
+                    <i className="fal fa-trash-alt"></i>
+                  </button>
+                )}
+              </li>
+              {da.observaciones && da.observaciones.length!=0 && (
+                <div id={"da-desc-"+da.pk} className="collapse" onClick={() => showDAObservation(da)}
+                style={{
+                  paddingLeft: "1.8rem",
+                  paddingTop: "0",
+                  paddingBottom: ".75rem",
+                  background: "#e6eff7",
+                  cursor: "pointer"}}>
+                  <span>
+                    {da.observaciones}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+      </div>
+      <AlertModal func={deleteProcedure} />
+      <DAUpdate da={selected_da} />
+    </div>
+  )
 }
 const AlertModal = ({func}) => {
   return (
@@ -535,10 +554,12 @@ const Links = ({cita, fakeFinishCita, redirectTo}) => {
             <Icon type="odontogram" onClick={() => redirectTo(`/nav/odontograma/${cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Odontograma</span>
           </div>
-          <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
-            <Icon type="procedure" onClick={() => redirectTo(`/nav/procedimiento/${cita.pk}/agregar/`)} /><br/>
-            <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
-          </div>
+          {cita.estado=='1' && (
+            <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
+              <Icon type="procedure" onClick={() => redirectTo(`/nav/procedimiento/${cita.pk}/agregar/`)} /><br/>
+              <span style={{fontSize: "0.87rem"}}>Procedimiento</span>
+            </div>
+          )}
           <div style={{display: "inline-block", textAlign: "center", marginLeft: "15px", marginRight: "15px"}}>
             <Icon type="prescription" onClick={() => redirectTo(`/nav/prescripcion/${cita.pk}/`)} /><br/>
             <span style={{fontSize: "0.9rem"}}>Receta</span>
@@ -609,6 +630,36 @@ export const GDriveFile = ({file, deleteFile}) => {
         </div>
       </div>
     </div>
+  )
+}
+const DAUpdate = ({da}) => {
+  const saveDAObservaciones = () => {
+    let _observaciones = window.document.getElementById('da_update_observaciones').value
+    simplePostData(`atencion/detalle/${da.pk}/`, {observaciones: _observaciones}, "PATCH")
+    .finally(() => {
+      window.$('#'+html_da_observaciones_id).modal("hide")
+    })
+  }
+
+  useEffect(() => {
+    window.document.getElementById('da_update_observaciones').value = da.observaciones
+  }, [da])
+
+  return (
+    <RegularModalCentered
+      _id={html_da_observaciones_id}
+      _title={"Observación del procedimiento"}
+      _body={
+        <div>
+          <div style={{marginBottom: "10px"}}>
+            <label className="form-label" htmlFor="da_update_observaciones">Observaciones</label>
+            <textarea className="form-control" id="da_update_observaciones" rows="5" placeholder="Observaciones del procedimiento"></textarea>
+          </div>
+          <div>
+            <button className="btn btn-primary" onClick={saveDAObservaciones}>Guardar</button>
+          </div>
+        </div>
+      } />
   )
 }
 
