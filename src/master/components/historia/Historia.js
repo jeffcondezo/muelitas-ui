@@ -49,7 +49,7 @@ const HistoriaCitaList = ({patient_pk, redirectTo}) => {
   const {current_sucursal} = useContext(NavigationContext)
 
   const getCitas = pac_pk => {
-    simpleGet(`atencion/cita/?filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true", "sucursal":"${current_sucursal}"}`)
+    simpleGet(`atencion/cita/?filtro={"paciente":"${pac_pk}", "estado":"5", "sort":"true"}`)
     .then(res => {
       // Remove duplicated attention
       let _tmp = res;

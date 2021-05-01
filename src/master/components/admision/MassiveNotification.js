@@ -131,7 +131,7 @@ const MassiveNotification = () => {
     for(let i=1; i<100; i++) age_options.push(<option key={"opt-number-"+i} value={i}>{i}</option>)  // Regular 1-99 options
   }, [])
   useEffect(() => {
-    if(!patients || patients.length == 0) return
+    if(!patients) return
 
     // Select2 for personal choose in Cita
     // CSS

@@ -221,12 +221,12 @@ const Report2 = ({data}) => {
       <div className="panel">
         <div className="card-header">
           <div className="card-title">
-            Atenciones realizadas por procedimiento (15 principales)
+            Procedimiento realizados (15 principales)
           </div>
         </div>
         <div className="card-body" style={{minHeight: "100px", position: "relative"}}>
           {!data && <Loader scale={2} />}
-          {data && <h4>Total: {data.reduce((v, i) => v+i.count, 0)} atenciones</h4>}
+          {data && <h4>Total: {data.reduce((v, i) => v+i.count, 0)} procedimientos realizados</h4>}
           <div id="report2"></div>
         </div>
       </div>

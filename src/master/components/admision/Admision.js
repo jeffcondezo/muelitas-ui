@@ -89,7 +89,7 @@ const AdmisionHome = () => {
 }
 const SearchPatient = ({current_sucursal, redirectTo}) => {
   const patients_ref = useRef([])
-  const [patients, setPatients] = useState([])
+  const [patients, setPatients] = useState(false)
   const [datatable, setDatatable] = useState(false)
   const [loading, setLoader] = useState(true)
 
@@ -156,7 +156,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
   }, [])
   // When patients are setted
   useEffect(() => {
-    if(!patients || patients.length == 0) return  // Abort if it's false
+    if(!patients) return  // Abort if it's false
 
     // Destroy previous DT if exists
     let search_input_val = ""
@@ -255,7 +255,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     setDatatable(_tmp)  // Save DT in state
   }, [patients])
 
-  return patients.length == 0
+  return !patients
     ? "loading"
     : (
       <div className="datatable-container col-12">
