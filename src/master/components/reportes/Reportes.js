@@ -46,7 +46,7 @@ const Reportes = () => {
     }
     // Prevent dt-from to be newer than dt-to
     if( window.document.getElementById('dt-from').valueAsDate > window.document.getElementById('dt-to').valueAsDate ){
-      window.document.getElementById('dt-from').value = window.document.getElementById('dt-to').valueAsDate
+      window.document.getElementById('dt-from').value = window.document.getElementById('dt-to').value
     }
 
     getReportes()
