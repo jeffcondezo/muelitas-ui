@@ -10,7 +10,7 @@ import {
 import { NavigationContext } from '../Navigation';
 import { PageTitle } from '../bits';
 
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 
 
 const MassiveNotification = () => {

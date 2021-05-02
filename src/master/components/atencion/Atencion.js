@@ -16,7 +16,7 @@ import Loader from '../loader/Loader'
 
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 const html_da_observaciones_id = 'html_da_observaciones_id'
 
 

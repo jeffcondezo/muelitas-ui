@@ -27,7 +27,7 @@ import Loader from '../loader/Loader'
 
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 const PDTCreateCxt = createContext({
   pdt: false,
 })

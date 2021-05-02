@@ -28,7 +28,6 @@ function Login({logIn}){
     simplePostData(`gettoken/`, data)
     .then(
       res => {
-        console.log("res", res)
         // Add token to cookie
         localStorage.setItem('access_token', res.token)
         localStorage.setItem('logged', true)

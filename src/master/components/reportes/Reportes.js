@@ -11,7 +11,7 @@ import c3 from 'c3'
 import 'c3/c3.css'
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 
 
 const Reportes = () => {

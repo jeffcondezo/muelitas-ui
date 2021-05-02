@@ -20,7 +20,7 @@ import { NavigationContext } from '../Navigation';
 
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 const ProcedureModalContext = createContext(false)
 
 const Admin = () => (

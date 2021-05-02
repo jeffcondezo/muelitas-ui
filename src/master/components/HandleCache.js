@@ -19,7 +19,7 @@ export function getCacheData(key){
 // Crypt
 export const encryptData = data => {
   if(typeof data != "string" && typeof data != "number"){
-    if(process.env.REACT_APP_DEBUG) console.error("ERROR, data is not string in functions.js function encryptData");
+    if(process.env.REACT_APP_DEBUG=="true") console.error("ERROR, data is not string in functions.js function encryptData");
     return ""  // Default to handle error
   }
   data = String(data)

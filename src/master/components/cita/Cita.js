@@ -31,7 +31,7 @@ import { tipo_documento } from '../admision/Admision'
 import Loader from '../loader/Loader'
 
 // Static
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 
 
 const Cita = () => {

@@ -30,7 +30,7 @@ import Admin from './admin/Admin'
 import Reportes from './reportes/Reportes'
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 export const NavigationContext = createContext({})
 
 function Navigation({user, history}){
@@ -42,15 +42,19 @@ function Navigation({user, history}){
   if(__debug__==="true") console.log(`%c PROPS:`, 'color: yellow', user, sucursales.current, current_sucursal_pk, redirect.current)
 
   function setSucursal(){
-    simpleGet(`maestro/admin/permisos/asignar/?filtro={"usuario":"${user.pk}"}`)
+    // Get sucursales where user is included
+    simpleGet(`maestro/empresa/sucursal/user/`)
     .then(
-      response_obj => {
+      res => {
+        if(res.length == 0){
+          noSucursalAdded()
+          return
+        }
         // Handle sucursal response
-        let _obj = response_obj[0]
         // Save data
-        sucursales.current = _obj.sucursales
+        sucursales.current = res
         // Set current sucursal
-        setCurrentSucursal(_obj.sucursales[0].pk)
+        setCurrentSucursal(res[0].pk)
       },
       error => {
         console.log(error)
@@ -66,6 +70,12 @@ function Navigation({user, history}){
   const redirectTo = (url, data=null) => {
     if(data) redirect.current = data
     history.push(url)
+  }
+  const noSucursalAdded = () => {
+    // User has no sucursal in which to work
+    alert("lo sentimos, su usuario no tiene ninguna sucursal asignada")
+    deleteUserLogIn()  // Delete token from localstorage
+    window.location.replace("/")  // Reload page
   }
 
   useEffect(() => {

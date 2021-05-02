@@ -26,7 +26,7 @@ import { NavigationContext } from '../Navigation'
 import Loader from '../loader/Loader'
 
 // Constant
-const __debug__ = process.env.REACT_APP_DEBUG
+const __debug__ = process.env.REACT_APP_DEBUG == "true"
 const html_format_id = 'html_format_id'
 const html_instant_notification_id = 'html_instant_notification_id'
 const html_atender_modal_id = 'html_atender_modal_id'
