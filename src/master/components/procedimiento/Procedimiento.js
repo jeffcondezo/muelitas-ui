@@ -83,7 +83,7 @@ const Procedimiento = () => {
 const ProcedimientoForm = ({procedure, current_sucursal}) => {
   const [pxss, setPXS] = useState(false)
 
-  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/?filtro={"active":"1"}`).then(setPXS)
+  const getProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/?filtro={"active":"1"}`).then(setPXS)
   function handlePeriodChange(el){
     if(el.value=="0" || !el.value){
       document.getElementById("dues").value = "0"

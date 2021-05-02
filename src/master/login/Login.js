@@ -130,7 +130,7 @@ function Login({logIn}){
                                         </div>
                                     </form>
                                 </div>
-                                <button className="btn btn-danger rounded-pill waves-effect waves-themed" type="button" id="spinner" style={{display:'none'}}>
+                                <button className="btn btn-info rounded-pill waves-effect waves-themed" type="button" id="spinner" style={{display:'none'}}>
                                     <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
                                     Loading...
                                 </button>

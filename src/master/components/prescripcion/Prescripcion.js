@@ -185,7 +185,8 @@ const AddMedicine = ({cita, medicine_list, addMedicineToList}) => {
     let start_time = document.getElementById('start-time').valueAsDate
     let html_period = document.getElementById('period')
     let amount = document.getElementById('amount').value
-    let init_time = new Date()
+    let init_time = new Date(cita.fecha)
+    init_time.setDate(init_time.getDate()+1)
     init_time.setHours(start_time.getHours())
     init_time.setMinutes(start_time.getMinutes())
 

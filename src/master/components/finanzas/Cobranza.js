@@ -284,7 +284,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
         simpleGet(`atencion/reniec/${val}/`)
         .then(p => {
           if(clienttype != 1) return
-          window.document.getElementById('fullname').value = xhtmlDecode(p.nombres+" "+p.apellido_paterno+" "+p.apellido_materno)
+          if(window.document.getElementById('fullname')) window.document.getElementById('fullname').value = xhtmlDecode(p.nombres+" "+p.apellido_paterno+" "+p.apellido_materno)
           handleErrorResponse('paymentform', "", "Datos del dni obtenidos de la reniec", 'info')
         })
       }else{

@@ -32,8 +32,8 @@ const MassiveNotification = () => {
   }
 
   const getAllPatients = _sucursal_pk => {
-    simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/?filtro={"p_notificacion": true}`)
-    .then(res => setPatients(res.map(pxs => pxs.paciente)))
+    simpleGet(`atencion/paciente/sucursal/?filtro={"p_notificacion": true}`)
+    .then(res => setPatients(res.map(pxs => pxs.paciente_data)))
   }
   const filterPatients = () => {
     let _sucursal_pk = current_sucursal
@@ -58,7 +58,7 @@ const MassiveNotification = () => {
     }
 
     // Request
-    simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/?filtro={"p_notificacion": true${_filter}}`)
+    simpleGet(`atencion/paciente/sucursal/?filtro={"p_notificacion": true${_filter}}`)
     .then(pxss => selectFilteredPatients(pxss.map(pxs => pxs.paciente.pk)))
   }
   const saveMassiveNotification = () => {

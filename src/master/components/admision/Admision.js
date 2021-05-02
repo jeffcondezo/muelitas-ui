@@ -93,14 +93,14 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
   const [datatable, setDatatable] = useState(false)
   const [loading, setLoader] = useState(true)
 
-  // const getAllPatients = _sucursal_pk => simpleGet(`atencion/paciente/sucursal/${_sucursal_pk}/`).then(pxs => setPatients(pxs.map(i => i.paciente)))
+  // const getAllPatients = _sucursal_pk => simpleGet(`atencion/paciente/sucursal/`).then(pxs => setPatients(pxs.map(i => i.paciente_data)))
   const getAllPatients = _sucursal_pk => {
     // Function to build lot filter
     let filtro_batch = (_lot_length, _lot_number) => `?filtro={"lot":true,"lot_length":${_lot_length},"lot_number":${_lot_number}}`
     // Lot params
     let lot_length = 75
     // Init lot request
-    batchRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_batch, lot_length, 1, patients)
+    batchRequest(`atencion/paciente/sucursal/`, filtro_batch, lot_length, 1, patients)
     .catch(() => console.log("data batch loaded"))
     .finally(() => setLoader(false))
   }
@@ -125,7 +125,7 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
     /* This function is called to store and preserve state's value
     * batch responses can't be assigned to state right away bc state is asynchronous
     */
-    patients_ref.current = patients_ref.current.concat( _res.map(r => r.paciente) )
+    patients_ref.current = patients_ref.current.concat( _res.map(r => r.paciente_data) )
     setPatients(patients_ref.current)
   }
 
@@ -1397,7 +1397,7 @@ const AtenderPaciente = ({patient_pk, current_sucursal, redirectTo}) => {
     simplePostData(`atencion/noprogramado/unfinished/`, {paciente_pk: pac_pk, sucursal_pk: _sucursal_pk})
     .then(res => setLatestCitaInfo(res.citas))
   }
-  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
+  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"atencion":"true"}`).then(setPersonal)
   const submitAtender = () => {
     let personal_pk = window.document.getElementById('last_cita_personal').value
     simplePostData(`atencion/noprogramado/create/`, {paciente: patient_pk, sucursal: current_sucursal, personal: personal_pk})

@@ -112,7 +112,7 @@ const ProcedimientoListTable = ({current_sucursal, procedure_edit_modal_id}) => 
   const [datatable, setDatatable] = useState(false);
   const ctx_md = useContext(ProcedureModalContext)
 
-  const getSucursalProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/${_sucursal_pk}/`).then(setPXS)
+  const getSucursalProcedures = _sucursal_pk => simpleGet(`maestro/procedimiento/sucursal/`).then(setPXS)
   const changeProcedureActiveState = (_pk, state) => {
     simplePostData(`maestro/procedimiento/sucursal/detalle/${_pk}/`, {active: state}, "PATCH")
   }
@@ -282,7 +282,7 @@ const ProcedimientoEdit = ({current_sucursal, procedure_edit_modal_id}) => {
     }
 
     if(ctx_md.modal_data.action=="new"){
-      simplePostData(`maestro/procedimiento/sucursal/0/`, _data)
+      simplePostData(`maestro/procedimiento/sucursal/`, _data)
       .then(() => window.$('#'+procedure_edit_modal_id).modal("hide"))
       .then(() => handleErrorResponse('custom', "Exito", "Procedimiento añadido exitosamente, actualice la pagina para ver los cambios", 'success'))
       .catch(() => handleErrorResponse('custom', "Error", "Ha ocurrido un error", 'danger'))

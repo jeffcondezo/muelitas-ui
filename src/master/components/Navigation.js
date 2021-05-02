@@ -222,7 +222,7 @@ const ChooseSucursal = ({sucursales, changeSucursal, current_sucursal}) => (
       {sucursales && sucursales.map(s =>
         <a key={s.pk} onClick={()=>changeSucursal(s.pk)}
         className={s.pk==current_sucursal?"dropdown-item active":"dropdown-item"}>
-          {cFL(s.direccion)}
+          {s.direccion}
         </a>
       )}
     </div>

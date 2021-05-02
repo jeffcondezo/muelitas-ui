@@ -138,7 +138,7 @@ const getAllPatients = _sucursal_pk => {
   let next_lot_number = 1
   // patients = []  // Component's state variable
   // Init lot request
-  lotRequest(`atencion/paciente/sucursal/${_sucursal_pk}/`, filtro_lot, lot_length, next_lot_number, patients)
+  lotRequest(`atencion/paciente/sucursal/`, filtro_lot, lot_length, next_lot_number, patients)
 }
 const lotRequest = (_ep, _filtro_fn, _lot_length, _next_lot_number, _res) => {
   // Max number of requests

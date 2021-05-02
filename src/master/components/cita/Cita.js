@@ -61,8 +61,8 @@ const Cita = () => {
   const html_cita_repro = "modal-repro_cita"
 
   // initial requests
-  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"sucursal":"${current_sucursal}", "atencion":"true"}`).then(setPersonal)
-  const getPXS = () => simpleGet(`maestro/procedimiento/sucursal/${current_sucursal}/?filtro={"active":"1"}`).then(setPXS)
+  const getPersonal = () => simpleGet(`maestro/empresa/personal/?filtro={"atencion":"true"}`).then(setPersonal)
+  const getPXS = () => simpleGet(`maestro/procedimiento/sucursal/?filtro={"active":"1"}`).then(setPXS)
   const getCitas = () => {
     if(__debug__) console.log("Cita getCitas", show_past_citas)
     setLoader(true)
@@ -114,13 +114,13 @@ const Cita = () => {
     if(_dni.length < 6) return
 
     // Generate promise
-    simpleGet(`atencion/paciente/?filtro={"dni":"${_dni}","dni_otro":"true"}`)
+    simpleGet(`atencion/paciente/sucursal/?filtro={"dni":"${_dni}","dni_otro":"true"}`)
     .then(res => {
       if(res.length<1) return
 
       // Set paciente data
-      document.getElementById("pac_pk").value = res[0].pk
-      document.getElementById("pac_fullname").textContent = res[0].fullname
+      document.getElementById("pac_pk").value = res[0].paciente
+      document.getElementById("pac_fullname").textContent = res[0].paciente_data.fullname
     })
   }
   const cancelCitaForm = () => {
