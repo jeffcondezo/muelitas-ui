@@ -47,7 +47,7 @@ const Cita = () => {
   * and therefore it is not longer needed
   */
   const [fake_redirect_data, setFakeRedirectData] = useState(false)
-  const personal_color = ["#6e4e9e", "#179c8e", "#51adf6", "#ffb20e", "#fc077a", "#363636"]
+  const personal_color = ["#6E4E9E", "#179C8E", "#4580B3", "#FF9800", "#FC077A", "#363636", "#B0410B"]
   // const usageHint = useRef(false)  // Allow to change dynamically the behaviour
 
   // Redirect data
