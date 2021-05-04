@@ -1821,7 +1821,7 @@ function Odontograma({role, redirectTo}){
     teeth_k.lower_teeth = lower_teeth;
   }
   const changeTeethType = (type) => {
-    if(__debug__) console.log("changeTeethType");
+    if(__debug__) console.log("changeTeethType")
 
     if(type!='A'&&type!='K') return  // Allow only A || K
     if(odontogram_type == type) return  // Prevent redundancy
@@ -2116,6 +2116,8 @@ function Odontograma({role, redirectTo}){
     ctx = odontogram_el.getContext('2d');
     // Generate teeth objects
     genTeeth()
+    // Init default
+    changeTeethType('A')
     // Get evolution odontogram
     getEvolutionLog(cita.paciente)
 
@@ -2139,6 +2141,8 @@ function Odontograma({role, redirectTo}){
     ctx = odontogram_el.getContext('2d');
     // Generate teeth objects
     genTeeth()
+    // Init default
+    changeTeethType('A')
 
     // Obtener incidencias
     getIncidences(odontogram.pk)
@@ -2364,6 +2368,7 @@ function Odontograma({role, redirectTo}){
   function insertIncidencesInTeeth(objs){
     /* This function require teethState to be already declared */
     if(__debug__) console.log("insertIncidencesInTeeth");
+
     let new_inc_list = [];
     let last_od_type = "1"
     // Reset teeth incidence counter

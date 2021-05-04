@@ -223,12 +223,15 @@ const CobranzaDetail = () => {
 }
 export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=false}) => {
   // dcc_list = [{dcc: (i.dcc||null), monto: i.precio}]
-  let production_nofe_default = false  // Sucursal have perms to use FE
+  // let production_nofe_default = false  // Sucursal have perms to use FE
+  const nav_ctx = useContext(NavigationContext)
+  let production_nofe_default = !!nav_ctx.sucursales.find(s => s.empresa == 3)  // Sucursal have perms to use FE
   const update_ctx = useContext(UpdateContext)
   const [clienttype, setClientType] = useState(production_nofe_default?3:1)  // BOLETA || FACTURA || SIN CLIENTE
   const [ubigeos, setUbigeos] = useState(false)
   const [client, setClient] = useState(false)
-  const [loading, setLoader] = useState(true)
+  // const [loading, setLoader] = useState(true)
+  const [loading, setLoader] = useState(!production_nofe_default)
   let clicked = false
   let html_btn_group_toggle_class = "btn btn-outline-info waves-effect waves-themed"
 
