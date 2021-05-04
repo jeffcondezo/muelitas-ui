@@ -1357,7 +1357,7 @@ export const personaFromReniec = _dni => {
       // Fill data from reniec
       let primer_nombre = res.nombres.split(" ")[0]
       document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
-      document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre+" ", "") )
+      document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() )
       document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
       document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
       document.getElementById("name-pric").disabled = true
