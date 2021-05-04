@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import ReactDOM from 'react-dom'
 import { useParams } from "react-router-dom"
 import {
   simpleGet,
+  simplePostData,
 } from '../../functions'
-import { PageTitle, RegularModalCentered } from '../bits'
+import {
+  PageTitle,
+  RegularModalCentered,
+  ModalCancel
+} from '../bits'
 import { NavigationContext } from '../Navigation'
 import Loader from '../loader/Loader'
 
@@ -13,19 +18,34 @@ const __debug__ = process.env.REACT_APP_DEBUG == "true"
 
 
 const HistorialPagos = () => {
-  const {current_sucursal, redirectTo} = useContext(NavigationContext)
+  const {current_sucursal} = useContext(NavigationContext)
   let __params__ = useParams()
   const datatable_id = "patientxpagos-table"
+  const html_proc_annul = "html_proc_annul"
 
   const [patientxpagos, setPxP] = useState(false)
   const [datatable, setDatatable] = useState(false)
   const [selected_pago, selectPago] = useState(false)
+  let annul_proc = useRef(-1)
 
   const getPxP = () => {
     if(__debug__) console.log("HistorialPagos getPxP")
 
     simpleGet(`finanzas/sucursal/${current_sucursal}/paciente/${__params__.patient}/`)
     .then(setPxP)
+  }
+  const askAnnulPayment = _pk => {
+    annul_proc.current = _pk
+    window.$('#'+html_proc_annul).modal('show')
+  }
+  const annulPayment = () => {
+    let _pk = annul_proc.current
+    if(_pk == -1) return
+    simplePostData(`finanzas/pago/revert/`, {pagomaestro: _pk})
+    .then(() => {
+      annul_proc.current = -1
+      setPxP(patientxpagos.filter(pxp => pxp.pk != _pk))
+    })
   }
 
   // Add DataTable rel docs
@@ -55,7 +75,6 @@ const HistorialPagos = () => {
   // When patientxpagos variable is setted
   useEffect(() => {
     if(!patientxpagos) return  // Abort if it's false
-    console.log("patientxpagos", patientxpagos)
 
     // Destroy previous DT if exists
     if(datatable) window.$('#'+datatable_id).DataTable().clear().destroy()
@@ -68,6 +87,7 @@ const HistorialPagos = () => {
         {title: "Origen", data: "plantrabajo"},
         {title: "Detalle", data: "detalle"},
         {title: "Comprobante", data: "comprobante"},
+        {title: "Anular", data: "pk"},
       ],
       columnDefs: [{
         // Fecha y hora
@@ -116,7 +136,7 @@ const HistorialPagos = () => {
         }
       }, {
         // Comprobante
-        targets: -1,
+        targets: -2,
         orderable: false,
         createdCell: (cell, data, _) => {
           if(!data) return
@@ -125,6 +145,18 @@ const HistorialPagos = () => {
             target='_blank' href={process.env.REACT_APP_PROJECT_API+`fe/comprobante/view/${data}/`}>
               <i class="fal fa-print"></i>
             </a>
+            , cell
+          )
+        }
+      }, {
+        // Anular
+        targets: -1,
+        orderable: false,
+        createdCell: (cell, pk, _) => {
+          ReactDOM.render(
+            <button className="btn-secondary btn-pills" onClick={() => askAnnulPayment(pk)}>
+              <i className="fal fa-trash-alt"></i>
+            </button>
             , cell
           )
         }
@@ -164,7 +196,6 @@ const HistorialPagos = () => {
     setDatatable(_tmp)  // Save DT in state
   }, [patientxpagos])
 
-  console.log("patientxpagos", patientxpagos)
   return (
     <>
     <PageTitle title={"Historial de pagos del paciente"} />
@@ -174,14 +205,18 @@ const HistorialPagos = () => {
         <div className="datatable-container col-12">
           <table id={datatable_id} style={{width: "100%"}}></table>
 
-          <div>
-            <RegularModalCentered
-              _id={"pago-detalle"}
-              _title={"Detalle de pago"}
-              _body={
-                <ModalPagoDetalle pago={selected_pago} />
-              } />
-          </div>
+          <RegularModalCentered
+            _id={"pago-detalle"}
+            _title={"Detalle de pago"}
+            _body={
+              <ModalPagoDetalle pago={selected_pago} />
+            } />
+          <ModalCancel
+            _id={html_proc_annul}
+            _title={"Eliminar Pago"}
+            _action_text={"Eliminar"}
+            _action_func={annulPayment}
+            _body_text={"Esta seguro que quiere eliminar este Pago? En caso de haber emitido un comprobante de pago este se anulará"} />
         </div>
       )
     }
