@@ -706,7 +706,7 @@ const InfoCita = ({id, cita, confirmAnnul, openReprogramarCitaModal, redirectTo}
             <h6><b>Celular: </b>{cita.paciente_data.celular}</h6>
             <h6><b>Direccion: </b>{cita.paciente_data.direccion}</h6>
             <h6><b>Personal: </b>{cita.personal.fullname} - {cita.personal.especialidad_descripcion}</h6>
-            <h6><b>Programado: </b>{cita.programado}</h6>
+            <h6><b>Procedimientos: </b>{cita.programado}</h6>
           </div>
           <div className="modal-footer">
             {/* Icons */}

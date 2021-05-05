@@ -93,7 +93,7 @@ const AddMedicine = ({cita, medicine_list, addMedicineToList}) => {
       _medicines.map(m => {
         _medicine.push(
           <option key={m.pk} value={m.pk}>
-            {m.nombre} - {m.concentracion} - {m.presentacion}
+            {m.nombre} - {m.concentracion} - {m.forma_simple}
           </option>
         )
       })
