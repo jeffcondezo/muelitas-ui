@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import {
   Switch,
   Route,
@@ -232,6 +232,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   const [client, setClient] = useState(false)
   // const [loading, setLoader] = useState(true)
   const [loading, setLoader] = useState(!production_nofe_default)
+  let current_ctype = useRef(clienttype)
   let clicked = false
   let html_btn_group_toggle_class = "btn btn-outline-info waves-effect waves-themed"
 
@@ -286,7 +287,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
       if(tipo=="1"){
         simpleGet(`atencion/reniec/${val}/`)
         .then(res => {
-          if(clienttype != 1) return
+          if(current_ctype.current != 1) return
           if(res.hasOwnProperty('error')){
             handleErrorResponse('paymentform', "", "No se encontro información del dni", 'warning')
             enableFullnameField(true)
@@ -295,11 +296,11 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
 
           enableFullnameField(false)
           if(window.document.getElementById('fullname')) window.document.getElementById('fullname').value = xhtmlDecode(res.nombres+" "+res.apellido_paterno+" "+res.apellido_materno)
-        }, () => enableFullnameField(true))
+        })
       }else{
         simpleGet(`atencion/sunat/${val}/`)
         .then(p => {
-          if(clienttype != 1) return
+          if(current_ctype.current != 1) return
           // Validar respuesta
           if(p.success){
             window.document.getElementById('fullname').value = p.data.nombre_o_razon_social
@@ -324,7 +325,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
       // Consultar servicio de sunat
       simpleGet(`atencion/sunat/${val}/`)
       .then(p => {
-        if(clienttype != 2) return
+        if(current_ctype.current != 2) return
         // Validar respuesta
         if(p.success){
           window.document.getElementById('fullname').value = p.data.nombre_o_razon_social
@@ -469,6 +470,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
   useEffect(() => {
     if(__debug__) console.log("useEffect client/ubigeos", client)
     if(__debug__) console.log("useEffect clienttype", clienttype)
+    current_ctype.current = clienttype
 
     if(ubigeos && clienttype==1){
       if(client) fillFromClient()
