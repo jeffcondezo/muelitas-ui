@@ -285,11 +285,17 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
 
       if(tipo=="1"){
         simpleGet(`atencion/reniec/${val}/`)
-        .then(p => {
+        .then(res => {
           if(clienttype != 1) return
-          if(window.document.getElementById('fullname')) window.document.getElementById('fullname').value = xhtmlDecode(p.nombres+" "+p.apellido_paterno+" "+p.apellido_materno)
-          handleErrorResponse('paymentform', "", "Datos del dni obtenidos de la reniec", 'info')
-        })
+          if(res.hasOwnProperty('error')){
+            handleErrorResponse('paymentform', "", "No se encontro información del dni", 'warning')
+            enableFullnameField(true)
+            return
+          }else handleErrorResponse('paymentform', "", "Datos del dni obtenidos de la reniec", 'info')
+
+          enableFullnameField(false)
+          if(window.document.getElementById('fullname')) window.document.getElementById('fullname').value = xhtmlDecode(res.nombres+" "+res.apellido_paterno+" "+res.apellido_materno)
+        }, () => enableFullnameField(true))
       }else{
         simpleGet(`atencion/sunat/${val}/`)
         .then(p => {
@@ -301,14 +307,18 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
             let _opt = window.document.querySelector(`option[data-ubigeo='${p.data.ubigeo[2]}']`)
             window.$('#form-ubigeo').val(_opt.value).trigger('change')
             handleErrorResponse('paymentform', "", "Datos del ruc obtenidos de la sunat", 'info')
-          }else handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
+            enableFullnameField(false)
+          }else{
+            handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
+            enableFullnameField(true)
+          }
         })
       }
     }else if(clienttype==2){
       // FACTURA
       // Validar longitud de val
       if(val.length != 11){
-        window.document.getElementById('client-data-2').value = ""
+        window.document.getElementById('fullname').value = ""
         return
       }
       // Consultar servicio de sunat
@@ -317,13 +327,25 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
         if(clienttype != 2) return
         // Validar respuesta
         if(p.success){
-          window.document.getElementById('client-data-2').value = p.data.nombre_o_razon_social
+          window.document.getElementById('fullname').value = p.data.nombre_o_razon_social
           window.document.getElementById('form-direccion').value = p.data.direccion
           let _opt = window.document.querySelector(`option[data-ubigeo='${p.data.ubigeo[2]}']`)
           window.$('#form-ubigeo').val(_opt.value).trigger('change')
           handleErrorResponse('paymentform', "", "Se ha encontrado información relacionada al ruc en el servicio de sunat", 'info')
-        }else handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
+          enableFullnameField(false)
+        }else{
+          handleErrorResponse('paymentform', "", "El RUC no existe", 'danger')
+          enableFullnameField(true)
+        }
       })
+    }
+  }
+  const enableFullnameField = _val => {
+    console.log("enableFullnameField", _val)
+    window.document.getElementById('fullname').disabled = !_val
+    if(_val == true){
+      window.document.getElementById('fullname').value = ""
+      window.document.getElementById('form-direccion').value = ""
     }
   }
   // Save payment
@@ -341,7 +363,7 @@ export const PaymentForm = ({patient, current_sucursal, dcc_list, footer_fn=fals
 
     if(clienttype==2){
       client.ruc = window.document.getElementById('client-data-1').value
-      client.razon_social = window.document.getElementById('client-data-2').value
+      client.razon_social = window.document.getElementById('fullname').value
       client.dni = null
       // Validate
       if(client.ruc.length!=11){
@@ -541,8 +563,8 @@ const FormPayMethod2 = ({inputChange}) => (
       maxLength="11" onChange={inputChange} />
     </div>
     <div className="col-sm" style={{paddingBottom: "5px"}}>
-      <label className="form-label" htmlFor="client-data-2">Razón Social: </label>
-      <input type="text" id="client-data-2" className="form-control" disabled={true} />
+      <label className="form-label" htmlFor="fullname">Razón Social: </label>
+      <input type="text" id="fullname" className="form-control" disabled={true} />
     </div>
   </div>
 )
