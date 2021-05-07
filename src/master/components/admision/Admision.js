@@ -913,8 +913,8 @@ function validatePatientForm(){
     }
   }else{
     // DNI_OTRO
-    if(el_dni.value.trim().length<6){
-      handleErrorResponse("custom", "Error", "El documento debe tener al menos 6 digitos", 'warning')
+    if(el_dni.value.trim().length<4){
+      handleErrorResponse("custom", "Error", "El documento debe tener al menos 4 digitos", 'warning')
       return false
     }
   }
