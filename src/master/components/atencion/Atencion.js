@@ -7,8 +7,14 @@ import {
   simplePostData,
   simpleGet,
   simpleDelete,
+  addRequestValidation
 } from '../../functions'
-import { Icon, ModalLoading, RegularModalCentered } from '../bits'
+import {
+  Icon,
+  ModalLoading,
+  ModalCancel,
+  RegularModalCentered
+} from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
 import { ModalFileUpload, tipo_documento } from '../admision/Admision'
 import { NavigationContext } from '../Navigation'
@@ -192,8 +198,10 @@ const AttentionDetail = () => {
   const {redirectTo} = useContext(NavigationContext)
   const [cita, setCita] = useState(false)
   const {cita_pk} = useParams()
+  const [consents, setConsents] = useState([])
 
   const getCita = _cita_pk => getDataByPK('atencion/cita', _cita_pk).then(setCita)
+  const getConsents = () => getDataByPK('atencion/consentimiento/atencion', cita.atencion).then(setConsents)
   const fakeFinishCita = () => {
     let fake_cita = Object.assign({}, cita)
     fake_cita.estado = 5
@@ -203,6 +211,11 @@ const AttentionDetail = () => {
   useEffect(() => {
     getCita(cita_pk)
   }, [])
+  useEffect(() => {
+    if(!cita) return
+
+    getConsents()
+  }, [cita])
 
   return !cita
     ? "loading"
@@ -231,6 +244,11 @@ const AttentionDetail = () => {
               atencion_pk={cita.atencion}
               patient_pk={cita.paciente_data.pk} />
           </div>
+          {consents.length>0 && (
+            <div className="panel">
+              <InformedConsent cita={cita} consents={consents} getConsents={getConsents} />
+            </div>
+          )}
         </div>
       </div>
     )
@@ -406,7 +424,7 @@ const ArchivosPaciente = ({atencion_pk, patient_pk}) => {
           modal_id={fileupload_modal_id}
           patient_pk={patient_pk}
           atencion_pk={atencion_pk}
-          refresFiles={() => setFiles(false)} />
+          refreshFiles={() => setFiles(false)} />
         <ModalLoading
           _id={fileloadingdelete_modal_id}
           _title={"Cargando.."}
@@ -660,6 +678,281 @@ const DAUpdate = ({da}) => {
           </div>
         </div>
       } />
+  )
+}
+const InformedConsent = ({cita, consents, getConsents}) => {
+  const html_id_modalconsentform = "html_id_modalconsentform"
+  const html_id_modaluploadconsentfile = "html_id_modaluploadconsentfile"
+  const html_id_confirmdelete = "html_id_confirmdelete"
+  const _body_text = "Esta seguro que quiere eliminar este consentimiento? El consentimiento retornara a su estado inicial sin datos, para eliminar el consentimiento de forma definitiva eliminelo después de haber finalizado la atención"
+  const [selected_consent, selectConsent] = useState(false)
+
+  const showCustomForm = _c => {
+    console.log("showCustomForm")
+    selectConsent(Object.assign({}, _c), () => console.log("finished"))
+    window.$('#'+html_id_modalconsentform).modal("show")
+  }
+  const openPrintableDoc = _c => window.open(process.env.REACT_APP_PROJECT_API+`atencion/viewdoc/consentimiento/${_c.pk}/`, "_blank")
+  const modalUploadConsentFile = _c => {
+    selectConsent(Object.assign({}, _c))
+    window.$('#'+html_id_modaluploadconsentfile).modal('show')
+  }
+  const openViewConsentFile = _c => window.open(_c.archivo, "_blank")
+  const modalConfirmDelete = _c => {
+    selectConsent(Object.assign({}, _c))
+    window.$('#'+html_id_confirmdelete).modal('show')
+  }
+  const deleteDCI = () => simpleDelete(`atencion/consentimiento/detalle/${selected_consent.pk}/`).then(getConsents)
+
+  return (
+    <div className="card col-12" style={{padding: "0px", userSelect: "none"}}>
+      <div className="card-header">
+        <div className="card-title">
+          Consentimientos Informados Necesarios
+        </div>
+      </div>
+      <div id="proc-list" style={{minHeight: "48px", position: "relative"}}>
+        {consents.map(c => (
+          <div key={"consent-"+c.pk}>
+            <li className="list-group-item d-flex">
+              {c.nombre.toUpperCase()}
+
+              {/* Editar, Imprimir, Subir, Visualizar, Eliminar */}
+              <span className="ml-auto"></span>
+              {[1, 2].indexOf(c.fase)!=-1 && (
+                <button className="btn" onClick={()=>showCustomForm(c)} style={
+                  {paddingTop: "0", paddingBottom: "0"}
+                }>
+                  <i className="fal fa-edit"></i>
+                </button>
+              )}
+              {[2].indexOf(c.fase)!=-1 && (
+                <button className="btn" onClick={()=>openPrintableDoc(c)} style={
+                  {paddingTop: "0", paddingBottom: "0"}
+                }>
+                  <i className="fal fa-print"></i>
+                </button>
+              )}
+              {[2].indexOf(c.fase)!=-1 && (
+                <button className="btn" onClick={()=>modalUploadConsentFile(c)} style={
+                  {paddingTop: "0", paddingBottom: "0"}
+                }>
+                  <i className="fal fa-upload"></i>
+                </button>
+              )}
+              {[3].indexOf(c.fase)!=-1 && (
+                <button className="btn" onClick={()=>openViewConsentFile(c)} style={
+                  {paddingTop: "0", paddingBottom: "0"}
+                }>
+                  <i className="fal fa-eye"></i>
+                </button>
+              )}
+              {[3, 4].indexOf(c.fase)!=-1 && (
+                <button className="btn" onClick={()=>modalConfirmDelete(c)} style={
+                  {paddingTop: "0", paddingBottom: "0"}
+                }>
+                  <i className="fal fa-trash-alt"></i>
+                </button>
+              )}
+            </li>
+          </div>
+        ))}
+      </div>
+
+      <ModalCancel
+        _id={html_id_confirmdelete}
+        _title={"Eliminar consentimiento"}
+        _action_text={"Eliminar"}
+        _action_func={deleteDCI}
+        _body_text={_body_text} />
+      <ModalConsentDataForm
+        modal_id={html_id_modalconsentform}
+        dci={selected_consent}
+        refreshConsents={getConsents} />
+      <ModalConsentFileUpload
+        modal_id={html_id_modaluploadconsentfile}
+        patient_pk={cita.paciente}
+        atencion_pk={cita.atencion}
+        dci_pk={selected_consent.pk}
+        refreshFiles={getConsents} />
+    </div>
+  )
+}
+const ModalConsentDataForm = ({modal_id, dci, refreshConsents}) => {
+  const style_ = {
+    mb: {marginBottom: "10px"}
+  }
+
+  const saveConsentData = () => {
+    // Formar JSON son los datos del formulario
+    let _json = {}
+    if( dci.campos.indexOf(".apoderado.")!=-1 ){
+      let _apoderado = {}
+      _apoderado['dni'] = window.document.getElementById("dci_campos_apoderado_dni").value
+      _apoderado['fullname'] = window.document.getElementById("dci_campos_apoderado_fullname").value
+      _apoderado['direccion'] = window.document.getElementById("dci_campos_apoderado_direccion").value
+      // Validar valores
+      if(_apoderado.dni.length != 8 || isNaN(Number(_apoderado.dni))){
+        handleErrorResponse("modalconsentform", "Error", "El dni debe ser un número de 8 digitos", "warning")
+        return
+      }
+      if(!/^[a-zA-Z][ a-zA-Z]+[a-zA-Z]$/.test(_apoderado.fullname) || _apoderado.fullname.split(" ").length<3){
+        handleErrorResponse("modalconsentform", "Error", "Debe escribir el nombres y apellidos completos", "warning")
+        return
+      }
+      if(_apoderado.direccion.length<6){
+        handleErrorResponse("modalconsentform", "Error", "Debe especificar una direccion de al menos 6 digitos", "warning")
+        return
+      }
+      _json['apoderado'] = _apoderado
+    }
+    if( dci.campos.indexOf(".precio_inicial")!=-1 ){
+      _json['precio_inicial'] = window.document.getElementById("dci_campos_precioinicial").value
+    }
+    if( dci.campos.indexOf(".n_cuotas")!=-1 ){
+      _json['n_cuotas'] = window.document.getElementById("dci_campos_ncuotas").value
+    }
+    if( dci.campos.indexOf(".precio_cuota")!=-1 ){
+      _json['precio_cuota'] = window.document.getElementById("dci_campos_preciocuota").value
+    }
+    if( dci.campos.indexOf(".observaciones")!=-1 ){
+      _json['observaciones'] = window.document.getElementById("dci_campos_observaciones").value
+    }
+
+    let _datos = JSON.stringify({custom: _json})
+    simplePostData(`atencion/consentimiento/detalle/${dci.pk}/`, {datos: _datos}, "PATCH")
+    .then(() => handleErrorResponse("custom", "Exito", "El consentimiento se modifico exitosamente", "success"))
+    .then(refreshConsents)
+    .finally(() => window.$('#'+modal_id).modal("hide"))
+  }
+
+  useEffect(() => {
+    if(!dci || !dci.datos) return
+    // Fill data from selected dci
+    if( dci.campos.indexOf(".apoderado.")!=-1 ){
+      window.document.getElementById("dci_campos_apoderado_dni").value = dci.datos.custom.apoderado.dni
+      window.document.getElementById("dci_campos_apoderado_fullname").value = dci.datos.custom.apoderado.fullname
+      window.document.getElementById("dci_campos_apoderado_direccion").value = dci.datos.custom.apoderado.direccion
+    }
+    if( dci.campos.indexOf(".precio_inicial")!=-1 ) window.document.getElementById("dci_campos_precioinicial").value = dci.datos.custom.precio_inicial
+    if( dci.campos.indexOf(".n_cuotas")!=-1 ) window.document.getElementById("dci_campos_ncuotas").value = dci.datos.custom.n_cuotas
+    if( dci.campos.indexOf(".precio_cuota")!=-1 ) window.document.getElementById("dci_campos_preciocuota").value = dci.datos.custom.precio_cuota
+    if( dci.campos.indexOf(".observaciones")!=-1 ) window.document.getElementById("dci_campos_observaciones").value = dci.datos.custom.observaciones
+  }, [dci])
+
+  return (
+    <RegularModalCentered
+      _id={modal_id}
+      _title={"Datos requeridos del consentimiento"}
+      _body={!dci?"":!dci.campos?"":
+        <div>
+          {/* Alert */}
+          <div id="alert-modalconsentform" className="alert bg-warning-700 fade" role="alert" style={{display: "none"}}>
+            <strong id="alert-modalconsentform-headline">Error!</strong> <span id="alert-modalconsentform-text">Algo salió mal</span>.
+          </div>
+          {/* Apoderado */}
+          {dci.campos.indexOf(".apoderado.")!=-1 && (
+            <div>
+              <div style={style_.mb}>
+                <label className="form-label" htmlFor="dci_campos_apoderado_dni">DNI Apoderado</label>
+                <input className="form-control" id="dci_campos_apoderado_dni" type="text" maxLength="8" />
+              </div>
+              <div style={style_.mb}>
+                <label className="form-label" htmlFor="dci_campos_apoderado_fullname">Nombre completo del apoderado (como aparecera en contrato)</label>
+                <input className="form-control" id="dci_campos_apoderado_fullname" type="text" />
+              </div>
+              <div style={style_.mb}>
+                <label className="form-label" htmlFor="dci_campos_apoderado_direccion">Dirección del apoderado</label>
+                <input className="form-control" id="dci_campos_apoderado_direccion" type="text" />
+              </div>
+            </div>
+          )}
+          {/* Precios/Cuotas */}
+          {dci.campos.indexOf(".precio_inicial")!=-1 && (
+            <div style={style_.mb}>
+              <label className="form-label" htmlFor="dci_campos_precioinicial">Pago inicial</label>
+              <input className="form-control" id="dci_campos_precioinicial" type="number" min="0" />
+            </div>
+          )}
+          {dci.campos.indexOf(".n_cuotas")!=-1 && (
+            <div style={style_.mb}>
+              <label className="form-label" htmlFor="dci_campos_ncuotas">Número de cuotas</label>
+              <input className="form-control" id="dci_campos_ncuotas" type="number" min="0" />
+            </div>
+          )}
+          {dci.campos.indexOf(".precio_cuota")!=-1 && (
+            <div style={style_.mb}>
+              <label className="form-label" htmlFor="dci_campos_preciocuota">Pago por cuota</label>
+              <input className="form-control" id="dci_campos_preciocuota" type="number" min="0" />
+            </div>
+          )}
+          {/* Observaciones */}
+          {dci.campos.indexOf(".observaciones")!=-1 && (
+            <div style={style_.mb}>
+              <label className="form-label" htmlFor="dci_campos_observaciones">Observaciones</label>
+              <textarea className="form-control" id="dci_campos_observaciones" rows="3"></textarea>
+            </div>
+          )}
+
+          <div><button className="btn btn-primary" onClick={saveConsentData}>Guardar</button></div>
+        </div>
+      } />
+    )
+}
+const ModalConsentFileUpload = ({modal_id, patient_pk, atencion_pk, dci_pk, refreshFiles}) => {
+  const [selectedFile, setSelectedFile] = useState(false)
+  const modal_load_id = "html_modal_file_uploading"
+
+  const uploadFile = () => {
+    let input_file = window.document.getElementById('input-consent-file')
+    if(input_file.files.length == 0) return
+
+    let file = input_file.files[0]
+    let data = new FormData()
+    data.append("file", file)
+    data.append("paciente", patient_pk)
+    data.append("atencion", atencion_pk)
+    data.append("consentimiento", dci_pk)  // Consent file
+
+    window.$('#'+modal_id).modal("hide")  // Hide file upload modal
+    showLoadingUploadModal()  // Show loading file upload modal
+
+    return addRequestValidation(fetch(
+        process.env.REACT_APP_PROJECT_API+`atencion/paciente/${patient_pk}/files/`,
+        { method: "POST", body: data, headers: {Authorization: localStorage.getItem('access_token')} }
+      ))
+      .then(refreshFiles)
+      .then(hideLoadingUploadModal)
+  }
+  const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
+  const showLoadingUploadModal = () => window.$('#'+modal_load_id).modal("show")
+  const hideLoadingUploadModal = () => window.$('#'+modal_load_id).modal("hide")
+
+  useEffect(() => () => {
+    // Assure modals will be closed before leaving current page
+    window.$('#'+modal_id).modal("hide")
+    window.$('#'+modal_id).modal("hide")
+  }, [])
+
+  return (
+    <div>
+      <RegularModalCentered
+        _id={modal_id}
+        _title={"Guardar archivo de consentimiento"}
+        _body={
+          <div>
+            <div className="form-group">
+              <input type="file" id="input-consent-file" onChange={inputFileChange} />
+            </div>
+            <button className="btn btn-primary" disabled={!selectedFile} onClick={uploadFile}>Subir archivo</button>
+          </div>
+        } />
+
+      <ModalLoading
+        _id={modal_load_id}
+        _title={"Cargando.."}
+        _body_text={"Por favor espere unos segundos mientras se guarda el archivo"} />
+    </div>
   )
 }
 

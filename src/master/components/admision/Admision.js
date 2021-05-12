@@ -1121,7 +1121,7 @@ const ArchivosPaciente = () => {
         <ModalFileUpload
           modal_id={fileupload_modal_id}
           patient_pk={_params_.patient}
-          refresFiles={() => setFiles(false)} />
+          refreshFiles={() => setFiles(false)} />
         <ModalLoading
           _id={fileloadingdelete_modal_id}
           _title={"Cargando.."}
@@ -1129,7 +1129,7 @@ const ArchivosPaciente = () => {
       </div>
     )
 }
-export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}) => {
+export const ModalFileUpload = ({modal_id, patient_pk, refreshFiles, atencion_pk}) => {
   const gadriveloadingupload_modal_id = "gadrive_loadingupload"
   const [selectedFile, setSelectedFile] = useState(false)
 
@@ -1161,7 +1161,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
           },
         )
       )
-      .then(refresFiles)
+      .then(refreshFiles)
       .then(hideLoadingUploadModal)
   }
   const inputFileChange = ev => setSelectedFile(ev.target.files.length!=0)
@@ -1170,6 +1170,7 @@ export const ModalFileUpload = ({modal_id, patient_pk, refresFiles, atencion_pk}
 
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
+    window.$('#'+modal_id).modal("hide")
     window.$('#'+gadriveloadingupload_modal_id).modal("hide")
   }, [])
 
