@@ -439,7 +439,8 @@ const AttentionProcedures = ({cita}) => {
   const delete_proc_pk = useRef(-1)
 
   const getProcedures = _atencion => simpleGet(`atencion/detalle/?filtro={"atencion":"${_atencion}"}`).then(setDA)
-  const modalConfirmDelete = _pk => {
+  const modalConfirmDelete = (_pk, ev) => {
+    ev.stopPropagation()
     window.$('#modal_delete_procedure').modal('show')
     delete_proc_pk.current = _pk
   }
@@ -450,7 +451,7 @@ const AttentionProcedures = ({cita}) => {
     simpleDelete(`atencion/detalle/${delete_proc_pk.current}/`)
     .then(() => {
       // Delete item from DOM
-      document.getElementById(delete_proc_pk.current).parentElement.remove()
+      document.getElementById("da-"+delete_proc_pk.current).remove()
       // Reset delete_proc_pk val
       delete_proc_pk.current = -1
     })
@@ -483,7 +484,7 @@ const AttentionProcedures = ({cita}) => {
           : das.length == 0
           ? "No se ha relizado ningún procedimiento"
           : das.map(da => (
-            <div key={"da-"+da.pk}>
+            <div key={"da-"+da.pk} id={"da-"+da.pk}>
               <li className="list-group-item d-flex" id={"da-title-"+da.pk}
               onClick={ (!da.observaciones || da.observaciones.length==0) ? () => showDAObservation(da) : () => {} }
               data-toggle="collapse" data-target={"#da-desc-"+da.pk} aria-expanded="true"  // collapse behaviour
@@ -501,7 +502,7 @@ const AttentionProcedures = ({cita}) => {
                 {(!da.pago_iniciado || da.dpdt) && (
                   <button className={"btn"+(da.dpdt?" ml-auto":"")}
                   style={{paddingTop: "0", paddingBottom: "0", fontSize: "15px"}}
-                  onClick={()=>modalConfirmDelete(da.pk)}>
+                  onClick={ev=>modalConfirmDelete(da.pk, ev)}>
                     <i className="fal fa-trash-alt"></i>
                   </button>
                 )}
@@ -791,18 +792,21 @@ const ModalConsentDataForm = ({modal_id, dci, refreshConsents}) => {
       _apoderado['dni'] = window.document.getElementById("dci_campos_apoderado_dni").value
       _apoderado['fullname'] = window.document.getElementById("dci_campos_apoderado_fullname").value
       _apoderado['direccion'] = window.document.getElementById("dci_campos_apoderado_direccion").value
-      // Validar valores
-      if(_apoderado.dni.length != 8 || isNaN(Number(_apoderado.dni))){
-        handleErrorResponse("modalconsentform", "Error", "El dni debe ser un número de 8 digitos", "warning")
-        return
-      }
-      if(!/^[a-zA-Z][ a-zA-Z]+[a-zA-Z]$/.test(_apoderado.fullname) || _apoderado.fullname.split(" ").length<3){
-        handleErrorResponse("modalconsentform", "Error", "Debe escribir el nombres y apellidos completos", "warning")
-        return
-      }
-      if(_apoderado.direccion.length<6){
-        handleErrorResponse("modalconsentform", "Error", "Debe especificar una direccion de al menos 6 digitos", "warning")
-        return
+      // Validar solo si al menos un valor ha sido especificado
+      if(_apoderado.dni != "" && _apoderado.fullname != "" && _apoderado.direccion != ""){
+        // Validar valores
+        if(_apoderado.dni.length != 8 || isNaN(Number(_apoderado.dni))){
+          handleErrorResponse("modalconsentform", "Error", "El dni debe ser un número de 8 digitos", "warning")
+          return
+        }
+        if(!/^[a-zA-Z][ a-zA-Z]+[a-zA-Z]$/.test(_apoderado.fullname) || _apoderado.fullname.split(" ").length<3){
+          handleErrorResponse("modalconsentform", "Error", "Debe escribir el nombres y apellidos completos", "warning")
+          return
+        }
+        if(_apoderado.direccion.length<6){
+          handleErrorResponse("modalconsentform", "Error", "Debe especificar una direccion de al menos 6 digitos", "warning")
+          return
+        }
       }
       _json['apoderado'] = _apoderado
     }
