@@ -215,11 +215,11 @@ const SearchPatient = ({current_sucursal, redirectTo}) => {
           }
         }
       }],
-      pageLength: 8,
+      pageLength: 10,
       search: {
         search: search_input_val
       },
-      lengthMenu: [[8, 15, 25], [8, 15, 25]],
+      lengthMenu: [[10, 20, 30], [10, 20, 30]],
       language: {
         // url: "https://cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
         sProcessing:     "Procesando...",
@@ -563,11 +563,11 @@ const NewEditPatient = () => {
     .then(pxs => redirectTo(`/nav/admision/${pxs.paciente}/detalle`))
     .then(() => handleErrorResponse('custom', "Exito", "Se han guardado los cambios exitosamente", 'info'))
     .catch(res => {
-      console.log("res", res)
+      if(__debug__) console.log("res", res)
       if(!res) return
 
       res.json().then(er => {
-        console.log("er", er)
+        if(__debug__) console.log("er", er)
         if(er.hasOwnProperty('dni'))
           handleErrorResponse('custom', "Error", "El DNI ya existe", 'warning')
         if(er.hasOwnProperty('non_field_errors'))
@@ -582,7 +582,7 @@ const NewEditPatient = () => {
     if(!_data) return Promise.reject()
 
     return simplePostData(`atencion/paciente/`, _data)
-      .then(pac => updatePatientAntecedents(pac.pk))
+      .then(pac => updatePatientOtherData(pac.pk))
   }
   // Edit
   const saveEdit = () => {
@@ -591,17 +591,167 @@ const NewEditPatient = () => {
     if(!_data) return Promise.reject()
 
     return simplePostData(`atencion/paciente/${patient.pk}/`, _data, "PUT")
-      .then(pac => updatePatientAntecedents(pac.pk))
+      .then(pac => updatePatientOtherData(pac.pk))
   }
   // Extra
-  const updatePatientAntecedents = pac_pk => {
+  const validatePatientForm = () => {
+    // Values validation
+    let _tmp1
+    _tmp1 = document.getElementById("name-pric")
+    if(!_tmp1 || _tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Nombre principal no especificado", 'warning')
+      return false
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
+      return false
+    }
+
+    _tmp1 = document.getElementById("name-sec")
+    if(!_tmp1){
+      handleErrorResponse("custom", "Error", "Nombre secundario no especificado", 'warning')
+      return false
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
+      return false
+    }
+
+    _tmp1 = document.getElementById("ape-p")
+    if(!_tmp1){
+      handleErrorResponse("custom", "Error", "Apellido paterno no especificado", 'warning')
+      return false
+    }
+    if(_tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio", 'warning')
+      return false
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
+      return false
+    }
+
+    _tmp1 = document.getElementById("ape-m")
+    if(!_tmp1){
+      handleErrorResponse("custom", "Error", "Apellido materno no especificado", 'warning')
+      return false
+    }
+    if(_tmp1.value.trim().length==0){
+      handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio", 'warning')
+      return false
+    }
+    if(!isNaN(parseInt(_tmp1.value))){
+      handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
+      return false
+    }
+
+    // Validate dni considering dni_tipo
+    let el_dni = document.getElementById('dni')
+    if(window.document.getElementById("dni_tipo").value == '1'){
+      // DNI
+      if(el_dni.value.trim().length!=8){
+        handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
+        return false
+      }
+      if(isNaN(parseInt(el_dni.value.trim()))){
+        handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
+        return false
+      }
+    }else{
+      // DNI_OTRO
+      if(el_dni.value.trim().length<4){
+        handleErrorResponse("custom", "Error", "El documento debe tener al menos 4 digitos", 'warning')
+        return false
+      }
+    }
+
+    _tmp1 = document.getElementById("born-date")
+    if(_tmp1){
+      if(_tmp1.value>=(new Date().toDateInputValue)){
+        handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy", 'warning')
+        return false
+      }
+    }
+
+    _tmp1 = document.getElementById("phone")
+    if(_tmp1 && !!_tmp1.value){
+      if(_tmp1.value.length!=9){
+        handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
+        return false
+      }
+      if(isNaN(parseInt(_tmp1.value))){
+        handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
+        return false
+      }
+    }
+
+    _tmp1 = document.getElementById("email")
+    if(_tmp1 && _tmp1.value.length!=0){
+      if(!_tmp1.checkValidity()){
+        handleErrorResponse("custom", "Error", "Introduzca un correo electronico correcto", 'warning')
+        return false
+      }
+    }
+
+    // Address no not need validation
+    // Provenance no not need validation
+    // Residence no not need validation
+
+    let _tmp = {
+      nombre_principal: document.getElementById('name-pric').value,
+      nombre_secundario: document.getElementById('name-sec').value,
+      ape_paterno: document.getElementById('ape-p').value,
+      ape_materno: document.getElementById('ape-m').value,
+      sexo: document.getElementById('sexo').value,
+      permiso_sms: document.getElementById('permiso_sms').checked,
+    }
+    // DNI or DNI_OTRO
+    let b_dni_otro = window.document.getElementById("dni_tipo").value != '1'  // Indicador
+    _tmp.dni = b_dni_otro ? null : el_dni.value
+    _tmp.dni_otro = b_dni_otro ? el_dni.value : null
+    _tmp.tipo_documento = window.document.getElementById("dni_tipo").value
+
+    // Add non-required fields
+    if(document.getElementById('born-date').value)
+      _tmp.fecha_nacimiento = document.getElementById('born-date').value
+    if(document.getElementById('phone').value)
+      _tmp.celular = document.getElementById('phone').value
+    if(document.getElementById('address').value)
+      _tmp.direccion = document.getElementById('address').value
+    if(document.getElementById('email').value)
+      _tmp.correo = document.getElementById('email').value
+
+    return _tmp
+  }
+  const validatePatientAntecedentsForm = () => {
+    return {
+      diabetes: document.getElementById('diabetes').value,
+      hepatitis: document.getElementById('hepatitis').value,
+      hemorragia: document.getElementById('hemorragia').value,
+      enf_cardiovascular: document.getElementById('enf_cardiovascular').value,
+      alergias: document.getElementById('alergias').value,
+      operaciones: document.getElementById('operaciones').value,
+      medicamentos: document.getElementById('medicamentos').value,
+      paciente: patient.pk,
+    }
+  }
+  const getExtraFieldsData = () => {
+    return patient.camposextra.reduce((ar, ce) => {
+      let val = window.document.getElementById('extra-field-'+ce.pk).value
+      if(val && val.length!=0) ar.push([ce.pk, val])
+      return ar
+    }, [])
+  }
+  const updatePatientOtherData = pac_pk => {
     // By default Patient's antecedent is created, so we only need to update not create
-    let _data = validatePatientAntecedentsForm()
-    if(!_data) return
+    let _data = {
+      antecedentes: validatePatientAntecedentsForm(),
+      extra: getExtraFieldsData()
+    }
+    if(!_data) return Promise.reject(null)
     _data.paciente = pac_pk
 
-    return simplePostData(`atencion/paciente/${pac_pk}/antecedentes/`, _data, 'PUT')
-      .then(pa => pa.paciente)
+    return simplePostData(`atencion/paciente/${pac_pk}/extra/`, _data)
   }
   const getBack = () => window.history.back()
   const createPacienteXSucursal = pac_pk => simplePostData(`atencion/paciente/sucursal/`, {paciente: pac_pk, sucursal: current_sucursal})
@@ -614,6 +764,8 @@ const NewEditPatient = () => {
     <div>
       <PatientForm patient={patient} setPatient={setPatient} />
       <PatientAntecedentsForm antecedente={patient&&patient.antecedentes} />
+      {/* EXTRA FIELDS */}
+      <ExtraFieldsForm camposextra={patient.camposextra} />
 
       <div style={{paddingTop: "25px"}}></div>  {/* Separador */}
 
@@ -704,6 +856,7 @@ const PatientForm = ({patient, setPatient=(()=>{})}) => {
     window.document.getElementById('phone').value = patient.celular
     window.document.getElementById('permiso_sms').checked = patient.permiso_sms
     window.document.getElementById('address').value = patient.direccion
+    window.document.getElementById('email').value = patient.correo
   }, [patient])
 
   return (
@@ -759,9 +912,13 @@ const PatientForm = ({patient, setPatient=(()=>{})}) => {
           <label className="custom-control-label" htmlFor="permiso_sms">Permitir envio de mensajes</label>
         </div>
       </div>
-      <div className="form-group col-12">
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
         <label className="form-label" htmlFor="address">Dirección: </label>
         <input type="text" id="address" className="form-control" />
+      </div>
+      <div className="form-group col-md-6" style={{display:'inline-block'}}>
+        <label className="form-label" htmlFor="email">Correo electronico: </label>
+        <input type="email" id="email" className="form-control" />
       </div>
     </div>
   )
@@ -801,183 +958,104 @@ const PatientAntecedentsForm = ({antecedente}) => {
   }, [antecedente])
 
   return (
-    <div className="form-group col-md-12">  {/* Form */}
-      <h3>Antecedentes</h3>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="diabetes">Diabetes? </label>
-        <select id="diabetes" className="custom-select form-control">
-          <option value="0">No</option>
-          <option value="1">Si</option>
-        </select>
-      </div>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="hepatitis">Hepatitis? </label>
-        <select id="hepatitis" className="custom-select form-control">
-          <option value="0">No</option>
-          <option value="1">Si</option>
-        </select>
-      </div>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="hemorragia">Hemorragia? </label>
-        <select id="hemorragia" className="custom-select form-control">
-          <option value="0">No</option>
-          <option value="1">Si</option>
-        </select>
-      </div>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="enf_cardiovascular">Enfermedad cardiovascular? </label>
-        <select id="enf_cardiovascular" className="custom-select form-control">
-          <option value="0">No</option>
-          <option value="1">Si</option>
-        </select>
-      </div>
 
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="alergias">Alergias</label>
-        <textarea className="form-control" id="alergias" rows="2"></textarea>
+    <div className="form-group col-md-12">
+      <div style={{display: "flex", cursor: "pointer"}}
+      data-toggle="collapse" data-target="#accordion-content-antecedentes" aria-expanded="false">
+        <span className="mr-2">
+          <span className="collapsed-reveal">
+            <i className="fal fa-minus fs-xl" style={{verticalAlign: "bottom"}}></i>
+          </span>
+          <span className="collapsed-hidden">
+            <i className="fal fa-plus fs-xl" style={{verticalAlign: "bottom"}}></i>
+          </span>
+        </span>
+        <h3><b>Antecedentes</b></h3>
       </div>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="operaciones">Operaciones</label>
-        <textarea className="form-control" id="operaciones" rows="2"></textarea>
-      </div>
-      <div className="form-group col-md-6" style={{display:'inline-block'}}>
-        <label className="form-label" htmlFor="medicamentos">Medicamentos</label>
-        <textarea className="form-control" id="medicamentos" rows="2"></textarea>
-      </div>
+      <div className="collapse" id="accordion-content-antecedentes">
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="diabetes">Diabetes? </label>
+          <select id="diabetes" className="custom-select form-control">
+            <option value="0">No</option>
+            <option value="1">Si</option>
+          </select>
+        </div>
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="hepatitis">Hepatitis? </label>
+          <select id="hepatitis" className="custom-select form-control">
+            <option value="0">No</option>
+            <option value="1">Si</option>
+          </select>
+        </div>
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="hemorragia">Hemorragia? </label>
+          <select id="hemorragia" className="custom-select form-control">
+            <option value="0">No</option>
+            <option value="1">Si</option>
+          </select>
+        </div>
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="enf_cardiovascular">Enfermedad cardiovascular? </label>
+          <select id="enf_cardiovascular" className="custom-select form-control">
+            <option value="0">No</option>
+            <option value="1">Si</option>
+          </select>
+        </div>
 
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="alergias">Alergias</label>
+          <textarea className="form-control" id="alergias" rows="2"></textarea>
+        </div>
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="operaciones">Operaciones</label>
+          <textarea className="form-control" id="operaciones" rows="2"></textarea>
+        </div>
+        <div className="form-group col-md-6" style={{display:'inline-block'}}>
+          <label className="form-label" htmlFor="medicamentos">Medicamentos</label>
+          <textarea className="form-control" id="medicamentos" rows="2"></textarea>
+        </div>
+      </div>
     </div>
   )
 }
-function validatePatientForm(){
-  // Values validation
-  let _tmp1
-  _tmp1 = document.getElementById("name-pric")
-  if(!_tmp1 || _tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Nombre principal no especificado", 'warning')
-    return false
-  }
-  if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
-    return false
-  }
+const ExtraFieldsForm = ({camposextra}) => {
+  useEffect(() => {
+    if(!camposextra || camposextra.length == 0) return
+    // Fill inputs from camposextra
+    camposextra.filter(i => i.respuesta).map(ce => {
+      window.document.getElementById('extra-field-'+ce.pk).value = ce.respuesta
+    })
+  }, [camposextra])
 
-  _tmp1 = document.getElementById("name-sec")
-  if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Nombre secundario no especificado", 'warning')
-    return false
-  }
-  if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los nombres solo pueden contener letras", 'warning')
-    return false
-  }
-
-  _tmp1 = document.getElementById("ape-p")
-  if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido paterno no especificado", 'warning')
-    return false
-  }
-  if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido paterno no puede estar vacio", 'warning')
-    return false
-  }
-  if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
-    return false
-  }
-
-  _tmp1 = document.getElementById("ape-m")
-  if(!_tmp1){
-    handleErrorResponse("custom", "Error", "Apellido materno no especificado", 'warning')
-    return false
-  }
-  if(_tmp1.value.trim().length==0){
-    handleErrorResponse("custom", "Error", "Apellido materno no puede estar vacio", 'warning')
-    return false
-  }
-  if(!isNaN(parseInt(_tmp1.value))){
-    handleErrorResponse("custom", "Error", "Los apellidos solo pueden contener letras", 'warning')
-    return false
-  }
-
-  // Validate dni considering dni_tipo
-  let el_dni = document.getElementById('dni')
-  if(window.document.getElementById("dni_tipo").value == '1'){
-    // DNI
-    if(el_dni.value.trim().length!=8){
-      handleErrorResponse("custom", "Error", "El DNI debe tener 8 digitos", 'warning')
-      return false
-    }
-    if(isNaN(parseInt(el_dni.value.trim()))){
-      handleErrorResponse("custom", "Error", "El DNI debe contener solo números", 'warning')
-      return false
-    }
-  }else{
-    // DNI_OTRO
-    if(el_dni.value.trim().length<4){
-      handleErrorResponse("custom", "Error", "El documento debe tener al menos 4 digitos", 'warning')
-      return false
-    }
-  }
-
-  _tmp1 = document.getElementById("born-date")
-  if(_tmp1){
-    if(_tmp1.value>=(new Date().toDateInputValue)){
-      handleErrorResponse("custom", "Error", "La fecha de nacimiento no debe ser posterior al día de hoy", 'warning')
-      return false
-    }
-  }
-
-  _tmp1 = document.getElementById("phone")
-  if(_tmp1 && !!_tmp1.value){
-    if(_tmp1.value.length!=9){
-      handleErrorResponse("custom", "Error", "El celular debe tener 9 digitos", 'warning')
-      return false
-    }
-    if(isNaN(parseInt(_tmp1.value))){
-      handleErrorResponse("custom", "Error", "El celular debe contener solo digitos", 'warning')
-      return false
-    }
-  }
-
-  // Address no not need validation
-  // Provenance no not need validation
-  // Residence no not need validation
-
-  let _tmp = {
-    nombre_principal: document.getElementById('name-pric').value,
-    nombre_secundario: document.getElementById('name-sec').value,
-    ape_paterno: document.getElementById('ape-p').value,
-    ape_materno: document.getElementById('ape-m').value,
-    sexo: document.getElementById('sexo').value,
-    permiso_sms: document.getElementById('permiso_sms').checked,
-  }
-  // DNI or DNI_OTRO
-  let b_dni_otro = window.document.getElementById("dni_tipo").value != '1'  // Indicador
-  _tmp.dni = b_dni_otro ? null : el_dni.value
-  _tmp.dni_otro = b_dni_otro ? el_dni.value : null
-  _tmp.tipo_documento = window.document.getElementById("dni_tipo").value
-
-  // Add non-required fields
-  if(document.getElementById('born-date').value)
-    _tmp.fecha_nacimiento = document.getElementById('born-date').value
-  if(document.getElementById('phone').value)
-    _tmp.celular = document.getElementById('phone').value
-  if(document.getElementById('address').value)
-    _tmp.direccion = document.getElementById('address').value
-
-  return _tmp
-}
-function validatePatientAntecedentsForm(){
-  let values = {
-    diabetes: document.getElementById('diabetes').value,
-    hepatitis: document.getElementById('hepatitis').value,
-    hemorragia: document.getElementById('hemorragia').value,
-    enf_cardiovascular: document.getElementById('enf_cardiovascular').value,
-    alergias: document.getElementById('alergias').value,
-    operaciones: document.getElementById('operaciones').value,
-    medicamentos: document.getElementById('medicamentos').value,
-  }
-  return values
+  return (camposextra && camposextra.length != 0)
+  ? (
+    <div className="form-group col-md-12">
+      <div style={{display: "flex", cursor: "pointer"}}
+      data-toggle="collapse" data-target="#accordion-content-extrafields" aria-expanded="false">
+        <span className="mr-2">
+          <span className="collapsed-reveal">
+            <i className="fal fa-minus fs-xl" style={{verticalAlign: "bottom"}}></i>
+          </span>
+          <span className="collapsed-hidden">
+            <i className="fal fa-plus fs-xl" style={{verticalAlign: "bottom"}}></i>
+          </span>
+        </span>
+        <h3><b>Extras</b></h3>
+      </div>
+      <div className="collapse" id="accordion-content-extrafields">
+      {camposextra.map(ce => (
+        <div key={"container-extra-field-"+ce.pk} className="form-group col-md-6" style={{
+          display:'inline-block',
+          verticalAlign: 'top'
+        }}>
+          <label className="form-label" htmlFor={"extra-field-"+ce.pk}>{ce.texto}</label>
+          {ce.tipo_campo == 1 && (<input type="text" id={"extra-field-"+ce.pk} className="form-control" />)}
+          {ce.tipo_campo == 2 && (<textarea className="form-control" id={"extra-field-"+ce.pk} rows="2"></textarea>)}
+        </div>
+      ))}
+      </div>
+    </div>
+  ) : ""
 }
 // Archivos del paciente
 const ArchivosPaciente = () => {
@@ -1466,7 +1544,7 @@ const AtenderPaciente = ({patient_pk, current_sucursal, redirectTo}) => {
 }
 
 
-export default Admision;
+export default Admision
 
 /*
 * Add cita (optional|maybe later)
