@@ -12,8 +12,9 @@ import {
   deleteUserLogIn
 } from './functions'
 // Components
-import Login from './login/Login';
-import Navigation from './components/Navigation';
+import Login from './login/Login'
+import Navigation from './components/Navigation'
+import BackendRedirect from './components/backendredirect/BackendRedirect'
 
 
 function Master(){
@@ -68,20 +69,29 @@ function Master(){
             <Redirect to="/login" />
           }
         </Route>
+
         <Route path="/login">
           {logged ? <Redirect to="/nav" /> : <Login logIn={checkLogIn} />}
         </Route>
+
         <Route path="/nav">  {/* NAVIGATION */}
           {logged ?
             <Navigation user={user} errorFunc={setErrorLog} /> :
             <Redirect to="/" />}
         </Route>
+
+        {/* BackEnd Redirect */}
+        <Route path="/red/docview">
+          <BackendRedirect />
+        </Route>
+
         <Route path="/error/log">
           {error_log!==false ?
             <Error log={error_log} /> :
             <Redirect to="/nav" />
           }
         </Route>
+
         <Route>  {/* ROUTE NOT FOUND REDIRECT */}
           <Redirect to="/error/log" />
         </Route>

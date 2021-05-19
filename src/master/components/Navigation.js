@@ -142,7 +142,7 @@ const SelectComponent = () => (
   <main id="js-page-content" role="main" className="page-content">
     <Switch>
       <Route exact path="/nav/home">
-        <SPAHome />
+        <Redirect to="/nav/cita" />
       </Route>
       <Route path="/nav/cita">
         <Cita />
@@ -245,11 +245,6 @@ const PageFooter = () => (
     </div>
   </footer>
 )
-function SPAHome(){
-  return (
-    <h1>HOME</h1>
-  )
-}
 
 // Unused components
 const ActionUser = () => {
