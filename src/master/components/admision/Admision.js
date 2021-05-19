@@ -542,6 +542,7 @@ const NewEditPatient = () => {
   const {current_sucursal, redirectTo} = useContext(NavigationContext)
   const _params_ = useParams()  // patient_pk in url
   const [patient, setPatient] = useState(false)
+  const [extrafields, setEF] = useState(false)
   /* Flux
   * New:
     * If patient not in DB -> regular create -> redirect admision
@@ -550,6 +551,7 @@ const NewEditPatient = () => {
   */
 
   const getInitialData = () => {
+    simpleGet('atencion/admision/extra').then(setEF)  // Get extra fields from sucursal
     if(_params_.patient == '0') return  // Nuevo
     // Get patient by id if patient is setted in url
     getDataByPK('atencion/paciente/admision/pk', _params_.patient).then(setPatient)
@@ -732,15 +734,14 @@ const NewEditPatient = () => {
       alergias: document.getElementById('alergias').value,
       operaciones: document.getElementById('operaciones').value,
       medicamentos: document.getElementById('medicamentos').value,
-      paciente: patient.pk,
     }
   }
   const getExtraFieldsData = () => {
-    return patient.camposextra.reduce((ar, ce) => {
+    return extrafields.reduce((ar, ce) => {
       let val = window.document.getElementById('extra-field-'+ce.pk).value
       if(val && val.length!=0) ar.push([ce.pk, val])
       return ar
-    }, [])
+    }, []) || {}
   }
   const updatePatientOtherData = pac_pk => {
     // By default Patient's antecedent is created, so we only need to update not create
@@ -765,7 +766,7 @@ const NewEditPatient = () => {
       <PatientForm patient={patient} setPatient={setPatient} />
       <PatientAntecedentsForm antecedente={patient&&patient.antecedentes} />
       {/* EXTRA FIELDS */}
-      <ExtraFieldsForm camposextra={patient.camposextra} />
+      <ExtraFieldsForm camposextra={patient.camposextra || extrafields} />
 
       <div style={{paddingTop: "25px"}}></div>  {/* Separador */}
 
@@ -1410,6 +1411,7 @@ const getPatiente = (dni, setPatient) => {
     document.getElementById("name-sec").disabled = false
     document.getElementById("ape-p").disabled = false
     document.getElementById("ape-m").disabled = false
+    setPatient(false)
     return
   }
 
