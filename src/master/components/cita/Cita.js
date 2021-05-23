@@ -24,10 +24,11 @@ import {
   handleErrorResponse,
   capitalizeFirstLetter as cFL,
   simpleGet,
+  getDataByPK,
   simplePostData,
 } from '../../functions'
 import { NavigationContext } from '../Navigation';
-import { tipo_documento } from '../admision/Admision'
+import { tipo_documento, personaFromReniec, xhtmlDecode } from '../admision/Admision'
 import Loader from '../loader/Loader'
 
 // Static
@@ -42,6 +43,7 @@ const Cita = () => {
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
   const [show_past_citas, setShowPastCitas] = useState(false)  // Show past citas
   const [loading, setLoader] = useState(true)
+  const [newpatient, isNewPatient] = useState(false)
   /* fake_redirect_data: Workaround to fake redirect_data empty
   * when it has already been fully used to create a Cita
   * and therefore it is not longer needed
@@ -114,28 +116,55 @@ const Cita = () => {
     if(_dni.length < 6) return
 
     // Generate promise
-    simpleGet(`atencion/paciente/sucursal/?filtro={"dni":"${_dni}","dni_otro":"true"}`)
-    .then(res => {
-      if(res.length<1) return
-
+    getDataByPK('atencion/paciente/dni', _dni)
+    .then(pac => {
+      isNewPatient(false)
       // Set paciente data
-      document.getElementById("pac_pk").value = res[0].paciente
-      document.getElementById("pac_fullname").textContent = res[0].paciente_data.fullname
+      document.getElementById("pac_pk").value = pac.pk
+      document.getElementById("pac_fullname").textContent = pac.fullname
+    })
+    .catch(() => {
+      if(_dni.length == 8){
+        window.document.getElementById("newpat-name-pric").value = ""
+        window.document.getElementById("newpat-name-sec").value = ""
+        window.document.getElementById("newpat-ape-p").value = ""
+        window.document.getElementById("newpat-ape-m").value = ""
+        isNewPatient(true)
+        personaFromReniec(_dni)
+        .then(res => {
+          if(__debug__) console.log("personaFromReniec res", res);
+          if(res.hasOwnProperty('error')) return
+          else handleErrorResponse('pac_form', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
+          // Fill data from reniec
+          let primer_nombre = res.nombres.split(" ")[0]
+          document.getElementById("newpat-name-pric").value = xhtmlDecode(primer_nombre)
+          document.getElementById("newpat-name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() )
+          document.getElementById("newpat-ape-p").value = xhtmlDecode(res.apellido_paterno)
+          document.getElementById("newpat-ape-m").value = xhtmlDecode(res.apellido_materno)
+        })
+      }
     })
   }
   const cancelCitaForm = () => {
     if(_redirect_data) return
 
-    document.getElementById("pac_pk").value = ""
-    document.getElementById("pac_dni").value = ""
-    document.getElementById("pac_fullname").textContent = ""
+    window.document.getElementById("pac_pk").value = ""
+    window.document.getElementById("pac_dni").value = ""
+    window.document.getElementById("pac_fullname").textContent = ""
 
-    document.getElementById("cita-date").value = new Date().toDateInputValue()
-    document.getElementById("cita-hour").value = "08"
-    document.getElementById("cita-minute").value = "00"
-    document.getElementById("cita-duracion").value = "15"
+    window.document.getElementById("cita-date").value = new Date().toDateInputValue()
+    window.document.getElementById("cita-hour").value = "08"
+    window.document.getElementById("cita-minute").value = "00"
+    window.document.getElementById("cita-duracion").value = "15"
+
+    window.document.getElementById("newpat-name-pric").value = ""
+    window.document.getElementById("newpat-name-sec").value = ""
+    window.document.getElementById("newpat-ape-p").value = ""
+    window.document.getElementById("newpat-ape-m").value = ""
+
     window.$("#select-filtro_personal").val(null).trigger('change')
     window.$("#select-procedimiento_programado").val([]).trigger("change")
+    isNewPatient(false)
   }
   const errorForm = log => {
     document.querySelector('div#alert-cita-form span').innerText = log
@@ -214,6 +243,59 @@ const Cita = () => {
 
     // Get patient
     let _paciente = document.getElementById("pac_pk").value
+    if(_paciente==""){
+      _paciente = {}
+      let _tmp
+      // Validate newpat values
+      // dni
+      _tmp = window.document.getElementById("pac_dni").value
+      if(_tmp.trim().length!=8){
+        errorForm("El DNI debe tener 8 digitos")
+        return
+      }
+      _paciente.dni = _tmp
+      // nombre_principal
+      _tmp = window.document.getElementById("newpat-name-pric").value
+      if(_tmp.trim() == ""){
+        errorForm("Debe especificar un nombre principal")
+        return
+      }
+      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+        errorForm("Los nombres solo pueden contener letras")
+        return false
+      }
+      _paciente.nombre_principal = _tmp
+      // nombre_secundario
+      _tmp = window.document.getElementById("newpat-name-sec").value
+      if(_tmp.trim() != ""){
+        if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+          errorForm("Los nombres solo pueden contener letras")
+          return false
+        }else _paciente.nombre_secundario = _tmp
+      }
+      // ape_paterno
+      _tmp = window.document.getElementById("newpat-ape-p").value
+      if(_tmp.trim() == ""){
+        errorForm("Debe especificar un apellido paterno")
+        return
+      }
+      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+        errorForm("Los apellidos solo pueden contener letras")
+        return false
+      }
+      _paciente.ape_paterno = _tmp
+      // ape_materno
+      _tmp = window.document.getElementById("newpat-ape-m").value
+      if(_tmp.trim() == ""){
+        errorForm("Debe especificar un apellido materno")
+        return
+      }
+      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+        errorForm("Los apellidos solo pueden contener letras")
+        return false
+      }
+      _paciente.ape_materno = _tmp
+    }
 
     // Get META
     let _minutos = document.getElementById("cita-minute").value
@@ -300,6 +382,7 @@ const Cita = () => {
     if(__debug__) console.log("Cita saveCita")
 
     let data = getValidatedCitaFormData()
+    console.log("data", data)
     if(!data) return
 
     // Generate promise
@@ -537,6 +620,7 @@ const Cita = () => {
         personal={personal}
         pxss={pxss}
         redirect_data={_redirect_data}
+        newpatient={newpatient}
         />
 
       {/* INFO CITA (modal) */}
@@ -586,7 +670,7 @@ const FilterPersonal = ({personal, personal_color, filterByPersonal}) => {
     </div>
   )
 }
-const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, personal, redirect_data}) => (
+const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, personal, redirect_data, newpatient}) => (
   <div className="modal fade" id={id} tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
     <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div className="modal-content">
@@ -599,6 +683,9 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
           </button>
         </div>
         <div className="modal-body" id="cita-form">
+          <div id="alert-pac_form" className="alert bg-info-700 fade" role="alert" style={{display: "none"}}>
+            <strong id="alert-pac_form-headline"></strong> <span id="alert-pac_form-text"></span>.
+          </div>
           <SelectPersonal personal={personal} />
           {/* Paciente */}
           <input type="text" id="pac_pk" style={{display:'none'}} disable="true" />
@@ -609,9 +696,30 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
           </div>
           <div className="form-group col-12" style={{display:'inline-block'}}>
             <span id="pac_fullname" className="form-control form-control-lg"
-            style={{backgroundColor: "lightgray"}}>
+            style={{backgroundColor: "lightgray", display: newpatient?"none":"block"}}>
             </span>
           </div>
+
+          <div style={{display: newpatient?"block":"none"}}>
+            {/* New Patient Form */}
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <label className="form-label" htmlFor="newpat-name-pric">Nombre principal: </label>
+              <input type="text" id="newpat-name-pric" className="form-control" />
+            </div>
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <label className="form-label" htmlFor="newpat-name-sec">Nombre secundario: </label>
+              <input type="text" id="newpat-name-sec" className="form-control" />
+            </div>
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <label className="form-label" htmlFor="newpat-ape-p">Apellido paterno: </label>
+              <input type="text" id="newpat-ape-p" className="form-control" />
+            </div>
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <label className="form-label" htmlFor="newpat-ape-m">Apellido materno: </label>
+              <input type="text" id="newpat-ape-m" className="form-control" />
+            </div>
+          </div>
+
           {/* Fin Paciente */}
           <SelectProcedure
             pxss={pxss}

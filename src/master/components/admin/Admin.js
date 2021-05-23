@@ -458,6 +458,9 @@ const AdmisionCamposListTable = ({current_sucursal, edit_modal_id}) => {
   const changeProcedureActiveState = (_pk, state) => {
     simplePostData(`atencion/admision/extra/${_pk}/`, {activo: state}, "PATCH")
   }
+  const changeProcedureMostrarState = (_pk, state) => {
+    simplePostData(`atencion/admision/extra/${_pk}/`, {mostrar_en_admision: state}, "PATCH")
+  }
   const updateEF = (_pk, _data) => {
     // Update procedure values locally only (avoid asking api again)
     let _ef = efs.find(ef => ef.pk == ctx_md.modal_data.data.pk)
@@ -507,6 +510,7 @@ const AdmisionCamposListTable = ({current_sucursal, edit_modal_id}) => {
         {title: "Texto", data: "texto"},
         {title: "Tipo", data: "nombre_tipo_campo"},
         {title: "Activo", data: "activo"},
+        {title: "Mostrar", data: "mostrar_en_admision"},
         {title: "", data: null},
       ],
       columnDefs: [
@@ -522,8 +526,18 @@ const AdmisionCamposListTable = ({current_sucursal, edit_modal_id}) => {
             </div>, cell
           )
         },
-        // Edit
+        // Mostrar
         {targets: 3, orderable: false,
+          createdCell: (cell, data, row) => ReactDOM.render(
+            <div className="custom-switch">
+              <input type="checkbox" className="custom-control-input" id={"chxb_switch-mostraradmision-"+row.pk}
+              defaultChecked={data} onChange={e => changeProcedureMostrarState(row.pk, e.target.checked)} />
+              <label className="custom-control-label" htmlFor={"chxb_switch-mostraradmision-"+row.pk}></label>
+            </div>, cell
+          )
+        },
+        // Edit
+        {targets: -1, orderable: false,
           defaultContent: "<button class='btn btn-sm btn-light btn-pills waves-effect'>Editar</button>",
           createdCell: (cell, _, row) => cell.children[0].onclick = () => {
             ctx_md.setModalData({data: row, action: 'edit'})

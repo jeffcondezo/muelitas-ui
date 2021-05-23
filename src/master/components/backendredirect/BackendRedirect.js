@@ -8,7 +8,7 @@ const BackendRedirect = () => {
     <Switch>
       <Route exact path="/red/docview/:doc_pk/:suc_pk/:pac_pk/"
         render={p =>
-          window.location.assign(`${process.env.REACT_APP_PROJECT_API}atencion/viewdoc/${p.match.params.doc_pk}/${p.match.params.suc_pk}/${p.match.params.pac_pk}/`)} >
+          window.location.replace(`${process.env.REACT_APP_PROJECT_API}atencion/viewdoc/${p.match.params.doc_pk}/${p.match.params.suc_pk}/${p.match.params.pac_pk}/`)} >
       </Route>
     </Switch>
   )

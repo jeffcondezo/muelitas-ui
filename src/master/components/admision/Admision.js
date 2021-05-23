@@ -354,7 +354,7 @@ const AdmisionDetail = () => {
   const _params_ = useParams()
   const [patient, setPatient] = useState(false)
 
-  const getPatientByID = _id => getDataByPK('atencion/paciente', _id).then(setPatient)
+  const getPatientByID = _id => getDataByPK('atencion/paciente/admision/pk', _id).then(setPatient)
 
   useEffect(() => {
     getPatientByID(_params_.patient)
@@ -370,8 +370,16 @@ const AdmisionDetail = () => {
     : (
       <div className="row">
         <div className="col-lg-6">
-          <div style={{marginBottom: "25px"}}>
-            <PatientData patient={patient} />
+          <div className="panel">
+            <div className="card col-12" style={{padding: "0px"}}>
+              <div className="card-header">
+                <div className="card-title">
+                  Paciente
+                </div>
+              </div>
+              <PatientDataList patient={patient} />
+              <PatientExtraDataList patient={patient} />
+            </div>
           </div>
         </div>
         <div className="col-lg-6">
@@ -392,16 +400,6 @@ const AdmisionDetail = () => {
       </div>
     )
 }
-const PatientData = ({patient}) => (
-  <div className="card col-12" style={{padding: "0px"}}>
-    <div className="card-header">
-      <div className="card-title">
-        Paciente
-      </div>
-    </div>
-    <PatientDataList patient={patient} />
-  </div>
-)
 export const PatientDataList = ({patient}) => (
   <div className="card-body">
     <h5>Nombres: <span style={{color:"black"}}>{cFL(patient.nombre_principal)+
@@ -432,6 +430,28 @@ export const PatientDataList = ({patient}) => (
     }
   </div>
 )
+const PatientExtraDataList = ({patient}) => {
+  let ant = patient.antecedentes
+  let extra = patient.camposextra.length == 0 ? false : patient.camposextra.filter(e => e.mostrar_en_admision)
+  const printBlack = val => <span style={{color:"black"}}>{val}</span>
+  const printExBlack = ex => <h5 key={"extra-field-"+ex.pk}>{ex.texto}: {printBlack(ex.respuesta || ex.respuesta_descripcion)}</h5>
+
+  return (
+    <div className="card-body">
+      <hr style={{borderBottomWidth: "2px", borderBottomStyle: "solid", marginTop: "-30px"}}/> {/* Separator */}
+      <h5>Alergias: {printBlack(ant.alergias)}</h5>
+      <h5>Medicamentos: {printBlack(ant.medicamentos)}</h5>
+      <h5>Operaciones: {printBlack(ant.operaciones)}</h5>
+
+      {ant.diabetes && <h5>Diabetes: SI</h5>}
+      {ant.enf_cardiovascular && <h5>Enfermedad Cardiovascular: SI</h5>}
+      {ant.hemorragia && <h5>Hemorragia: SI</h5>}
+      {ant.hepatitis && <h5>Hepatitis: SI</h5>}
+
+      {extra && extra.map(printExBlack)}
+    </div>
+  )
+}
 const PatientPrescription = ({patient}) => {
   const [prescription_list, setPrescriptionList] = useState(false)
 
@@ -1024,7 +1044,7 @@ const ExtraFieldsForm = ({camposextra}) => {
     if(!camposextra || camposextra.length == 0) return
     // Fill inputs from camposextra
     camposextra.filter(i => i.respuesta).map(ce => {
-      window.document.getElementById('extra-field-'+ce.pk).value = ce.respuesta
+      window.document.getElementById('extra-field-'+ce.pk).value = ce.respuesta || ce.respuesta_descripcion
     })
   }, [camposextra])
 
@@ -1424,29 +1444,27 @@ const getPatiente = (dni, setPatient) => {
     if(res.status == 404){
       // Consultar reniec
       return personaFromReniec(dni)
+      .then(res => {
+        if(__debug__) console.log("personaFromReniec res", res);
+        // Handle errors
+        if(res.hasOwnProperty('error')) return
+        else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
+        // Fill data from reniec
+        let primer_nombre = res.nombres.split(" ")[0]
+        document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
+        document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() )
+        document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
+        document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
+        document.getElementById("name-pric").disabled = true
+        document.getElementById("name-sec").disabled = true
+        document.getElementById("ape-p").disabled = true
+        document.getElementById("ape-m").disabled = true
+      })
     }
   })
   .then(i => console.log("bypass getPatiente i:", i) && false || i)
 }
-export const personaFromReniec = _dni => {
-  return simpleGet(`atencion/reniec/${_dni}/`)
-    .then(res => {
-      if(__debug__) console.log("personaFromReniec res", res);
-      // Handle errors
-      if(res.hasOwnProperty('error')) return
-      else handleErrorResponse('custom', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
-      // Fill data from reniec
-      let primer_nombre = res.nombres.split(" ")[0]
-      document.getElementById("name-pric").value = xhtmlDecode(primer_nombre)
-      document.getElementById("name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() )
-      document.getElementById("ape-p").value = xhtmlDecode(res.apellido_paterno)
-      document.getElementById("ape-m").value = xhtmlDecode(res.apellido_materno)
-      document.getElementById("name-pric").disabled = true
-      document.getElementById("name-sec").disabled = true
-      document.getElementById("ape-p").disabled = true
-      document.getElementById("ape-m").disabled = true
-    })
-}
+export const personaFromReniec = _dni => simpleGet(`atencion/reniec/${_dni}/`)
 export const xhtmlDecode = _text => {
   let xhtml_codes = [
     {code: '&ntilde;', value: 'ñ'},
