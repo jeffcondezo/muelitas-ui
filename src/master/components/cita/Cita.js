@@ -43,13 +43,13 @@ const Cita = () => {
   const [cita_selected, selectCita] = useState(false)  // Cita selected to get info
   const [show_past_citas, setShowPastCitas] = useState(false)  // Show past citas
   const [loading, setLoader] = useState(true)
-  const [newpatient, isNewPatient] = useState(false)
   /* fake_redirect_data: Workaround to fake redirect_data empty
   * when it has already been fully used to create a Cita
   * and therefore it is not longer needed
   */
   const [fake_redirect_data, setFakeRedirectData] = useState(false)
   const personal_color = ["#6E4E9E", "#179C8E", "#4580B3", "#FF9800", "#FC077A", "#363636", "#B0410B"]
+  const fullname_validado = useRef(false)  // Keeps a track if unknown patient's data came from reniec's service
   // const usageHint = useRef(false)  // Allow to change dynamically the behaviour
 
   // Redirect data
@@ -106,30 +106,38 @@ const Cita = () => {
       td.fc-day-today div.fc-timegrid-now-indicator-container {background-color: #bbddf5}
     `
   }
+  const pacienteDataInputs = (_pk="", _n1="", _n2="", _a1="", _a2="", _c="", _sms=true, block=false) => {
+    window.document.getElementById("pac_pk").value = _pk
+    window.document.getElementById("newpat-name-pric").value = _n1
+    window.document.getElementById("newpat-name-sec").value = _n2
+    window.document.getElementById("newpat-ape-p").value = _a1
+    window.document.getElementById("newpat-ape-m").value = _a2
+    window.document.getElementById("newpat-phone").value = _c
+    window.document.getElementById("newpat-permiso_sms").checked = _sms
+    // Enable/Disable
+    fullname_validado.current = block
+    window.document.getElementById("newpat-name-pric").disabled = block
+    window.document.getElementById("newpat-name-sec").disabled = block
+    window.document.getElementById("newpat-ape-p").disabled = block
+    window.document.getElementById("newpat-ape-m").disabled = block
+  }
   const fillPatienteByDNI = _dni => {
     if(__debug__) console.log("fillPatienteByDNI", _dni)
 
     // Reset values when dni changes
-    document.getElementById("pac_pk").value = ""
-    document.getElementById("pac_fullname").textContent = ""
+    pacienteDataInputs()
 
     if(_dni.length < 6) return
 
     // Generate promise
     getDataByPK('atencion/paciente/dni', _dni)
     .then(pac => {
-      isNewPatient(false)
       // Set paciente data
-      document.getElementById("pac_pk").value = pac.pk
-      document.getElementById("pac_fullname").textContent = pac.fullname
+      pacienteDataInputs(pac.pk, pac.nombre_principal, pac.nombre_secundario, pac.ape_paterno, pac.ape_materno, pac.celular, pac.permiso_sms, pac.fullname_validado)
     })
     .catch(() => {
       if(_dni.length == 8){
-        window.document.getElementById("newpat-name-pric").value = ""
-        window.document.getElementById("newpat-name-sec").value = ""
-        window.document.getElementById("newpat-ape-p").value = ""
-        window.document.getElementById("newpat-ape-m").value = ""
-        isNewPatient(true)
+        pacienteDataInputs()
         personaFromReniec(_dni)
         .then(res => {
           if(__debug__) console.log("personaFromReniec res", res);
@@ -137,34 +145,25 @@ const Cita = () => {
           else handleErrorResponse('pac_form', "", "Se ha encontrado información relacionada al dni en el servicio de reniec", 'info')
           // Fill data from reniec
           let primer_nombre = res.nombres.split(" ")[0]
-          document.getElementById("newpat-name-pric").value = xhtmlDecode(primer_nombre)
-          document.getElementById("newpat-name-sec").value = xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() )
-          document.getElementById("newpat-ape-p").value = xhtmlDecode(res.apellido_paterno)
-          document.getElementById("newpat-ape-m").value = xhtmlDecode(res.apellido_materno)
+          pacienteDataInputs("", xhtmlDecode(primer_nombre),
+            xhtmlDecode( res.nombres.replace(primer_nombre, "").trim() ),
+            xhtmlDecode(res.apellido_paterno), xhtmlDecode(res.apellido_materno),
+            "", true, true)
         })
       }
     })
   }
   const cancelCitaForm = () => {
     if(_redirect_data) return
-
-    window.document.getElementById("pac_pk").value = ""
     window.document.getElementById("pac_dni").value = ""
-    window.document.getElementById("pac_fullname").textContent = ""
-
+    pacienteDataInputs()
     window.document.getElementById("cita-date").value = new Date().toDateInputValue()
     window.document.getElementById("cita-hour").value = "08"
     window.document.getElementById("cita-minute").value = "00"
     window.document.getElementById("cita-duracion").value = "15"
 
-    window.document.getElementById("newpat-name-pric").value = ""
-    window.document.getElementById("newpat-name-sec").value = ""
-    window.document.getElementById("newpat-ape-p").value = ""
-    window.document.getElementById("newpat-ape-m").value = ""
-
     window.$("#select-filtro_personal").val(null).trigger('change')
     window.$("#select-procedimiento_programado").val([]).trigger("change")
-    isNewPatient(false)
   }
   const errorForm = log => {
     document.querySelector('div#alert-cita-form span').innerText = log
@@ -186,9 +185,12 @@ const Cita = () => {
     * select patient are setted directly
     */
     // Set paciente data
-    document.getElementById("pac_pk").value = _redirect_data.patient.pk
-    document.getElementById("pac_dni").value = _redirect_data.patient.dni ? _redirect_data.patient.dni : _redirect_data.patient.dni_otro
-    document.getElementById("pac_fullname").textContent = _redirect_data.patient.fullname
+    window.document.getElementById("pac_dni").value = _redirect_data.patient.dni ? _redirect_data.patient.dni : _redirect_data.patient.dni_otro
+    pacienteDataInputs(_redirect_data.patient.pk,
+      _redirect_data.patient.nombre_principal,
+      _redirect_data.patient.nombre_secundario||"",
+      _redirect_data.patient.ape_paterno,
+      _redirect_data.patient.ape_materno)
     // Open modal
     window.$('#'+html_cita_form).modal('show')
   }
@@ -242,10 +244,10 @@ const Cita = () => {
     })
 
     // Get patient
-    let _paciente = document.getElementById("pac_pk").value
-    if(_paciente==""){
-      _paciente = {}
-      let _tmp
+    let _paciente = {}
+    let _tmp = document.getElementById("pac_pk").value
+    if(_tmp != "") _paciente.pk = _tmp
+    if(_tmp == ""){
       // Validate newpat values
       // dni
       _tmp = window.document.getElementById("pac_dni").value
@@ -295,7 +297,13 @@ const Cita = () => {
         return false
       }
       _paciente.ape_materno = _tmp
+      // fullname_validado
+      _paciente.fullname_validado = fullname_validado.current
     }
+    // celular
+    _paciente.celular = window.document.getElementById("newpat-phone").value
+    // permiso_sms
+    _paciente.permiso_sms = window.document.getElementById("newpat-permiso_sms").checked
 
     // Get META
     let _minutos = document.getElementById("cita-minute").value
@@ -620,7 +628,6 @@ const Cita = () => {
         personal={personal}
         pxss={pxss}
         redirect_data={_redirect_data}
-        newpatient={newpatient}
         />
 
       {/* INFO CITA (modal) */}
@@ -670,7 +677,7 @@ const FilterPersonal = ({personal, personal_color, filterByPersonal}) => {
     </div>
   )
 }
-const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, personal, redirect_data, newpatient}) => (
+const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, personal, redirect_data}) => (
   <div className="modal fade" id={id} tabIndex="-1" role="dialog" style={{display: "none"}} aria-hidden="true">
     <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div className="modal-content">
@@ -689,18 +696,13 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
           <SelectPersonal personal={personal} />
           {/* Paciente */}
           <input type="text" id="pac_pk" style={{display:'none'}} disable="true" />
-          <div className="form-group col-md-12" style={{marginBottom: 0}}>
+          <div className="form-group col-md-12">
             <label className="form-label input-sm" htmlFor="pac_dni">Dni: </label>
             <input type="text" id="pac_dni" placeholder="Dni del paciente" maxLength="30"
             className="form-control form-control-lg" onChange={e => fillPatienteByDNI(e.target.value)} />
           </div>
-          <div className="form-group col-12" style={{display:'inline-block'}}>
-            <span id="pac_fullname" className="form-control form-control-lg"
-            style={{backgroundColor: "lightgray", display: newpatient?"none":"block"}}>
-            </span>
-          </div>
 
-          <div style={{display: newpatient?"block":"none"}}>
+          <div style={{display: "block"}}>
             {/* New Patient Form */}
             <div className="form-group col-md-6" style={{display:'inline-block'}}>
               <label className="form-label" htmlFor="newpat-name-pric">Nombre principal: </label>
@@ -717,6 +719,17 @@ const ModalCitaForm = ({id, saveCita, cancelCitaForm, fillPatienteByDNI, pxss, p
             <div className="form-group col-md-6" style={{display:'inline-block'}}>
               <label className="form-label" htmlFor="newpat-ape-m">Apellido materno: </label>
               <input type="text" id="newpat-ape-m" className="form-control" />
+            </div>
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <label className="form-label" htmlFor="newpat-phone">Celular: </label>
+              <span style={{fontSize: ".6875rem", marginLeft: "1em", color: "blue"}}>(Mantener actualizado)</span>
+              <input type="text" id="newpat-phone" className="form-control" maxLength="9" />
+            </div>
+            <div className="form-group col-md-6" style={{display:'inline-block'}}>
+              <div className="custom-control custom-checkbox custom-control-inline" style={{alignItems: "center"}}>
+                <input type="checkbox" className="custom-control-input" id="newpat-permiso_sms" />
+                <label className="custom-control-label" htmlFor="newpat-permiso_sms">Permitir envio de mensajes</label>
+              </div>
             </div>
           </div>
 
