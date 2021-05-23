@@ -878,6 +878,12 @@ const PatientForm = ({patient, setPatient=(()=>{})}) => {
     window.document.getElementById('permiso_sms').checked = patient.permiso_sms
     window.document.getElementById('address').value = patient.direccion
     window.document.getElementById('email').value = patient.correo
+    if(patient.fullname_validado){
+      window.document.getElementById("name-pric").disabled = true
+      window.document.getElementById("name-sec").disabled = true
+      window.document.getElementById("ape-p").disabled = true
+      window.document.getElementById("ape-m").disabled = true
+    }
   }, [patient])
 
   return (
