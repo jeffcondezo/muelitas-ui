@@ -190,7 +190,10 @@ const Cita = () => {
       _redirect_data.patient.nombre_principal,
       _redirect_data.patient.nombre_secundario||"",
       _redirect_data.patient.ape_paterno,
-      _redirect_data.patient.ape_materno)
+      _redirect_data.patient.ape_materno,
+      _redirect_data.patient.celular,
+      _redirect_data.patient.permiso_sms,
+      _redirect_data.patient.fullname_validado)
     // Open modal
     window.$('#'+html_cita_form).modal('show')
   }
