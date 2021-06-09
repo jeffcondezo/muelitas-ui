@@ -27,8 +27,9 @@ import {
   getDataByPK,
   simplePostData,
 } from '../../functions'
-import { NavigationContext } from '../Navigation';
-import { tipo_documento, personaFromReniec, xhtmlDecode } from '../admision/Admision'
+import { NavigationContext } from '../Navigation'
+import { tipo_documento } from '../admision/Admision'
+import { personaFromReniec, xhtmlDecode } from '../admision/NewEditPatient'
 import Loader from '../loader/Loader'
 
 // Static

@@ -16,7 +16,8 @@ import {
   RegularModalCentered
 } from '../bits'
 import { FileIcon, defaultStyles } from 'react-file-icon'
-import { ModalFileUpload, tipo_documento } from '../admision/Admision'
+import { tipo_documento } from '../admision/Admision'
+import { ModalFileUpload } from '../admision/GDriveFiles'
 import { NavigationContext } from '../Navigation'
 import Loader from '../loader/Loader'
 
@@ -962,15 +963,3 @@ const ModalConsentFileUpload = ({modal_id, patient_pk, atencion_pk, dci_pk, refr
 
 
 export default Atencion
-
-/*
-Update debts after removing procedure
-* badge (to pay/paid)
-* Disable cobranza button when there is nothing to pay for
-
-* roles (admin, medic)
-* Fill attention.detail when attention is over (clinic history) (but where to ask that?)
-* prescription (read only) (permission)
-* odontogram (read only) (permission)
-* BUG: Modal background do not disappear when change page without closing modal
-*/

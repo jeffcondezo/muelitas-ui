@@ -19,7 +19,7 @@ import {
 import { PageTitle } from '../bits'
 import HistorialPagos from './HistorialPagos'
 import { NavigationContext } from '../Navigation'
-import { xhtmlDecode } from '../admision/Admision'
+import { xhtmlDecode } from '../admision/NewEditPatient'
 import Loader from '../loader/Loader'
 
 
