@@ -585,6 +585,10 @@ const ModalFormatos = ({patient_pk, current_sucursal}) => {
       text: "Formato de Historia",
       link: `atencion/viewdoc/historia/${current_sucursal}/${patient_pk}/`,
       sucursal: [2, 4],
+    }, {
+      text: "Dirección de Paciente",
+      link: `atencion/viewdoc/103/${current_sucursal}/${patient_pk}/`,
+      sucursal: [2, 3, 4],
     },
   ]
   const redirectToFormat = endpoint => window.open(process.env.REACT_APP_PROJECT_API+endpoint, '_blank')
@@ -601,7 +605,8 @@ const ModalFormatos = ({patient_pk, current_sucursal}) => {
       _body={
         <div>
           {formats.map(f => (f.sucursal.indexOf(current_sucursal) != -1) && (
-            <button className="btn btn-primary" onClick={() => redirectToFormat(f.link)}>
+            <button className="btn btn-primary" style={{display: "block"}}
+            onClick={() => redirectToFormat(f.link)}>
               {f.text}
             </button>
           ))}
