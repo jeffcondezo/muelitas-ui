@@ -266,7 +266,7 @@ const Cita = () => {
         errorForm("Debe especificar un nombre principal")
         return
       }
-      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+      if(!/^[a-zA-ZñÑáéíóúÁÉÍÓÚ]+$/.test(_tmp)){
         errorForm("Los nombres solo pueden contener letras")
         return false
       }
@@ -274,7 +274,7 @@ const Cita = () => {
       // nombre_secundario
       _tmp = window.document.getElementById("newpat-name-sec").value
       if(_tmp.trim() != ""){
-        if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+        if(!/^[a-zA-ZñÑáéíóúÁÉÍÓÚ]+$/.test(_tmp)){
           errorForm("Los nombres solo pueden contener letras")
           return false
         }else _paciente.nombre_secundario = _tmp
@@ -285,7 +285,7 @@ const Cita = () => {
         errorForm("Debe especificar un apellido paterno")
         return
       }
-      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+      if(!/^[a-zA-ZñÑáéíóúÁÉÍÓÚ]+$/.test(_tmp)){
         errorForm("Los apellidos solo pueden contener letras")
         return false
       }
@@ -296,7 +296,7 @@ const Cita = () => {
         errorForm("Debe especificar un apellido materno")
         return
       }
-      if(!/^[a-zA-ZñÑ]+$/.test(_tmp)){
+      if(!/^[a-zA-ZñÑáéíóúÁÉÍÓÚ]+$/.test(_tmp)){
         errorForm("Los apellidos solo pueden contener letras")
         return false
       }
