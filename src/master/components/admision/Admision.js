@@ -401,7 +401,7 @@ const AdmisionDetail = () => {
               redirectTo={redirectTo} />
           </div>
         </div>
-        <ModalFormatos patient_pk={patient.pk} current_sucursal={current_sucursal} />
+        <ModalFormatos patient={patient} current_sucursal={current_sucursal} />
         <InstantNotification patient_pk={patient.pk} current_sucursal={current_sucursal} />
         <AtenderPaciente patient_pk={patient.pk} current_sucursal={current_sucursal} redirectTo={redirectTo} />
         <ListCuestionario patient_pk={patient.pk} redirectTo={redirectTo} />
@@ -571,34 +571,74 @@ const LinksDetail = ({patient, redirectTo}) => {
   )
 }
 // Formatos
-const ModalFormatos = ({patient_pk, current_sucursal}) => {
+const ModalFormatos = ({patient, current_sucursal}) => {
+  const [format, selectFormat] = useState(false)
+  const [over, setOver] = useState(false)
+  const html_address_id = 'html_format_address_id'
+
+  const byPassFunction = _f => {
+    if(_f.bypass){
+      selectFormat(_f)
+      setOver(false)
+    }else redirectToFormat(_f.link)
+  }
+  const redirectToFormat = endpoint => window.open(process.env.REACT_APP_PROJECT_API+endpoint, '_blank')
+  // Aditional functions
+  const openDireccionModal = () => window.$('#'+html_address_id).modal("show")
+  const closeByPass = () => {
+    setOver(true)
+    window.$('#'+html_address_id).modal("hide")
+  }
+  const saveCustomAddress = () => {
+    let data = {
+      direccion_sec: window.document.getElementById("address-direccion_sec").value,
+      direccion_ref: window.document.getElementById("address-direccion_ref").value
+    }
+    simplePostData(`atencion/paciente/${patient.pk}/`, data, "PATCH")
+    .then(closeByPass)
+  }
+  // Formats
   let formats = [
     {
       text: "Cuidados de la ortodoncia",
-      link: `atencion/viewdoc/1/${current_sucursal}/${patient_pk}/`,
+      link: `atencion/viewdoc/1/${current_sucursal}/${patient.pk}/`,
       sucursal: [2, 3, 4],
+      bypass: false,
     }, {
       text: "Certificado de atencion",
-      link: `atencion/viewdoc/101/${current_sucursal}/${patient_pk}/`,
+      link: `atencion/viewdoc/101/${current_sucursal}/${patient.pk}/`,
       sucursal: [2, 3],
+      bypass: false,
     }, {
       text: "Formato de Historia",
-      link: `atencion/viewdoc/historia/${current_sucursal}/${patient_pk}/`,
+      link: `atencion/viewdoc/historia/${current_sucursal}/${patient.pk}/`,
       sucursal: [2, 4],
+      bypass: false,
     }, {
       text: "Dirección de Paciente",
-      link: `atencion/viewdoc/103/${current_sucursal}/${patient_pk}/`,
+      link: `atencion/viewdoc/103/${current_sucursal}/${patient.pk}/`,
       sucursal: [2, 3, 4],
+      bypass: openDireccionModal,
     },
   ]
-  const redirectToFormat = endpoint => window.open(process.env.REACT_APP_PROJECT_API+endpoint, '_blank')
 
   useEffect(() => () => {
     // Assure modals will be closed before leaving current page
     window.$('#'+html_format_id).modal("hide")
   }, [])
+  useEffect(() => {
+    if(!over && format){
+      window.$('#'+html_format_id).modal("hide")
+      format.bypass()
+    }
+    if(over && format){
+      selectFormat(false)
+      redirectToFormat(format.link)
+    }
+  }, [over, format])
 
   return (
+    <>
     <RegularModalCentered
       _id={html_format_id}
       _title={"Generar formato"}
@@ -606,12 +646,32 @@ const ModalFormatos = ({patient_pk, current_sucursal}) => {
         <div>
           {formats.map(f => (f.sucursal.indexOf(current_sucursal) != -1) && (
             <button className="btn btn-primary" style={{display: "block"}}
-            onClick={() => redirectToFormat(f.link)}>
+            onClick={() => byPassFunction(f)}>
               {f.text}
             </button>
           ))}
         </div>
       } />
+    <RegularModalCentered
+      _id={html_address_id}
+      _title={"Formulario direccion"}
+      _body={
+        <div>
+          <div>
+            <label className="form-label" htmlFor="address-direccion_sec">Dirección:</label>
+            <input className="form-control" id="address-direccion_sec" type="text"
+            maxLength="255" defaultValue={patient.direccion_sec||""} />
+          </div>
+          <div>
+            <label className="form-label" htmlFor="address-direccion_ref">Referencia</label>
+            <input className="form-control" id="address-direccion_ref" type="text"
+            maxLength="255" defaultValue={patient.direccion_ref||""} />
+          </div>
+          <br/>
+          <div><button className="btn btn-primary" onClick={saveCustomAddress}>Continuar</button></div>
+        </div>
+      } />
+  </>
   )
 }
 // Send Instant Notification

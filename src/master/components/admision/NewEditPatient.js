@@ -4,6 +4,7 @@ import {
   simplePostData,
   handleErrorResponse,
   getDataByPK,
+  capitalizeFirstLetter as cFL,
 } from '../../functions'
 import {
   useParams,
@@ -531,7 +532,7 @@ const ExtraFieldsForm = ({camposextra}) => {
           display:'inline-block',
           verticalAlign: 'top'
         }}>
-          <label className="form-label" htmlFor={"extra-field-"+ce.pk}>{ce.texto}</label>
+          <label className="form-label" htmlFor={"extra-field-"+ce.pk}>{cFL(ce.texto)}</label>
           {ce.tipo_campo == 1 && (<input type="text" id={"extra-field-"+ce.pk} className="form-control" />)}
           {ce.tipo_campo == 2 && (<textarea className="form-control" id={"extra-field-"+ce.pk} rows="2"></textarea>)}
         </div>
